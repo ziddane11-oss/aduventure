@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>어두밴처 v0.7.3</title>
+<title>어두밴처 v0.8.0</title>
 <style>body{margin:0;background:#0e1420}</style>
 </head>
 <body>
@@ -2001,6 +2001,32 @@ const css = `
     box-shadow:0 6px 18px rgba(0,0,0,.55); }
   .crpg .artimg { position:sticky; top:6px; z-index:20; max-height:130px; object-fit:cover; }
 }
+
+/* v0.8-a combat hit feedback (display-only) */
+@keyframes hitShake {
+  0%,100% { transform: translate(0,0); }
+  20% { transform: translate(-3px,1px); }
+  40% { transform: translate(3px,-2px); }
+  60% { transform: translate(-2px,1px); }
+  80% { transform: translate(2px,0); }
+}
+@keyframes dmgPop {
+  0% { opacity:1; transform: translate(-50%,0) scale(1); }
+  100% { opacity:0; transform: translate(-50%,-28px) scale(1.15); }
+}
+@keyframes hpFlash {
+  0%,100% { filter:brightness(1); box-shadow:none; }
+  35% { filter:brightness(1.8); box-shadow:0 0 10px #ff8a7a; }
+}
+.crpg.hit-shake { animation: hitShake .28s ease-out; }
+.crpg .sheet { position:relative; }
+.crpg .dmg-pop {
+  position:absolute; left:50%; top:2px; z-index:30; pointer-events:none;
+  font-family:'IBM Plex Mono',monospace; font-size:18px; font-weight:700;
+  color:#ff6b5a; text-shadow:0 1px 2px #000; animation: dmgPop .45s ease-out forwards;
+}
+.crpg .hpbar.flash { animation: hpFlash .28s ease; }
+.crpg .hpbar.flash i { background:linear-gradient(90deg,#fff,#ff8a7a)!important; }
 @media (prefers-reduced-motion: reduce) { .crpg * { animation:none !important; transition:none !important; } }
 `;
 function CRPG() {
@@ -2022,6 +2048,24 @@ function CRPG() {
   const [fate, setFate] = useState(1);
   const [specialLeft, setSpecialLeft] = useState(2);
   const [breathLeft, setBreathLeft] = useState(1);
+  /* v0.8-a display-only combat hit FX (no logic change) */
+  const [hitShake, setHitShake] = useState(false);
+  const [hpFlash, setHpFlash] = useState(false);
+  const [dmgPop, setDmgPop] = useState(null);
+  function triggerHitFx(dmg) {
+    if (!(dmg > 0)) return;
+    if (typeof window !== "undefined" && window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    setHitShake(true);
+    setHpFlash(true);
+    setDmgPop({
+      id: Date.now(),
+      amount: dmg
+    });
+    setTimeout(() => setHitShake(false), 280);
+    setTimeout(() => setHpFlash(false), 280);
+    setTimeout(() => setDmgPop(null), 480);
+  }
+
   const [tutOpen, setTutOpen] = useState(false);
   const [tutSeen, setTutSeen] = useState(false);
   const [sfxOn, setSfxOn] = useState(false);
@@ -2113,6 +2157,7 @@ function CRPG() {
         ...p,
         hp: Math.max(0, p.hp - dmg)
       }));
+      triggerHitFx(dmg);
       extra = `\n\n(${dmg} 피해)`;
     }
     if (branch.flag) {
@@ -2279,6 +2324,7 @@ function CRPG() {
       t: "◀ " + foe.name + ": " + def.detail + (isDef ? " (방어 태세)" : "")
     });
     curHp = Math.max(0, curHp - def.damage);
+    triggerHitFx(def.damage);
     setPc({
       ...pc,
       hp: curHp
@@ -2322,10 +2368,10 @@ function CRPG() {
   const allBadges = badges.length >= BADGES.length;
   const chapterTitle = chapter === 3 ? "제3장 사라진 종소리" : chapter === 2 ? "제2장 검은 코트" : "제1장 잿빛 등대";
   return /*#__PURE__*/React.createElement("div", {
-    className: "crpg"
+    className: "crpg" + (hitShake ? " hit-shake" : "")
   }, /*#__PURE__*/React.createElement("style", null, css), /*#__PURE__*/React.createElement("div", {
     className: "frame"
-  }, /*#__PURE__*/React.createElement("header", null, /*#__PURE__*/React.createElement("h1", null, "\uC5B4\uB450\uBC34\uCC98", /*#__PURE__*/React.createElement("span", null, chapterTitle, " \xB7 v0.7.3")), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("header", null, /*#__PURE__*/React.createElement("h1", null, "\uC5B4\uB450\uBC34\uCC98", /*#__PURE__*/React.createElement("span", null, chapterTitle, " \xB7 v0.8.0")), /*#__PURE__*/React.createElement("div", {
     className: "hctrl"
   }, /*#__PURE__*/React.createElement("button", {
     onClick: () => setSfxOn(SFX.toggle()),
@@ -2417,8 +2463,12 @@ function CRPG() {
   }, pc.icon, " ", pc.name, " ", /*#__PURE__*/React.createElement("em", {
     className: "cls"
   }, CLASSES[pc.classKey].name)), /*#__PURE__*/React.createElement("div", {
-    className: "hpbar"
-  }, /*#__PURE__*/React.createElement("i", {
+    className: "hpbar" + (hpFlash ? " flash" : "")
+  }, dmgPop && /*#__PURE__*/React.createElement("div", {
+    key: dmgPop.id,
+    className: "dmg-pop",
+    "aria-hidden": true
+  }, "-" + dmgPop.amount), /*#__PURE__*/React.createElement("i", {
     style: {
       width: pc.hp / pc.maxHp * 100 + "%"
     }
@@ -2611,7 +2661,7 @@ function CRPG() {
   }, "모험은 여기서 끊겼다.\n\n하지만 주사위는 다시 굴릴 수 있다."), /*#__PURE__*/React.createElement("button", {
     className: "restart primary",
     onClick: () => restart()
-  }, "\uCC98\uC74C\uBD80\uD130 \uB2E4\uC2DC")), /*#__PURE__*/React.createElement("footer", null, "\uC5B4\uB450\uBC34\uCC98 \u2014 \uC791\uBA85: \uBE0C\uB2C8\uC5D8\uC5EC\uC790\uACE0\uB4F1\uD559\uAD50 2\uD559\uB144 \uBB3C\uB9AC\uBC18 \xB7 \uD3EC\uC2A4\uD130: Gemini", /*#__PURE__*/React.createElement("br", null), "\uC0BD\uD654\xB7\uC544\uC774\uB514\uC5B4 \uBAA8\uC9D1 \uC911: \uCC44\uD0DD\uC791\uC740 \uC2E4\uBA85 \uD06C\uB808\uB527\uACFC \uD568\uAED8 \uAC8C\uC784\uC5D0 \uC601\uAD6C \uC218\uB85D", /*#__PURE__*/React.createElement("br", null), "\uB8F0: SRD 5.1 (CC-BY-4.0) \uBD80\uBD84\uC9D1\uD569 \xB7 \uC5D4\uC9C4 v0.7.3", /*#__PURE__*/React.createElement("br", null), "채택된 제안 — 태희: 창문 순간이동(1장 등대 입구)")));
+  }, "\uCC98\uC74C\uBD80\uD130 \uB2E4\uC2DC")), /*#__PURE__*/React.createElement("footer", null, "\uC5B4\uB450\uBC34\uCC98 \u2014 \uC791\uBA85: \uBE0C\uB2C8\uC5D8\uC5EC\uC790\uACE0\uB4F1\uD559\uAD50 2\uD559\uB144 \uBB3C\uB9AC\uBC18 \xB7 \uD3EC\uC2A4\uD130: Gemini", /*#__PURE__*/React.createElement("br", null), "\uC0BD\uD654\xB7\uC544\uC774\uB514\uC5B4 \uBAA8\uC9D1 \uC911: \uCC44\uD0DD\uC791\uC740 \uC2E4\uBA85 \uD06C\uB808\uB527\uACFC \uD568\uAED8 \uAC8C\uC784\uC5D0 \uC601\uAD6C \uC218\uB85D", /*#__PURE__*/React.createElement("br", null), "\uB8F0: SRD 5.1 (CC-BY-4.0) \uBD80\uBD84\uC9D1\uD569 \xB7 \uC5D4\uC9C4 v0.8.0", /*#__PURE__*/React.createElement("br", null), "채택된 제안 — 태희: 창문 순간이동(1장 등대 입구)")));
 }
 ReactDOM.createRoot(document.getElementById('root')).render(/*#__PURE__*/React.createElement(CRPG, null));
 </script>
