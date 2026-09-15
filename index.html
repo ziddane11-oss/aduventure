@@ -1332,6 +1332,46 @@ const BADGES = [{
 }];
 const badgeId = (ending, flags) => ending === 1 ? "1" + (flags.includes("peaceful") ? "p" : "c") + (flags.includes("fixed") ? "f" : "j") : ending === 2 ? "2" + (flags.includes("peaceful2") ? "p" : "c") : "3" + (flags.includes("saved3") ? "s" : "e");
 
+/* ---------- 오늘의 도전 — 날짜 기반으로 매일 하나가 결정된다(재방문 유도) ---------- */
+const DAILY_CHALLENGES = [{
+  id: "fighter",
+  label: "파이터로 한 장(章)을 끝내기",
+  test: c => c.classKey === "fighter"
+}, {
+  id: "rogue",
+  label: "로그로 한 장을 끝내기",
+  test: c => c.classKey === "rogue"
+}, {
+  id: "wizard",
+  label: "위저드로 한 장을 끝내기",
+  test: c => c.classKey === "wizard"
+}, {
+  id: "ace",
+  label: "판정 성공률 80% 이상으로 끝내기",
+  test: c => c.rolls >= 1 && c.rate >= 80
+}, {
+  id: "flawless",
+  label: "HP를 한 칸도 잃지 않고 끝내기",
+  test: c => c.hp === c.maxHp
+}, {
+  id: "simple",
+  label: "Simple 2d6 룰로 끝내기",
+  test: c => c.ruleKey === "simple2d6"
+}, {
+  id: "clever",
+  label: "판정 6회 이하로 끝내기",
+  test: c => c.rolls >= 1 && c.rolls <= 6
+}];
+const dayKey = () => {
+  const d = new Date();
+  return "" + d.getFullYear() + String(d.getMonth() + 1).padStart(2, "0") + String(d.getDate()).padStart(2, "0");
+};
+const dayHash = s => {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  return h;
+};
+
 /* ============================================================
    장면 비주얼 — 1장: 어둠이 걷히는 등대 / 2장: 안개 걷히는 부두
    ============================================================ */
@@ -2014,6 +2054,19 @@ const css = `
   box-shadow:0 0 0 rgba(212,169,78,0); animation:fadeIn .5s ease; }
 .crpg .continueBtn:hover { background:rgba(212,169,78,.24); transform:translateY(-1px); box-shadow:0 4px 14px rgba(212,169,78,.18); }
 .crpg .continueBtn .cont-meta { font-size:12px; font-weight:400; color:var(--dim); letter-spacing:.02em; }
+.crpg .daily { display:flex; flex-direction:column; gap:4px; margin:18px 0 6px; padding:12px 14px;
+  border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:8px; background:var(--panel); }
+.crpg .daily.done { border-left-color:var(--good); }
+.crpg .daily .daily-h { font-size:11px; letter-spacing:.18em; color:var(--accent); font-weight:600; }
+.crpg .daily.done .daily-h { color:var(--good); }
+.crpg .daily .daily-l { font-size:15px; color:var(--text); }
+.crpg .daily .daily-s { font-size:12px; color:var(--dim); }
+.crpg .daily.done .daily-s { color:var(--good); font-weight:600; }
+.crpg .record.new { margin:12px 0 4px; padding:10px 14px; border-radius:8px; text-align:center; font-weight:600;
+  color:var(--gold); border:1px solid var(--gold); background:rgba(212,169,78,.1); animation:popIn .4s ease; }
+.crpg .daily-res { margin:8px 0 4px; padding:9px 14px; border-radius:8px; font-size:13px; color:var(--dim);
+  border:1px solid var(--line); background:var(--panel); }
+.crpg .daily-res.done { color:var(--good); border-color:var(--good); }
 @media (prefers-reduced-motion: reduce) { .crpg * { animation:none !important; transition:none !important; } }
 `;
 function CRPG() {
@@ -2044,6 +2097,11 @@ function CRPG() {
   const [newBadge, setNewBadge] = useState(null);
   const SAVE_KEY = "aduventure_save";
   const [savedGame, setSavedGame] = useState(() => store.get(SAVE_KEY));
+  const [records, setRecords] = useState(() => store.get("aduventure_records") || {});
+  const [recordFlash, setRecordFlash] = useState(null);
+  const todayKey = dayKey();
+  const daily = DAILY_CHALLENGES[dayHash(todayKey) % DAILY_CHALLENGES.length];
+  const [dailyDone, setDailyDone] = useState(() => !!store.get("aduventure_daily_" + todayKey));
   const clogRef = useRef(null);
   useEffect(() => {
     clogRef.current?.scrollTo(0, 99999);
@@ -2084,6 +2142,47 @@ function CRPG() {
     if (pc && scene && (scene.ending || scene.gameover)) {
       store.remove(SAVE_KEY);
       setSavedGame(null);
+    }
+  }, [sceneKey, pc]);
+  // 엔딩 도달 시 — 이 엔딩의 최고 기록(성공률 우선, 동률이면 최소 판정)을 갱신하고 오늘의 도전 달성을 판정한다.
+  useEffect(() => {
+    if (!pc || !scene || !scene.ending) return;
+    const rolls = stats.rolls;
+    const success = stats.success;
+    const rate = rolls ? Math.round(success / rolls * 100) : 0;
+    const bId = badgeId(scene.ending, flags);
+    const cur = records[bId];
+    const better = !cur || rate > cur.rate || rate === cur.rate && rolls < cur.rolls;
+    if (better) {
+      const next = {
+        ...records,
+        [bId]: {
+          rolls,
+          success,
+          rate,
+          hp: pc.hp,
+          maxHp: pc.maxHp,
+          ruleKey,
+          at: Date.now()
+        }
+      };
+      store.set("aduventure_records", next);
+      setRecords(next);
+      setRecordFlash(bId);
+    } else {
+      setRecordFlash(null);
+    }
+    if (!dailyDone && daily.test({
+      classKey: pc.classKey,
+      ruleKey,
+      rate,
+      rolls,
+      hp: pc.hp,
+      maxHp: pc.maxHp,
+      ending: scene.ending
+    })) {
+      store.set("aduventure_daily_" + todayKey, true);
+      setDailyDone(true);
     }
   }, [sceneKey, pc]);
   function unlock(id) {
@@ -2349,6 +2448,7 @@ function CRPG() {
     setEnemy(null);
     setClog([]);
     setNewBadge(null);
+    setRecordFlash(null);
     setFate(1);
     setSpecialLeft(2);
     setBreathLeft(1);
@@ -2478,14 +2578,22 @@ function CRPG() {
     className: "ci"
   }, c.icon), /*#__PURE__*/React.createElement("h2", null, c.name), /*#__PURE__*/React.createElement("p", null, c.blurb), /*#__PURE__*/React.createElement("div", {
     className: "st"
-  }, "HP ", c.maxHp, " \xB7 AC ", c.ac, " \xB7 ", c.weapon.name, " \xB7 \uD2B9\uC218\uAE30 ", SPECIALS[k].name, /*#__PURE__*/React.createElement("br", null), "\uC219\uB828: ", c.proficiencies.map(s => SKILL_NAMES[s]).join(" · "))))), /*#__PURE__*/React.createElement("p", {
+  }, "HP ", c.maxHp, " \xB7 AC ", c.ac, " \xB7 ", c.weapon.name, " \xB7 \uD2B9\uC218\uAE30 ", SPECIALS[k].name, /*#__PURE__*/React.createElement("br", null), "\uC219\uB828: ", c.proficiencies.map(s => SKILL_NAMES[s]).join(" · "))))), /*#__PURE__*/React.createElement("div", {
+    className: "daily" + (dailyDone ? " done" : "")
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "daily-h"
+  }, "\uC624\uB298\uC758 \uB3C4\uC804"), /*#__PURE__*/React.createElement("span", {
+    className: "daily-l"
+  }, daily.label), /*#__PURE__*/React.createElement("span", {
+    className: "daily-s"
+  }, dailyDone ? "\u2714 \uB2EC\uC131" : "\uBBF8\uB2EC\uC131")), /*#__PURE__*/React.createElement("p", {
     className: "bcount"
   }, "\uC5D4\uB529 \uB3C4\uAC10 ", badges.length, "/", BADGES.length), /*#__PURE__*/React.createElement("div", {
     className: "badges"
   }, BADGES.map(b => /*#__PURE__*/React.createElement("span", {
     key: b.id,
     className: "badge" + (badges.includes(b.id) ? " on" : ""),
-    title: badges.includes(b.id) ? b.how + (b.first ? " — 초대 랭크 1: " + b.first : "") : "???"
+    title: badges.includes(b.id) ? b.how + (records[b.id] ? " · 최고 성공률 " + records[b.id].rate + "% (판정 " + records[b.id].rolls + "회)" : "") + (b.first ? " — 초대 랭크 1: " + b.first : "") : "???"
   }, badges.includes(b.id) ? "★ " + b.name + (b.first ? " · 초대 " + b.first : "") : "???"))), allBadges && /*#__PURE__*/React.createElement("div", {
     className: "teaser"
   }, /*#__PURE__*/React.createElement("span", {
@@ -2663,7 +2771,11 @@ function CRPG() {
     className: "badge on new"
   }, "\u2605 \uD788\uB4E0 \uCE6D\uD638 \u2014 \uC7BF\uBE5B \uB4F1\uB300\uC9C0\uAE30"), /*#__PURE__*/React.createElement("p", null, TEASER)), /*#__PURE__*/React.createElement("p", {
     className: "stats"
-  }, "\uC6A9\uC0AC: ", pc.name, " (", CLASSES[pc.classKey].name, ") \xB7 \uD310\uC815 ", stats.rolls, "\uD68C \xB7 \uC131\uACF5 ", stats.success, "\uD68C", /*#__PURE__*/React.createElement("br", null), "\uC774\uBC88 \uBAA8\uD5D8\uC758 \uB2E8\uC11C: ", flags.filter(f => CLUES[f]).map(f => CLUES[f]).join(" · ") || "없음", /*#__PURE__*/React.createElement("br", null), "\uB8F0: ", rules.name), scene.ending === 1 ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("button", {
+  }, "\uC6A9\uC0AC: ", pc.name, " (", CLASSES[pc.classKey].name, ") \xB7 \uD310\uC815 ", stats.rolls, "\uD68C \xB7 \uC131\uACF5 ", stats.success, "\uD68C", /*#__PURE__*/React.createElement("br", null), "\uC774\uBC88 \uBAA8\uD5D8\uC758 \uB2E8\uC11C: ", flags.filter(f => CLUES[f]).map(f => CLUES[f]).join(" · ") || "없음", /*#__PURE__*/React.createElement("br", null), "\uB8F0: ", rules.name), recordFlash && /*#__PURE__*/React.createElement("div", {
+    className: "record new"
+  }, "\u2605 \uC2E0\uAE30\uB85D! \uC774 \uC5D4\uB529\uC758 \uCD5C\uACE0 \uAE30\uB85D\uC744 \uAC31\uC2E0\uD588\uB2E4"), /*#__PURE__*/React.createElement("div", {
+    className: "daily-res" + (dailyDone ? " done" : "")
+  }, "\uC624\uB298\uC758 \uB3C4\uC804 \u2014 ", daily.label, " \xB7 ", dailyDone ? "\u2714 \uB2EC\uC131" : "\uBBF8\uB2EC\uC131"), scene.ending === 1 ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("button", {
     className: "restart primary",
     onClick: () => goto("intro2")
   }, "2\uC7A5 \u300C\uAC80\uC740 \uCF54\uD2B8\u300D \uACC4\uC18D \u2192"), /*#__PURE__*/React.createElement("button", {
