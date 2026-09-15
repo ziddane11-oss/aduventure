@@ -1871,7 +1871,7 @@ const css = `
 .crpg .lhscene { display:block; width:100%; border:1px solid var(--line); border-radius:10px; margin-bottom:16px; background:#0b101c; }
 .crpg .artimg { display:block; width:100%; border:1px solid var(--gold); border-radius:10px; margin-bottom:4px; }
 .crpg .artcredit { font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:var(--dim); text-align:right; margin-bottom:12px; }
-.crpg .sheet { display:flex; gap:14px; flex-wrap:wrap; align-items:center; background:var(--panel);
+.crpg .sheet { position:relative; display:flex; gap:14px; flex-wrap:wrap; align-items:center; background:var(--panel);
   border:1px solid var(--line); border-radius:8px; padding:10px 14px; margin-bottom:16px; font-size:13px; }
 .crpg .sheet .nm { font-weight:600; color:var(--gold); }
 .crpg .sheet .cls { font-style:normal; font-size:11px; color:var(--dim); margin-left:4px; }
@@ -2011,17 +2011,16 @@ const css = `
   80% { transform: translate(2px,0); }
 }
 @keyframes dmgPop {
-  0% { opacity:1; transform: translate(-50%,0) scale(1); }
-  100% { opacity:0; transform: translate(-50%,-28px) scale(1.15); }
+  0% { opacity:1; transform: translateY(0) scale(1); }
+  100% { opacity:0; transform: translateY(-28px) scale(1.15); }
 }
 @keyframes hpFlash {
   0%,100% { filter:brightness(1); box-shadow:none; }
   35% { filter:brightness(1.8); box-shadow:0 0 10px #ff8a7a; }
 }
 .crpg.hit-shake { animation: hitShake .28s ease-out; }
-.crpg .sheet { position:relative; }
 .crpg .dmg-pop {
-  position:absolute; left:50%; top:2px; z-index:30; pointer-events:none;
+  position:absolute; right:0; top:2px; z-index:30; pointer-events:none;
   font-family:'IBM Plex Mono',monospace; font-size:18px; font-weight:700;
   color:#ff6b5a; text-shadow:0 1px 2px #000; animation: dmgPop .45s ease-out forwards;
 }
@@ -2462,13 +2461,13 @@ function CRPG() {
     className: "nm"
   }, pc.icon, " ", pc.name, " ", /*#__PURE__*/React.createElement("em", {
     className: "cls"
-  }, CLASSES[pc.classKey].name)), /*#__PURE__*/React.createElement("div", {
-    className: "hpbar" + (hpFlash ? " flash" : "")
-  }, dmgPop && /*#__PURE__*/React.createElement("div", {
+  }, CLASSES[pc.classKey].name)), dmgPop && /*#__PURE__*/React.createElement("div", {
     key: dmgPop.id,
     className: "dmg-pop",
     "aria-hidden": true
-  }, "-" + dmgPop.amount), /*#__PURE__*/React.createElement("i", {
+  }, "-" + dmgPop.amount), /*#__PURE__*/React.createElement("div", {
+    className: "hpbar" + (hpFlash ? " flash" : "")
+  }, /*#__PURE__*/React.createElement("i", {
     style: {
       width: pc.hp / pc.maxHp * 100 + "%"
     }
