@@ -365,6 +365,12 @@ const store = {
     try {
       localStorage.setItem(k, JSON.stringify(v));
     } catch (e) {}
+  },
+  remove(k) {
+    delete memStore[k];
+    try {
+      localStorage.removeItem(k);
+    } catch (e) {}
   }
 };
 
@@ -2001,6 +2007,13 @@ const css = `
     box-shadow:0 6px 18px rgba(0,0,0,.55); }
   .crpg .artimg { position:sticky; top:6px; z-index:20; max-height:130px; object-fit:cover; }
 }
+.crpg .continueBtn { display:flex; flex-direction:column; align-items:center; gap:3px; width:100%; margin:2px 0 20px;
+  padding:14px 16px; border:1px solid var(--gold); border-radius:10px;
+  background:linear-gradient(180deg, rgba(212,169,78,.16), rgba(212,169,78,.04));
+  color:var(--gold); font-family:inherit; font-size:16px; font-weight:600; cursor:pointer; transition:all .15s;
+  box-shadow:0 0 0 rgba(212,169,78,0); animation:fadeIn .5s ease; }
+.crpg .continueBtn:hover { background:rgba(212,169,78,.24); transform:translateY(-1px); box-shadow:0 4px 14px rgba(212,169,78,.18); }
+.crpg .continueBtn .cont-meta { font-size:12px; font-weight:400; color:var(--dim); letter-spacing:.02em; }
 @media (prefers-reduced-motion: reduce) { .crpg * { animation:none !important; transition:none !important; } }
 `;
 function CRPG() {
@@ -2029,6 +2042,8 @@ function CRPG() {
   const [clog, setClog] = useState([]);
   const [badges, setBadges] = useState(() => store.get("aduventure_badges") || []);
   const [newBadge, setNewBadge] = useState(null);
+  const SAVE_KEY = "aduventure_save";
+  const [savedGame, setSavedGame] = useState(() => store.get(SAVE_KEY));
   const clogRef = useRef(null);
   useEffect(() => {
     clogRef.current?.scrollTo(0, 99999);
@@ -2042,6 +2057,35 @@ function CRPG() {
   useEffect(() => {
     if (sceneKey === "ending3" && flags.includes("keeper")) SFX.bell();
   }, [sceneKey]);
+  // 자동 저장 — 안정적인 서사 장면에서만 진행 상태를 보관한다.
+  // (전투·판정 중·엔딩·게임오버·첫 인트로는 제외 → 복원 시 항상 선택지 화면으로 복귀)
+  useEffect(() => {
+    if (!pc || !scene) return;
+    if (scene.combat || scene.ending || scene.gameover) return;
+    if (rolling || pending || sceneKey === "intro") return;
+    const snapshot = {
+      v: 1,
+      pc,
+      sceneKey,
+      flags,
+      stats,
+      fate,
+      specialLeft,
+      breathLeft,
+      ruleKey,
+      tutSeen,
+      savedAt: Date.now()
+    };
+    store.set(SAVE_KEY, snapshot);
+    setSavedGame(snapshot);
+  }, [sceneKey, pc, flags, stats, fate, specialLeft, breathLeft, ruleKey, tutSeen, rolling, pending]);
+  // 회차가 끝나면(엔딩·게임오버) 이어하기 기록을 비운다. 엔딩 도감(badges)은 별도로 영구 보관된다.
+  useEffect(() => {
+    if (pc && scene && (scene.ending || scene.gameover)) {
+      store.remove(SAVE_KEY);
+      setSavedGame(null);
+    }
+  }, [sceneKey, pc]);
   function unlock(id) {
     if (badges.includes(id)) {
       setNewBadge(null);
@@ -2311,7 +2355,37 @@ function CRPG() {
     if (toScene) setPc(p => ({
       ...p,
       hp: p.maxHp
-    }));else setPc(null);
+    }));else {
+      setPc(null);
+      store.remove(SAVE_KEY);
+      setSavedGame(null);
+    }
+  }
+  // 이어서 하기 — 저장된 진행 상태를 복원한다. 임시 상태(전투·판정·직전 결과)는 초기화한다.
+  function continueGame() {
+    const s = savedGame || store.get(SAVE_KEY);
+    if (!s || !s.pc) return;
+    setRuleKey(s.ruleKey || "srd20");
+    setPc(s.pc);
+    setFlags(s.flags || []);
+    setStats(s.stats || {
+      rolls: 0,
+      success: 0
+    });
+    setFate(typeof s.fate === "number" ? s.fate : 1);
+    setSpecialLeft(typeof s.specialLeft === "number" ? s.specialLeft : 2);
+    setBreathLeft(typeof s.breathLeft === "number" ? s.breathLeft : 1);
+    setTutSeen(!!s.tutSeen);
+    setEnemy(null);
+    setClog([]);
+    setLastResult(null);
+    setPending(null);
+    setShowCalc(false);
+    setNewBadge(null);
+    setRolling(false);
+    setRollFace(null);
+    setSceneKey(s.sceneKey || "intro");
+    tele("continue", s.sceneKey, s.pc && s.pc.name, "ch" + (SCENES[s.sceneKey]?.ch || 1));
   }
   const pct = choice => Math.round(rules.successChance({
     actor: pc,
@@ -2375,7 +2449,13 @@ function CRPG() {
     className: "scene"
   }, /*#__PURE__*/React.createElement("div", {
     className: "about"
-  }, /*#__PURE__*/React.createElement("p", null, "\uC8FC\uC0AC\uC704\uB85C \uC6B4\uBA85\uC744 \uC815\uD558\uB294 \uBBF8\uC2A4\uD130\uB9AC \uD14D\uC2A4\uD2B8 \uC5B4\uB4DC\uBCA4\uCC98."), /*#__PURE__*/React.createElement("p", null, "\uD3ED\uD48D\uC758 \uBC24, \uD56D\uAD6C \uB9C8\uC744\uC758 \uB4F1\uB300\uAC00 \uAEBC\uC84C\uB2E4. \uC0C8\uBCBD\uAE4C\uC9C0 \uBD88\uC744 \uC62C\uB9AC\uC9C0 \uBABB\uD558\uBA74 \uC5B4\uC120 \uC138 \uCC99\uC774 \uC554\uCD08\uB85C \uD5A5\uD55C\uB2E4."), /*#__PURE__*/React.createElement("p", null, "\uC774\uB984\uC744 \uC0C8\uAE30\uACE0 \uC9C1\uC5C5\uC744 \uACE0\uB974\uBA74 \u2014 \uBAA8\uD5D8\uC774 \uC2DC\uC791\uB41C\uB2E4. \uC120\uD0DD\uC9C0\uC758 \uD30C\uB780 %\uB294 \uC131\uACF5 \uD655\uB960\uC774\uB2E4.")), /*#__PURE__*/React.createElement("label", {
+  }, /*#__PURE__*/React.createElement("p", null, "\uC8FC\uC0AC\uC704\uB85C \uC6B4\uBA85\uC744 \uC815\uD558\uB294 \uBBF8\uC2A4\uD130\uB9AC \uD14D\uC2A4\uD2B8 \uC5B4\uB4DC\uBCA4\uCC98."), /*#__PURE__*/React.createElement("p", null, "\uD3ED\uD48D\uC758 \uBC24, \uD56D\uAD6C \uB9C8\uC744\uC758 \uB4F1\uB300\uAC00 \uAEBC\uC84C\uB2E4. \uC0C8\uBCBD\uAE4C\uC9C0 \uBD88\uC744 \uC62C\uB9AC\uC9C0 \uBABB\uD558\uBA74 \uC5B4\uC120 \uC138 \uCC99\uC774 \uC554\uCD08\uB85C \uD5A5\uD55C\uB2E4."), /*#__PURE__*/React.createElement("p", null, "\uC774\uB984\uC744 \uC0C8\uAE30\uACE0 \uC9C1\uC5C5\uC744 \uACE0\uB974\uBA74 \u2014 \uBAA8\uD5D8\uC774 \uC2DC\uC791\uB41C\uB2E4. \uC120\uD0DD\uC9C0\uC758 \uD30C\uB780 %\uB294 \uC131\uACF5 \uD655\uB960\uC774\uB2E4.")), savedGame && savedGame.pc && /*#__PURE__*/React.createElement("button", {
+    className: "continueBtn",
+    onClick: continueGame,
+    title: "\uC800\uC7A5\uB41C \uBAA8\uD5D8\uC744 \uC774\uC5B4\uC11C \uD55C\uB2E4"
+  }, "\u21BB \uC774\uC5B4\uC11C \uD558\uAE30", /*#__PURE__*/React.createElement("span", {
+    className: "cont-meta"
+  }, (SCENES[savedGame.sceneKey]?.ch === 3 ? "\uC81C3\uC7A5" : SCENES[savedGame.sceneKey]?.ch === 2 ? "\uC81C2\uC7A5" : "\uC81C1\uC7A5") + " \xB7 " + savedGame.pc.name + " (" + (CLASSES[savedGame.pc.classKey] ? CLASSES[savedGame.pc.classKey].name : "\uC6A9\uC0AC") + ")")), /*#__PURE__*/React.createElement("label", {
     className: "nameLb"
   }, "\uC6A9\uC0AC\uC758 \uC774\uB984\uC740?"), /*#__PURE__*/React.createElement("input", {
     className: "nameIn",
