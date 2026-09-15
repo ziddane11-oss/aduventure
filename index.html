@@ -1153,6 +1153,11 @@ const SCENES = {
     ch: 3,
     text: `종탑 꼭대기. 종은 멀쩡하다 — 줄이 끊겨 있을 뿐.\n\n구석에 늙은 종탑 관리인이 웅크려 있다. 입술이 떨린다. "나, 나는 아무것도 못 봤소."`,
     choices: [{
+      artifactReq: "brass_lens",
+      label: `[유물] 되찾은 황동 렌즈로 정오의 빛을 모아 종탑 창밖 — 산 아래로 신호를 보낸다`,
+      flagDirect: "keeper",
+      goto: "undercroft"
+    }, {
       label: "[지각] 관리인의 떨리는 시선을 따라간다",
       check: {
         ability: "WIS",
@@ -1388,6 +1393,29 @@ const dayHash = s => {
   let h = 0;
   for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
   return h;
+};
+
+/* ---------- 전설의 유물 — 지식의 상위 등급. 능력치가 아니라 새 선택지·분기를 연다. ----------
+   회차를 넘어 영구 보관되며, 특정 성취(엔딩+조건)로만 얻는다. */
+const ARTIFACTS = {
+  brass_lens: {
+    name: "온전한 황동 렌즈",
+    icon: "\uD83D\uDD2E",
+    how: "1장을 완전 수리로 끝내 등대의 렌즈를 지켜낸다",
+    got: f => f.includes("fixed")
+  },
+  smuggler_ledger: {
+    name: "밀수 장부 원본",
+    icon: "\uD83D\uDCD2",
+    how: "2장에서 밀수 장부를 손에 넣는다",
+    got: f => f.includes("ledger")
+  },
+  evidence_letters: {
+    name: "증거 편지 뭉치",
+    icon: "\u2709\uFE0F",
+    how: "3장에서 사람 대신 증거를 택한다",
+    got: f => f.includes("chase3")
+  }
 };
 
 /* ============================================================
@@ -2090,6 +2118,11 @@ const css = `
 .crpg .loreitem.on { border-color:var(--accent); color:var(--accent); background:rgba(94,143,184,.1); }
 .crpg .lore-hint { font-size:12px; color:var(--dim); font-style:italic; margin:2px 0 6px; }
 .crpg .choice .tag.lore { border:1px solid var(--accent); color:var(--accent); background:rgba(94,143,184,.14); }
+.crpg .artifactbook { display:flex; flex-wrap:wrap; gap:6px; margin:4px 0 2px; }
+.crpg .artifactitem { font-size:12px; padding:5px 9px; border-radius:6px; border:1px solid var(--line); color:var(--dim); background:var(--panel); }
+.crpg .artifactitem.on { border-color:var(--gold); color:var(--gold); background:rgba(212,169,78,.1); }
+.crpg .choice .tag.artifact { border:1px solid var(--gold); color:var(--gold); background:rgba(212,169,78,.16); }
+.crpg .artifact-get { margin:10px 0 4px; padding:11px 14px; border-radius:8px; text-align:center; font-weight:600; color:var(--gold); border:1px solid var(--gold); background:linear-gradient(180deg, rgba(212,169,78,.16), rgba(212,169,78,.04)); animation:popIn .4s ease; }
 @media (prefers-reduced-motion: reduce) { .crpg * { animation:none !important; transition:none !important; } }
 `;
 function CRPG() {
@@ -2123,6 +2156,8 @@ function CRPG() {
   const [records, setRecords] = useState(() => store.get("aduventure_records") || {});
   const [recordFlash, setRecordFlash] = useState(null);
   const [lore, setLore] = useState(() => store.get("aduventure_lore") || []);
+  const [artifacts, setArtifacts] = useState(() => store.get("aduventure_artifacts") || []);
+  const [artifactFlash, setArtifactFlash] = useState(null);
   const todayKey = dayKey();
   const daily = DAILY_CHALLENGES[dayHash(todayKey) % DAILY_CHALLENGES.length];
   const [dailyDone, setDailyDone] = useState(() => !!store.get("aduventure_daily_" + todayKey));
@@ -2207,6 +2242,15 @@ function CRPG() {
     })) {
       store.set("aduventure_daily_" + todayKey, true);
       setDailyDone(true);
+    }
+    const newArts = Object.keys(ARTIFACTS).filter(id => ARTIFACTS[id].got(flags) && !artifacts.includes(id));
+    if (newArts.length) {
+      const nextA = [...artifacts, ...newArts];
+      store.set("aduventure_artifacts", nextA);
+      setArtifacts(nextA);
+      setArtifactFlash(newArts);
+    } else {
+      setArtifactFlash(null);
     }
   }, [sceneKey, pc]);
   // 비대칭 영속성 — 회차 중 발견한 단서(CLUES)는 '지식'으로 회차를 넘어 영구 축적된다.
@@ -2485,6 +2529,7 @@ function CRPG() {
     setClog([]);
     setNewBadge(null);
     setRecordFlash(null);
+    setArtifactFlash(null);
     setFate(1);
     setSpecialLeft(2);
     setBreathLeft(1);
@@ -2640,7 +2685,15 @@ function CRPG() {
     title: lore.includes(k) ? CLUES[k] : "\uC544\uC9C1 \uBC1C\uACAC\uD558\uC9C0 \uBABB\uD55C \uC9C0\uC2DD \u2014 \uBAA8\uD5D8\uC744 \uAC70\uB4ED\uD558\uBA70 \uCC3E\uC544\uB77C"
   }, lore.includes(k) ? "\u2726 " + CLUES[k] : "???"))), lore.length > 0 && /*#__PURE__*/React.createElement("p", {
     className: "lore-hint"
-  }, "\uC9C0\uC2DD\uC740 \uC8FD\uC5B4\uB3C4 \uC0AC\uB77C\uC9C0\uC9C0 \uC54A\uB294\uB2E4. \uB2E4\uC74C \uBAA8\uD5D8\uC5D0\uC11C \uC0C8 \uAE38\uC744 \uC5EC\uB294 \uC5F4\uC1E0\uAC00 \uB41C\uB2E4."), allBadges && /*#__PURE__*/React.createElement("div", {
+  }, "\uC9C0\uC2DD\uC740 \uC8FD\uC5B4\uB3C4 \uC0AC\uB77C\uC9C0\uC9C0 \uC54A\uB294\uB2E4. \uB2E4\uC74C \uBAA8\uD5D8\uC5D0\uC11C \uC0C8 \uAE38\uC744 \uC5EC\uB294 \uC5F4\uC1E0\uAC00 \uB41C\uB2E4."), /*#__PURE__*/React.createElement("p", {
+    className: "bcount"
+  }, "\uC804\uC124\uC758 \uC720\uBB3C ", artifacts.length, "/", Object.keys(ARTIFACTS).length), /*#__PURE__*/React.createElement("div", {
+    className: "artifactbook"
+  }, Object.keys(ARTIFACTS).map(k => /*#__PURE__*/React.createElement("span", {
+    key: k,
+    className: "artifactitem" + (artifacts.includes(k) ? " on" : ""),
+    title: artifacts.includes(k) ? ARTIFACTS[k].name + " \u2014 " + ARTIFACTS[k].how : "??? \u2014 " + ARTIFACTS[k].how
+  }, artifacts.includes(k) ? ARTIFACTS[k].icon + " " + ARTIFACTS[k].name : "\u25C7 ???"))), allBadges && /*#__PURE__*/React.createElement("div", {
     className: "teaser"
   }, /*#__PURE__*/React.createElement("span", {
     className: "badge on new"
@@ -2734,7 +2787,7 @@ function CRPG() {
     className: "narr"
   }, fmt(scene.text, pc)), /*#__PURE__*/React.createElement("div", {
     className: "choices"
-  }, scene.choices.filter(ch => (!ch.classOnly || pc && ch.classOnly === pc.classKey) && (!ch.loreReq || lore.includes(ch.loreReq))).map((ch, i) => /*#__PURE__*/React.createElement("button", {
+  }, scene.choices.filter(ch => (!ch.classOnly || pc && ch.classOnly === pc.classKey) && (!ch.loreReq || lore.includes(ch.loreReq)) && (!ch.artifactReq || artifacts.includes(ch.artifactReq))).map((ch, i) => /*#__PURE__*/React.createElement("button", {
     key: i,
     className: "choice",
     onClick: () => doChoice(ch)
@@ -2746,7 +2799,9 @@ function CRPG() {
     className: "tag"
   }, ch.credit), ch.loreReq && /*#__PURE__*/React.createElement("span", {
     className: "tag lore"
-  }, "\u2726 \uC9C0\uB09C \uBAA8\uD5D8\uC758 \uAE30\uC5B5"))), sceneKey === "intro" && ch1Cleared && /*#__PURE__*/React.createElement("button", {
+  }, "\u2726 \uC9C0\uB09C \uBAA8\uD5D8\uC758 \uAE30\uC5B5"), ch.artifactReq && /*#__PURE__*/React.createElement("span", {
+    className: "tag artifact"
+  }, "\u25C8 " + (ARTIFACTS[ch.artifactReq] ? ARTIFACTS[ch.artifactReq].name : "\uC720\uBB3C")))), sceneKey === "intro" && ch1Cleared && /*#__PURE__*/React.createElement("button", {
     className: "choice",
     onClick: () => goto("intro2")
   }, "(1\uC7A5 \uD074\uB9AC\uC5B4 \uAE30\uB85D \uC788\uC74C) 2\uC7A5\uBD80\uD130 \uC2DC\uC791\uD55C\uB2E4 \u2192"), sceneKey === "intro" && badges.some(b => b.startsWith("2")) && /*#__PURE__*/React.createElement("button", {
@@ -2823,7 +2878,9 @@ function CRPG() {
     className: "record new"
   }, "\u2605 \uC2E0\uAE30\uB85D! \uC774 \uC5D4\uB529\uC758 \uCD5C\uACE0 \uAE30\uB85D\uC744 \uAC31\uC2E0\uD588\uB2E4"), /*#__PURE__*/React.createElement("div", {
     className: "daily-res" + (dailyDone ? " done" : "")
-  }, "\uC624\uB298\uC758 \uB3C4\uC804 \u2014 ", daily.label, " \xB7 ", dailyDone ? "\u2714 \uB2EC\uC131" : "\uBBF8\uB2EC\uC131"), scene.ending === 1 ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("button", {
+  }, "\uC624\uB298\uC758 \uB3C4\uC804 \u2014 ", daily.label, " \xB7 ", dailyDone ? "\u2714 \uB2EC\uC131" : "\uBBF8\uB2EC\uC131"), artifactFlash && artifactFlash.length && /*#__PURE__*/React.createElement("div", {
+    className: "artifact-get"
+  }, "\u25C8 \uC720\uBB3C \uD68D\uB4DD \u2014 " + artifactFlash.map(id => ARTIFACTS[id].name).join(", ")), scene.ending === 1 ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("button", {
     className: "restart primary",
     onClick: () => goto("intro2")
   }, "2\uC7A5 \u300C\uAC80\uC740 \uCF54\uD2B8\u300D \uACC4\uC18D \u2192"), /*#__PURE__*/React.createElement("button", {
