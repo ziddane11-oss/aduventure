@@ -365,6 +365,12 @@ const store = {
     try {
       localStorage.setItem(k, JSON.stringify(v));
     } catch (e) {}
+  },
+  remove(k) {
+    delete memStore[k];
+    try {
+      localStorage.removeItem(k);
+    } catch (e) {}
   }
 };
 
@@ -842,6 +848,24 @@ const SCENES = {
     ch: 1,
     text: `나선 계단 중간층, 등불이 새어 나온다.\n\n비쩍 마른 사내가 등대의 황동 렌즈를 자루에 쑤셔 넣고 있다. 허리춤의 갈고리칼.\n\n"…재수도 없지. 못 본 걸로 하고 내려가. 응?"`,
     choices: [{
+      loreReq: "ledger",
+      label: `[기억] "네 이름, 부두 밀수 장부에서 봤다. 렌즈 두고 사라져."`,
+      check: {
+        ability: "CHA",
+        skill: "persuasion",
+        dc: 9,
+        label: "설득"
+      },
+      success: {
+        text: `사내의 얼굴이 하얗게 질린다. "…그걸 어떻게." 자루를 팽개치고 빗속으로 달아난다.`,
+        flag: "peaceful",
+        goto: "top"
+      },
+      fail: {
+        text: `"허풍이군." 갈고리칼이 호를 그린다.`,
+        goto: "combat"
+      }
+    }, {
       label: `[설득] "렌즈를 두고 가면, 나도 못 본 걸로 하지."`,
       check: {
         ability: "CHA",
@@ -1325,6 +1349,46 @@ const BADGES = [{
   how: "3장: 편지를 쫓는다"
 }];
 const badgeId = (ending, flags) => ending === 1 ? "1" + (flags.includes("peaceful") ? "p" : "c") + (flags.includes("fixed") ? "f" : "j") : ending === 2 ? "2" + (flags.includes("peaceful2") ? "p" : "c") : "3" + (flags.includes("saved3") ? "s" : "e");
+
+/* ---------- 오늘의 도전 — 날짜 기반으로 매일 하나가 결정된다(재방문 유도) ---------- */
+const DAILY_CHALLENGES = [{
+  id: "fighter",
+  label: "파이터로 한 장(章)을 끝내기",
+  test: c => c.classKey === "fighter"
+}, {
+  id: "rogue",
+  label: "로그로 한 장을 끝내기",
+  test: c => c.classKey === "rogue"
+}, {
+  id: "wizard",
+  label: "위저드로 한 장을 끝내기",
+  test: c => c.classKey === "wizard"
+}, {
+  id: "ace",
+  label: "판정 성공률 80% 이상으로 끝내기",
+  test: c => c.rolls >= 1 && c.rate >= 80
+}, {
+  id: "flawless",
+  label: "HP를 한 칸도 잃지 않고 끝내기",
+  test: c => c.hp === c.maxHp
+}, {
+  id: "simple",
+  label: "Simple 2d6 룰로 끝내기",
+  test: c => c.ruleKey === "simple2d6"
+}, {
+  id: "clever",
+  label: "판정 6회 이하로 끝내기",
+  test: c => c.rolls >= 1 && c.rolls <= 6
+}];
+const dayKey = () => {
+  const d = new Date();
+  return "" + d.getFullYear() + String(d.getMonth() + 1).padStart(2, "0") + String(d.getDate()).padStart(2, "0");
+};
+const dayHash = s => {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  return h;
+};
 
 /* ============================================================
    장면 비주얼 — 1장: 어둠이 걷히는 등대 / 2장: 안개 걷히는 부두
@@ -2001,6 +2065,31 @@ const css = `
     box-shadow:0 6px 18px rgba(0,0,0,.55); }
   .crpg .artimg { position:sticky; top:6px; z-index:20; max-height:130px; object-fit:cover; }
 }
+.crpg .continueBtn { display:flex; flex-direction:column; align-items:center; gap:3px; width:100%; margin:2px 0 20px;
+  padding:14px 16px; border:1px solid var(--gold); border-radius:10px;
+  background:linear-gradient(180deg, rgba(212,169,78,.16), rgba(212,169,78,.04));
+  color:var(--gold); font-family:inherit; font-size:16px; font-weight:600; cursor:pointer; transition:all .15s;
+  box-shadow:0 0 0 rgba(212,169,78,0); animation:fadeIn .5s ease; }
+.crpg .continueBtn:hover { background:rgba(212,169,78,.24); transform:translateY(-1px); box-shadow:0 4px 14px rgba(212,169,78,.18); }
+.crpg .continueBtn .cont-meta { font-size:12px; font-weight:400; color:var(--dim); letter-spacing:.02em; }
+.crpg .daily { display:flex; flex-direction:column; gap:4px; margin:18px 0 6px; padding:12px 14px;
+  border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:8px; background:var(--panel); }
+.crpg .daily.done { border-left-color:var(--good); }
+.crpg .daily .daily-h { font-size:11px; letter-spacing:.18em; color:var(--accent); font-weight:600; }
+.crpg .daily.done .daily-h { color:var(--good); }
+.crpg .daily .daily-l { font-size:15px; color:var(--text); }
+.crpg .daily .daily-s { font-size:12px; color:var(--dim); }
+.crpg .daily.done .daily-s { color:var(--good); font-weight:600; }
+.crpg .record.new { margin:12px 0 4px; padding:10px 14px; border-radius:8px; text-align:center; font-weight:600;
+  color:var(--gold); border:1px solid var(--gold); background:rgba(212,169,78,.1); animation:popIn .4s ease; }
+.crpg .daily-res { margin:8px 0 4px; padding:9px 14px; border-radius:8px; font-size:13px; color:var(--dim);
+  border:1px solid var(--line); background:var(--panel); }
+.crpg .daily-res.done { color:var(--good); border-color:var(--good); }
+.crpg .lorebook { display:flex; flex-wrap:wrap; gap:6px; margin:4px 0 2px; }
+.crpg .loreitem { font-size:12px; padding:5px 9px; border-radius:6px; border:1px solid var(--line); color:var(--dim); background:var(--panel); }
+.crpg .loreitem.on { border-color:var(--accent); color:var(--accent); background:rgba(94,143,184,.1); }
+.crpg .lore-hint { font-size:12px; color:var(--dim); font-style:italic; margin:2px 0 6px; }
+.crpg .choice .tag.lore { border:1px solid var(--accent); color:var(--accent); background:rgba(94,143,184,.14); }
 @media (prefers-reduced-motion: reduce) { .crpg * { animation:none !important; transition:none !important; } }
 `;
 function CRPG() {
@@ -2029,6 +2118,14 @@ function CRPG() {
   const [clog, setClog] = useState([]);
   const [badges, setBadges] = useState(() => store.get("aduventure_badges") || []);
   const [newBadge, setNewBadge] = useState(null);
+  const SAVE_KEY = "aduventure_save";
+  const [savedGame, setSavedGame] = useState(() => store.get(SAVE_KEY));
+  const [records, setRecords] = useState(() => store.get("aduventure_records") || {});
+  const [recordFlash, setRecordFlash] = useState(null);
+  const [lore, setLore] = useState(() => store.get("aduventure_lore") || []);
+  const todayKey = dayKey();
+  const daily = DAILY_CHALLENGES[dayHash(todayKey) % DAILY_CHALLENGES.length];
+  const [dailyDone, setDailyDone] = useState(() => !!store.get("aduventure_daily_" + todayKey));
   const clogRef = useRef(null);
   useEffect(() => {
     clogRef.current?.scrollTo(0, 99999);
@@ -2042,6 +2139,88 @@ function CRPG() {
   useEffect(() => {
     if (sceneKey === "ending3" && flags.includes("keeper")) SFX.bell();
   }, [sceneKey]);
+  // 자동 저장 — 안정적인 서사 장면에서만 진행 상태를 보관한다.
+  // (전투·판정 중·엔딩·게임오버·첫 인트로는 제외 → 복원 시 항상 선택지 화면으로 복귀)
+  useEffect(() => {
+    if (!pc || !scene) return;
+    if (scene.combat || scene.ending || scene.gameover) return;
+    if (rolling || pending || sceneKey === "intro") return;
+    const snapshot = {
+      v: 1,
+      pc,
+      sceneKey,
+      flags,
+      stats,
+      fate,
+      specialLeft,
+      breathLeft,
+      ruleKey,
+      tutSeen,
+      savedAt: Date.now()
+    };
+    store.set(SAVE_KEY, snapshot);
+    setSavedGame(snapshot);
+  }, [sceneKey, pc, flags, stats, fate, specialLeft, breathLeft, ruleKey, tutSeen, rolling, pending]);
+  // 회차가 끝나면(엔딩·게임오버) 이어하기 기록을 비운다. 엔딩 도감(badges)은 별도로 영구 보관된다.
+  useEffect(() => {
+    if (pc && scene && (scene.ending || scene.gameover)) {
+      store.remove(SAVE_KEY);
+      setSavedGame(null);
+    }
+  }, [sceneKey, pc]);
+  // 엔딩 도달 시 — 이 엔딩의 최고 기록(성공률 우선, 동률이면 최소 판정)을 갱신하고 오늘의 도전 달성을 판정한다.
+  useEffect(() => {
+    if (!pc || !scene || !scene.ending) return;
+    const rolls = stats.rolls;
+    const success = stats.success;
+    const rate = rolls ? Math.round(success / rolls * 100) : 0;
+    const bId = badgeId(scene.ending, flags);
+    const cur = records[bId];
+    const better = !cur || rate > cur.rate || rate === cur.rate && rolls < cur.rolls;
+    if (better) {
+      const next = {
+        ...records,
+        [bId]: {
+          rolls,
+          success,
+          rate,
+          hp: pc.hp,
+          maxHp: pc.maxHp,
+          ruleKey,
+          at: Date.now()
+        }
+      };
+      store.set("aduventure_records", next);
+      setRecords(next);
+      setRecordFlash(bId);
+    } else {
+      setRecordFlash(null);
+    }
+    if (!dailyDone && daily.test({
+      classKey: pc.classKey,
+      ruleKey,
+      rate,
+      rolls,
+      hp: pc.hp,
+      maxHp: pc.maxHp,
+      ending: scene.ending
+    })) {
+      store.set("aduventure_daily_" + todayKey, true);
+      setDailyDone(true);
+    }
+  }, [sceneKey, pc]);
+  // 비대칭 영속성 — 회차 중 발견한 단서(CLUES)는 '지식'으로 회차를 넘어 영구 축적된다.
+  // 실패·게임오버로 회차가 끝나도 지식은 남아, 다음 회차에서 새 선택지(loreReq)를 연다.
+  useEffect(() => {
+    const found = flags.filter(f => CLUES[f]);
+    if (!found.length) return;
+    setLore(prev => {
+      const next = [...new Set([...prev, ...found])];
+      if (next.length === prev.length) return prev;
+      store.set("aduventure_lore", next);
+      return next;
+    });
+  }, [flags]);
   function unlock(id) {
     if (badges.includes(id)) {
       setNewBadge(null);
@@ -2305,13 +2484,44 @@ function CRPG() {
     setEnemy(null);
     setClog([]);
     setNewBadge(null);
+    setRecordFlash(null);
     setFate(1);
     setSpecialLeft(2);
     setBreathLeft(1);
     if (toScene) setPc(p => ({
       ...p,
       hp: p.maxHp
-    }));else setPc(null);
+    }));else {
+      setPc(null);
+      store.remove(SAVE_KEY);
+      setSavedGame(null);
+    }
+  }
+  // 이어서 하기 — 저장된 진행 상태를 복원한다. 임시 상태(전투·판정·직전 결과)는 초기화한다.
+  function continueGame() {
+    const s = savedGame || store.get(SAVE_KEY);
+    if (!s || !s.pc) return;
+    setRuleKey(s.ruleKey || "srd20");
+    setPc(s.pc);
+    setFlags(s.flags || []);
+    setStats(s.stats || {
+      rolls: 0,
+      success: 0
+    });
+    setFate(typeof s.fate === "number" ? s.fate : 1);
+    setSpecialLeft(typeof s.specialLeft === "number" ? s.specialLeft : 2);
+    setBreathLeft(typeof s.breathLeft === "number" ? s.breathLeft : 1);
+    setTutSeen(!!s.tutSeen);
+    setEnemy(null);
+    setClog([]);
+    setLastResult(null);
+    setPending(null);
+    setShowCalc(false);
+    setNewBadge(null);
+    setRolling(false);
+    setRollFace(null);
+    setSceneKey(s.sceneKey || "intro");
+    tele("continue", s.sceneKey, s.pc && s.pc.name, "ch" + (SCENES[s.sceneKey]?.ch || 1));
   }
   const pct = choice => Math.round(rules.successChance({
     actor: pc,
@@ -2375,7 +2585,13 @@ function CRPG() {
     className: "scene"
   }, /*#__PURE__*/React.createElement("div", {
     className: "about"
-  }, /*#__PURE__*/React.createElement("p", null, "\uC8FC\uC0AC\uC704\uB85C \uC6B4\uBA85\uC744 \uC815\uD558\uB294 \uBBF8\uC2A4\uD130\uB9AC \uD14D\uC2A4\uD2B8 \uC5B4\uB4DC\uBCA4\uCC98."), /*#__PURE__*/React.createElement("p", null, "\uD3ED\uD48D\uC758 \uBC24, \uD56D\uAD6C \uB9C8\uC744\uC758 \uB4F1\uB300\uAC00 \uAEBC\uC84C\uB2E4. \uC0C8\uBCBD\uAE4C\uC9C0 \uBD88\uC744 \uC62C\uB9AC\uC9C0 \uBABB\uD558\uBA74 \uC5B4\uC120 \uC138 \uCC99\uC774 \uC554\uCD08\uB85C \uD5A5\uD55C\uB2E4."), /*#__PURE__*/React.createElement("p", null, "\uC774\uB984\uC744 \uC0C8\uAE30\uACE0 \uC9C1\uC5C5\uC744 \uACE0\uB974\uBA74 \u2014 \uBAA8\uD5D8\uC774 \uC2DC\uC791\uB41C\uB2E4. \uC120\uD0DD\uC9C0\uC758 \uD30C\uB780 %\uB294 \uC131\uACF5 \uD655\uB960\uC774\uB2E4.")), /*#__PURE__*/React.createElement("label", {
+  }, /*#__PURE__*/React.createElement("p", null, "\uC8FC\uC0AC\uC704\uB85C \uC6B4\uBA85\uC744 \uC815\uD558\uB294 \uBBF8\uC2A4\uD130\uB9AC \uD14D\uC2A4\uD2B8 \uC5B4\uB4DC\uBCA4\uCC98."), /*#__PURE__*/React.createElement("p", null, "\uD3ED\uD48D\uC758 \uBC24, \uD56D\uAD6C \uB9C8\uC744\uC758 \uB4F1\uB300\uAC00 \uAEBC\uC84C\uB2E4. \uC0C8\uBCBD\uAE4C\uC9C0 \uBD88\uC744 \uC62C\uB9AC\uC9C0 \uBABB\uD558\uBA74 \uC5B4\uC120 \uC138 \uCC99\uC774 \uC554\uCD08\uB85C \uD5A5\uD55C\uB2E4."), /*#__PURE__*/React.createElement("p", null, "\uC774\uB984\uC744 \uC0C8\uAE30\uACE0 \uC9C1\uC5C5\uC744 \uACE0\uB974\uBA74 \u2014 \uBAA8\uD5D8\uC774 \uC2DC\uC791\uB41C\uB2E4. \uC120\uD0DD\uC9C0\uC758 \uD30C\uB780 %\uB294 \uC131\uACF5 \uD655\uB960\uC774\uB2E4.")), savedGame && savedGame.pc && /*#__PURE__*/React.createElement("button", {
+    className: "continueBtn",
+    onClick: continueGame,
+    title: "\uC800\uC7A5\uB41C \uBAA8\uD5D8\uC744 \uC774\uC5B4\uC11C \uD55C\uB2E4"
+  }, "\u21BB \uC774\uC5B4\uC11C \uD558\uAE30", /*#__PURE__*/React.createElement("span", {
+    className: "cont-meta"
+  }, (SCENES[savedGame.sceneKey]?.ch === 3 ? "\uC81C3\uC7A5" : SCENES[savedGame.sceneKey]?.ch === 2 ? "\uC81C2\uC7A5" : "\uC81C1\uC7A5") + " \xB7 " + savedGame.pc.name + " (" + (CLASSES[savedGame.pc.classKey] ? CLASSES[savedGame.pc.classKey].name : "\uC6A9\uC0AC") + ")")), /*#__PURE__*/React.createElement("label", {
     className: "nameLb"
   }, "\uC6A9\uC0AC\uC758 \uC774\uB984\uC740?"), /*#__PURE__*/React.createElement("input", {
     className: "nameIn",
@@ -2398,15 +2614,33 @@ function CRPG() {
     className: "ci"
   }, c.icon), /*#__PURE__*/React.createElement("h2", null, c.name), /*#__PURE__*/React.createElement("p", null, c.blurb), /*#__PURE__*/React.createElement("div", {
     className: "st"
-  }, "HP ", c.maxHp, " \xB7 AC ", c.ac, " \xB7 ", c.weapon.name, " \xB7 \uD2B9\uC218\uAE30 ", SPECIALS[k].name, /*#__PURE__*/React.createElement("br", null), "\uC219\uB828: ", c.proficiencies.map(s => SKILL_NAMES[s]).join(" · "))))), /*#__PURE__*/React.createElement("p", {
+  }, "HP ", c.maxHp, " \xB7 AC ", c.ac, " \xB7 ", c.weapon.name, " \xB7 \uD2B9\uC218\uAE30 ", SPECIALS[k].name, /*#__PURE__*/React.createElement("br", null), "\uC219\uB828: ", c.proficiencies.map(s => SKILL_NAMES[s]).join(" · "))))), /*#__PURE__*/React.createElement("div", {
+    className: "daily" + (dailyDone ? " done" : "")
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "daily-h"
+  }, "\uC624\uB298\uC758 \uB3C4\uC804"), /*#__PURE__*/React.createElement("span", {
+    className: "daily-l"
+  }, daily.label), /*#__PURE__*/React.createElement("span", {
+    className: "daily-s"
+  }, dailyDone ? "\u2714 \uB2EC\uC131" : "\uBBF8\uB2EC\uC131")), /*#__PURE__*/React.createElement("p", {
     className: "bcount"
   }, "\uC5D4\uB529 \uB3C4\uAC10 ", badges.length, "/", BADGES.length), /*#__PURE__*/React.createElement("div", {
     className: "badges"
   }, BADGES.map(b => /*#__PURE__*/React.createElement("span", {
     key: b.id,
     className: "badge" + (badges.includes(b.id) ? " on" : ""),
-    title: badges.includes(b.id) ? b.how + (b.first ? " — 초대 랭크 1: " + b.first : "") : "???"
-  }, badges.includes(b.id) ? "★ " + b.name + (b.first ? " · 초대 " + b.first : "") : "???"))), allBadges && /*#__PURE__*/React.createElement("div", {
+    title: badges.includes(b.id) ? b.how + (records[b.id] ? " · 최고 성공률 " + records[b.id].rate + "% (판정 " + records[b.id].rolls + "회)" : "") + (b.first ? " — 초대 랭크 1: " + b.first : "") : "???"
+  }, badges.includes(b.id) ? "★ " + b.name + (b.first ? " · 초대 " + b.first : "") : "???"))), /*#__PURE__*/React.createElement("p", {
+    className: "bcount"
+  }, "\uBC1C\uACAC\uD55C \uC9C0\uC2DD ", lore.length, "/", Object.keys(CLUES).length), /*#__PURE__*/React.createElement("div", {
+    className: "lorebook"
+  }, Object.keys(CLUES).map(k => /*#__PURE__*/React.createElement("span", {
+    key: k,
+    className: "loreitem" + (lore.includes(k) ? " on" : ""),
+    title: lore.includes(k) ? CLUES[k] : "\uC544\uC9C1 \uBC1C\uACAC\uD558\uC9C0 \uBABB\uD55C \uC9C0\uC2DD \u2014 \uBAA8\uD5D8\uC744 \uAC70\uB4ED\uD558\uBA70 \uCC3E\uC544\uB77C"
+  }, lore.includes(k) ? "\u2726 " + CLUES[k] : "???"))), lore.length > 0 && /*#__PURE__*/React.createElement("p", {
+    className: "lore-hint"
+  }, "\uC9C0\uC2DD\uC740 \uC8FD\uC5B4\uB3C4 \uC0AC\uB77C\uC9C0\uC9C0 \uC54A\uB294\uB2E4. \uB2E4\uC74C \uBAA8\uD5D8\uC5D0\uC11C \uC0C8 \uAE38\uC744 \uC5EC\uB294 \uC5F4\uC1E0\uAC00 \uB41C\uB2E4."), allBadges && /*#__PURE__*/React.createElement("div", {
     className: "teaser"
   }, /*#__PURE__*/React.createElement("span", {
     className: "badge on new"
@@ -2500,7 +2734,7 @@ function CRPG() {
     className: "narr"
   }, fmt(scene.text, pc)), /*#__PURE__*/React.createElement("div", {
     className: "choices"
-  }, scene.choices.filter(ch => !ch.classOnly || pc && ch.classOnly === pc.classKey).map((ch, i) => /*#__PURE__*/React.createElement("button", {
+  }, scene.choices.filter(ch => (!ch.classOnly || pc && ch.classOnly === pc.classKey) && (!ch.loreReq || lore.includes(ch.loreReq))).map((ch, i) => /*#__PURE__*/React.createElement("button", {
     key: i,
     className: "choice",
     onClick: () => doChoice(ch)
@@ -2510,7 +2744,9 @@ function CRPG() {
     className: "pct"
   }, pct(ch), "%")), ch.credit && /*#__PURE__*/React.createElement("span", {
     className: "tag"
-  }, ch.credit))), sceneKey === "intro" && ch1Cleared && /*#__PURE__*/React.createElement("button", {
+  }, ch.credit), ch.loreReq && /*#__PURE__*/React.createElement("span", {
+    className: "tag lore"
+  }, "\u2726 \uC9C0\uB09C \uBAA8\uD5D8\uC758 \uAE30\uC5B5"))), sceneKey === "intro" && ch1Cleared && /*#__PURE__*/React.createElement("button", {
     className: "choice",
     onClick: () => goto("intro2")
   }, "(1\uC7A5 \uD074\uB9AC\uC5B4 \uAE30\uB85D \uC788\uC74C) 2\uC7A5\uBD80\uD130 \uC2DC\uC791\uD55C\uB2E4 \u2192"), sceneKey === "intro" && badges.some(b => b.startsWith("2")) && /*#__PURE__*/React.createElement("button", {
@@ -2583,7 +2819,11 @@ function CRPG() {
     className: "badge on new"
   }, "\u2605 \uD788\uB4E0 \uCE6D\uD638 \u2014 \uC7BF\uBE5B \uB4F1\uB300\uC9C0\uAE30"), /*#__PURE__*/React.createElement("p", null, TEASER)), /*#__PURE__*/React.createElement("p", {
     className: "stats"
-  }, "\uC6A9\uC0AC: ", pc.name, " (", CLASSES[pc.classKey].name, ") \xB7 \uD310\uC815 ", stats.rolls, "\uD68C \xB7 \uC131\uACF5 ", stats.success, "\uD68C", /*#__PURE__*/React.createElement("br", null), "\uC774\uBC88 \uBAA8\uD5D8\uC758 \uB2E8\uC11C: ", flags.filter(f => CLUES[f]).map(f => CLUES[f]).join(" · ") || "없음", /*#__PURE__*/React.createElement("br", null), "\uB8F0: ", rules.name), scene.ending === 1 ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("button", {
+  }, "\uC6A9\uC0AC: ", pc.name, " (", CLASSES[pc.classKey].name, ") \xB7 \uD310\uC815 ", stats.rolls, "\uD68C \xB7 \uC131\uACF5 ", stats.success, "\uD68C", /*#__PURE__*/React.createElement("br", null), "\uC774\uBC88 \uBAA8\uD5D8\uC758 \uB2E8\uC11C: ", flags.filter(f => CLUES[f]).map(f => CLUES[f]).join(" · ") || "없음", /*#__PURE__*/React.createElement("br", null), "\uB8F0: ", rules.name), recordFlash && /*#__PURE__*/React.createElement("div", {
+    className: "record new"
+  }, "\u2605 \uC2E0\uAE30\uB85D! \uC774 \uC5D4\uB529\uC758 \uCD5C\uACE0 \uAE30\uB85D\uC744 \uAC31\uC2E0\uD588\uB2E4"), /*#__PURE__*/React.createElement("div", {
+    className: "daily-res" + (dailyDone ? " done" : "")
+  }, "\uC624\uB298\uC758 \uB3C4\uC804 \u2014 ", daily.label, " \xB7 ", dailyDone ? "\u2714 \uB2EC\uC131" : "\uBBF8\uB2EC\uC131"), scene.ending === 1 ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("button", {
     className: "restart primary",
     onClick: () => goto("intro2")
   }, "2\uC7A5 \u300C\uAC80\uC740 \uCF54\uD2B8\u300D \uACC4\uC18D \u2192"), /*#__PURE__*/React.createElement("button", {
