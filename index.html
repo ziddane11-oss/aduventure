@@ -848,6 +848,24 @@ const SCENES = {
     ch: 1,
     text: `나선 계단 중간층, 등불이 새어 나온다.\n\n비쩍 마른 사내가 등대의 황동 렌즈를 자루에 쑤셔 넣고 있다. 허리춤의 갈고리칼.\n\n"…재수도 없지. 못 본 걸로 하고 내려가. 응?"`,
     choices: [{
+      loreReq: "ledger",
+      label: `[기억] "네 이름, 부두 밀수 장부에서 봤다. 렌즈 두고 사라져."`,
+      check: {
+        ability: "CHA",
+        skill: "persuasion",
+        dc: 9,
+        label: "설득"
+      },
+      success: {
+        text: `사내의 얼굴이 하얗게 질린다. "…그걸 어떻게." 자루를 팽개치고 빗속으로 달아난다.`,
+        flag: "peaceful",
+        goto: "top"
+      },
+      fail: {
+        text: `"허풍이군." 갈고리칼이 호를 그린다.`,
+        goto: "combat"
+      }
+    }, {
       label: `[설득] "렌즈를 두고 가면, 나도 못 본 걸로 하지."`,
       check: {
         ability: "CHA",
@@ -2067,6 +2085,11 @@ const css = `
 .crpg .daily-res { margin:8px 0 4px; padding:9px 14px; border-radius:8px; font-size:13px; color:var(--dim);
   border:1px solid var(--line); background:var(--panel); }
 .crpg .daily-res.done { color:var(--good); border-color:var(--good); }
+.crpg .lorebook { display:flex; flex-wrap:wrap; gap:6px; margin:4px 0 2px; }
+.crpg .loreitem { font-size:12px; padding:5px 9px; border-radius:6px; border:1px solid var(--line); color:var(--dim); background:var(--panel); }
+.crpg .loreitem.on { border-color:var(--accent); color:var(--accent); background:rgba(94,143,184,.1); }
+.crpg .lore-hint { font-size:12px; color:var(--dim); font-style:italic; margin:2px 0 6px; }
+.crpg .choice .tag.lore { border:1px solid var(--accent); color:var(--accent); background:rgba(94,143,184,.14); }
 @media (prefers-reduced-motion: reduce) { .crpg * { animation:none !important; transition:none !important; } }
 `;
 function CRPG() {
@@ -2099,6 +2122,7 @@ function CRPG() {
   const [savedGame, setSavedGame] = useState(() => store.get(SAVE_KEY));
   const [records, setRecords] = useState(() => store.get("aduventure_records") || {});
   const [recordFlash, setRecordFlash] = useState(null);
+  const [lore, setLore] = useState(() => store.get("aduventure_lore") || []);
   const todayKey = dayKey();
   const daily = DAILY_CHALLENGES[dayHash(todayKey) % DAILY_CHALLENGES.length];
   const [dailyDone, setDailyDone] = useState(() => !!store.get("aduventure_daily_" + todayKey));
@@ -2185,6 +2209,18 @@ function CRPG() {
       setDailyDone(true);
     }
   }, [sceneKey, pc]);
+  // 비대칭 영속성 — 회차 중 발견한 단서(CLUES)는 '지식'으로 회차를 넘어 영구 축적된다.
+  // 실패·게임오버로 회차가 끝나도 지식은 남아, 다음 회차에서 새 선택지(loreReq)를 연다.
+  useEffect(() => {
+    const found = flags.filter(f => CLUES[f]);
+    if (!found.length) return;
+    setLore(prev => {
+      const next = [...new Set([...prev, ...found])];
+      if (next.length === prev.length) return prev;
+      store.set("aduventure_lore", next);
+      return next;
+    });
+  }, [flags]);
   function unlock(id) {
     if (badges.includes(id)) {
       setNewBadge(null);
@@ -2594,7 +2630,17 @@ function CRPG() {
     key: b.id,
     className: "badge" + (badges.includes(b.id) ? " on" : ""),
     title: badges.includes(b.id) ? b.how + (records[b.id] ? " · 최고 성공률 " + records[b.id].rate + "% (판정 " + records[b.id].rolls + "회)" : "") + (b.first ? " — 초대 랭크 1: " + b.first : "") : "???"
-  }, badges.includes(b.id) ? "★ " + b.name + (b.first ? " · 초대 " + b.first : "") : "???"))), allBadges && /*#__PURE__*/React.createElement("div", {
+  }, badges.includes(b.id) ? "★ " + b.name + (b.first ? " · 초대 " + b.first : "") : "???"))), /*#__PURE__*/React.createElement("p", {
+    className: "bcount"
+  }, "\uBC1C\uACAC\uD55C \uC9C0\uC2DD ", lore.length, "/", Object.keys(CLUES).length), /*#__PURE__*/React.createElement("div", {
+    className: "lorebook"
+  }, Object.keys(CLUES).map(k => /*#__PURE__*/React.createElement("span", {
+    key: k,
+    className: "loreitem" + (lore.includes(k) ? " on" : ""),
+    title: lore.includes(k) ? CLUES[k] : "\uC544\uC9C1 \uBC1C\uACAC\uD558\uC9C0 \uBABB\uD55C \uC9C0\uC2DD \u2014 \uBAA8\uD5D8\uC744 \uAC70\uB4ED\uD558\uBA70 \uCC3E\uC544\uB77C"
+  }, lore.includes(k) ? "\u2726 " + CLUES[k] : "???"))), lore.length > 0 && /*#__PURE__*/React.createElement("p", {
+    className: "lore-hint"
+  }, "\uC9C0\uC2DD\uC740 \uC8FD\uC5B4\uB3C4 \uC0AC\uB77C\uC9C0\uC9C0 \uC54A\uB294\uB2E4. \uB2E4\uC74C \uBAA8\uD5D8\uC5D0\uC11C \uC0C8 \uAE38\uC744 \uC5EC\uB294 \uC5F4\uC1E0\uAC00 \uB41C\uB2E4."), allBadges && /*#__PURE__*/React.createElement("div", {
     className: "teaser"
   }, /*#__PURE__*/React.createElement("span", {
     className: "badge on new"
@@ -2688,7 +2734,7 @@ function CRPG() {
     className: "narr"
   }, fmt(scene.text, pc)), /*#__PURE__*/React.createElement("div", {
     className: "choices"
-  }, scene.choices.filter(ch => !ch.classOnly || pc && ch.classOnly === pc.classKey).map((ch, i) => /*#__PURE__*/React.createElement("button", {
+  }, scene.choices.filter(ch => (!ch.classOnly || pc && ch.classOnly === pc.classKey) && (!ch.loreReq || lore.includes(ch.loreReq))).map((ch, i) => /*#__PURE__*/React.createElement("button", {
     key: i,
     className: "choice",
     onClick: () => doChoice(ch)
@@ -2698,7 +2744,9 @@ function CRPG() {
     className: "pct"
   }, pct(ch), "%")), ch.credit && /*#__PURE__*/React.createElement("span", {
     className: "tag"
-  }, ch.credit))), sceneKey === "intro" && ch1Cleared && /*#__PURE__*/React.createElement("button", {
+  }, ch.credit), ch.loreReq && /*#__PURE__*/React.createElement("span", {
+    className: "tag lore"
+  }, "\u2726 \uC9C0\uB09C \uBAA8\uD5D8\uC758 \uAE30\uC5B5"))), sceneKey === "intro" && ch1Cleared && /*#__PURE__*/React.createElement("button", {
     className: "choice",
     onClick: () => goto("intro2")
   }, "(1\uC7A5 \uD074\uB9AC\uC5B4 \uAE30\uB85D \uC788\uC74C) 2\uC7A5\uBD80\uD130 \uC2DC\uC791\uD55C\uB2E4 \u2192"), sceneKey === "intro" && badges.some(b => b.startsWith("2")) && /*#__PURE__*/React.createElement("button", {
