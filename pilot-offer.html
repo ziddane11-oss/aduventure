@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>두두컴퍼니 — AI 수업자료 마무리 파일럿</title>
+<meta name="description" content="AI로 만든 수업용 PPT를 실제 수업에서 쓸 수 있게 정리합니다. 파일럿 1자리, 5만 원.">
+<style>
+  :root {
+    --ink: #1a2430;
+    --paper: #f7f3ea;
+    --fog: #e8e2d4;
+    --teal: #0f3d3e;
+    --teal-deep: #0a2a2b;
+    --gold: #c4a35a;
+    --gold-bright: #e0c078;
+    --danger: #9b3b2e;
+    --ok: #2f6b4f;
+    --muted: #5c6670;
+    --line: rgba(26, 36, 48, 0.12);
+    --shadow: 0 18px 50px rgba(10, 42, 43, 0.18);
+    --radius: 2px;
+    --font-display: "Iowan Old Style", "Palatino Linotype", Palatino, "Songti SC", "Batang", serif;
+    --font-body: "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", "Segoe UI", sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    color: var(--ink);
+    font-family: var(--font-body);
+    background:
+      radial-gradient(1200px 600px at 10% -10%, rgba(196, 163, 90, 0.18), transparent 55%),
+      radial-gradient(900px 500px at 100% 0%, rgba(15, 61, 62, 0.22), transparent 50%),
+      linear-gradient(180deg, #f3efe4 0%, var(--paper) 40%, #efe8d8 100%);
+    line-height: 1.55;
+    min-height: 100vh;
+  }
+
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.045;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    z-index: 0;
+  }
+
+  .wrap {
+    position: relative;
+    z-index: 1;
+    width: min(920px, calc(100% - 2rem));
+    margin: 0 auto;
+  }
+
+  /* —— Hero —— */
+  .hero {
+    min-height: 100svh;
+    display: grid;
+    align-content: center;
+    padding: 4.5rem 0 3.5rem;
+    animation: rise 0.9s ease both;
+  }
+
+  .brand {
+    font-family: var(--font-display);
+    font-size: clamp(2.4rem, 7vw, 4.2rem);
+    letter-spacing: -0.02em;
+    color: var(--teal-deep);
+    margin: 0 0 1.25rem;
+    line-height: 1.05;
+  }
+
+  .brand span {
+    display: inline-block;
+    border-bottom: 3px solid var(--gold);
+    padding-bottom: 0.08em;
+  }
+
+  .hero h1 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: clamp(1.35rem, 3.4vw, 1.85rem);
+    margin: 0 0 0.85rem;
+    max-width: 18ch;
+    color: var(--ink);
+  }
+
+  .hero .lead {
+    margin: 0 0 2rem;
+    max-width: 34ch;
+    color: var(--muted);
+    font-size: 1.05rem;
+  }
+
+  .cta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 1rem;
+    align-items: center;
+  }
+
+  .btn {
+    appearance: none;
+    border: 0;
+    cursor: pointer;
+    font: inherit;
+    font-weight: 700;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.9rem 1.35rem;
+    border-radius: var(--radius);
+    transition: transform 0.2s ease, background 0.2s ease, color 0.2s ease;
+  }
+  .btn:hover { transform: translateY(-1px); }
+  .btn:active { transform: translateY(0); }
+  .btn-primary {
+    background: var(--teal);
+    color: #f8f4ea;
+  }
+  .btn-primary:hover { background: var(--teal-deep); }
+  .btn-ghost {
+    background: transparent;
+    color: var(--teal);
+    border: 1px solid rgba(15, 61, 62, 0.35);
+  }
+  .btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .seat-pill {
+    font-size: 0.92rem;
+    color: var(--teal);
+    font-weight: 600;
+  }
+  .seat-pill[data-full="true"] { color: var(--danger); }
+
+  /* —— Sections —— */
+  section {
+    padding: 3.25rem 0;
+    border-top: 1px solid var(--line);
+    animation: rise 0.8s ease both;
+    animation-delay: 0.12s;
+  }
+
+  section h2 {
+    font-family: var(--font-display);
+    font-size: clamp(1.45rem, 3vw, 1.85rem);
+    margin: 0 0 0.55rem;
+    color: var(--teal-deep);
+  }
+
+  .section-lead {
+    margin: 0 0 1.5rem;
+    color: var(--muted);
+    max-width: 42ch;
+  }
+
+  .scope-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+  }
+  @media (max-width: 700px) {
+    .scope-grid { grid-template-columns: 1fr; }
+  }
+
+  .scope-block h3 {
+    margin: 0 0 0.65rem;
+    font-size: 1rem;
+    letter-spacing: 0.02em;
+  }
+  .scope-block ul {
+    margin: 0;
+    padding-left: 1.1rem;
+  }
+  .scope-block li { margin: 0.35rem 0; }
+  .scope-block.in h3 { color: var(--ok); }
+  .scope-block.out h3 { color: var(--danger); }
+
+  .price-line {
+    margin-top: 1.75rem;
+    padding: 1.1rem 1.2rem;
+    background: linear-gradient(135deg, rgba(15, 61, 62, 0.08), rgba(196, 163, 90, 0.12));
+    border-left: 3px solid var(--gold);
+    font-size: 1.02rem;
+  }
+  .price-line strong { color: var(--teal-deep); }
+
+  /* —— Form —— */
+  form {
+    display: grid;
+    gap: 1rem;
+  }
+  label {
+    display: grid;
+    gap: 0.35rem;
+    font-size: 0.92rem;
+    font-weight: 600;
+  }
+  input, textarea, select {
+    font: inherit;
+    font-weight: 400;
+    padding: 0.75rem 0.85rem;
+    border: 1px solid rgba(26, 36, 48, 0.2);
+    border-radius: var(--radius);
+    background: rgba(255, 255, 255, 0.72);
+    color: var(--ink);
+  }
+  textarea { min-height: 110px; resize: vertical; }
+  input:focus, textarea:focus, select:focus {
+    outline: 2px solid rgba(196, 163, 90, 0.55);
+    outline-offset: 1px;
+  }
+  .hint {
+    font-weight: 400;
+    font-size: 0.82rem;
+    color: var(--muted);
+  }
+  .form-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: center;
+    margin-top: 0.35rem;
+  }
+  .status {
+    min-height: 1.4em;
+    font-size: 0.95rem;
+    color: var(--teal);
+  }
+  .status.error { color: var(--danger); }
+
+  /* —— Operator log —— */
+  .ops {
+    background: var(--teal-deep);
+    color: #e8efe8;
+    border-radius: 4px;
+    padding: 1.35rem 1.25rem 1.5rem;
+    box-shadow: var(--shadow);
+  }
+  .ops h2 { color: var(--gold-bright); }
+  .ops .section-lead { color: rgba(232, 239, 232, 0.72); }
+  .ops label { color: rgba(232, 239, 232, 0.92); }
+  .ops input, .ops textarea, .ops select {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.22);
+    color: #f4f7f4;
+  }
+  .ops .hint { color: rgba(232, 239, 232, 0.55); }
+  .ops-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.85rem;
+  }
+  @media (max-width: 700px) {
+    .ops-grid { grid-template-columns: 1fr; }
+  }
+  .metric {
+    padding: 0.85rem 0.9rem;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+  }
+  .metric .k {
+    font-size: 0.78rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: rgba(232, 239, 232, 0.55);
+  }
+  .metric .v {
+    font-family: var(--font-display);
+    font-size: 1.45rem;
+    margin-top: 0.2rem;
+    color: var(--gold-bright);
+  }
+  .verdict {
+    margin-top: 1rem;
+    padding: 0.9rem 1rem;
+    border: 1px dashed rgba(224, 192, 120, 0.45);
+    font-size: 0.98rem;
+  }
+  .verdict[data-state="go"] { border-color: rgba(95, 180, 130, 0.55); }
+  .verdict[data-state="stop"] { border-color: rgba(200, 110, 95, 0.55); }
+  .verdict[data-state="wait"] { border-color: rgba(224, 192, 120, 0.45); }
+
+  footer {
+    padding: 2rem 0 3rem;
+    color: var(--muted);
+    font-size: 0.88rem;
+    border-top: 1px solid var(--line);
+  }
+  footer a { color: var(--teal); }
+
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(14px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation: none !important;
+      transition: none !important;
+    }
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="hero" id="top">
+      <p class="brand"><span>두두컴퍼니</span></p>
+      <h1>AI로 만든 수업자료를, 수업에서 쓸 수 있게</h1>
+      <p class="lead">흐름·문장·가독성만 정리합니다. 파일럿은 한 자리뿐입니다.</p>
+      <div class="cta-row">
+        <a class="btn btn-primary" href="#apply" id="ctaApply">한 자리 신청하기</a>
+        <a class="btn btn-ghost" href="#scope">범위 보기</a>
+        <span class="seat-pill" id="seatPill" data-full="false">남은 자리 1</span>
+      </div>
+    </header>
+
+    <section id="scope">
+      <h2>이 파일럿에서 하는 일</h2>
+      <p class="section-lead">응원이 아니라 납품입니다. 자료를 먼저 보고, 가능한 건만 받습니다.</p>
+      <div class="scope-grid">
+        <div class="scope-block in">
+          <h3>포함</h3>
+          <ul>
+            <li>기존 수업용 PPT 최대 10장</li>
+            <li>흐름·문장·가독성 정리</li>
+            <li>수정 1회</li>
+            <li>납품 목표: 모집·상담·수정 포함 총 투입 2시간 이내</li>
+          </ul>
+        </div>
+        <div class="scope-block out">
+          <h3>제외</h3>
+          <ul>
+            <li>새 단원·새 슬라이드 대량 제작</li>
+            <li>무제한 수정·디자인 전면 리뉴얼</li>
+            <li>앱·중독 치료·완주 모임 운영</li>
+            <li>품질을 판단할 수 없는 자료</li>
+          </ul>
+        </div>
+      </div>
+      <p class="price-line">
+        <strong>시험 조건:</strong> 5만 원 · 1자리 · 선결제 후 작업.
+        이 숫자는 시장 검증값이 아니라 파일럿 조건입니다.
+      </p>
+    </section>
+
+    <section id="case">
+      <h2>왜 이 범위인가</h2>
+      <p class="section-lead">
+        “미루는 습관”과 “마무리 기술이 부족한 상태”는 다릅니다.
+        AI로 PPT·웹을 만들었는데 수업·신청에 쓰기 어렵다면, 응원보다 구체적 수정이 필요합니다.
+      </p>
+      <ul>
+        <li>완성 사례 하나만 기준으로 제안합니다. (운영자 본인이 품질을 판단할 수 있는 자료)</li>
+        <li>결제가 있어도 작업이 끝없이 늘어나면 확장하지 않습니다.</li>
+        <li>한 번 안 팔렸다고 시장이 없다고 단정하지 않습니다. 조건을 기록하고 다음 판단을 합니다.</li>
+      </ul>
+    </section>
+
+    <section id="apply">
+      <h2>한 자리 신청</h2>
+      <p class="section-lead" id="applyLead">자료를 첨부할 링크와 수업 맥락을 남겨 주세요. 가능 여부만 회신합니다.</p>
+      <form id="applyForm" novalidate>
+        <label>
+          이름 / 호칭
+          <input name="name" required maxlength="40" placeholder="예: 김○○" autocomplete="name">
+        </label>
+        <label>
+          연락처 (이메일 또는 카카오 오픈채팅)
+          <input name="contact" required maxlength="120" placeholder="회신 받을 곳" autocomplete="email">
+        </label>
+        <label>
+          자료 링크 (Google Drive / Notion / 파일 URL)
+          <input name="fileUrl" required maxlength="400" placeholder="https://...">
+          <span class="hint">PPT/슬라이드 최대 10장. 열람 권한을 ‘링크 있는 사람’으로 열어 주세요.</span>
+        </label>
+        <label>
+          수업에서 막히는 지점
+          <textarea name="problem" required maxlength="800" placeholder="예: 흐름이 끊김, 문장이 길어서 칠판 설명이 안 됨, 한 장에 정보가 과다"></textarea>
+        </label>
+        <label>
+          희망 납품일
+          <input name="deadline" type="date">
+        </label>
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary" id="submitBtn">신청 제출</button>
+          <button type="button" class="btn btn-ghost" id="copyBtn">신청 내용 복사</button>
+          <span class="status" id="formStatus" role="status"></span>
+        </div>
+      </form>
+    </section>
+
+    <section id="ops">
+      <div class="ops">
+        <h2>운영자 실험 기록</h2>
+        <p class="section-lead">모집·상담·수정까지 포함해 2시간 안에 끝나는지, 결제와 납품을 함께 봅니다. 브라우저에만 저장됩니다.</p>
+
+        <div class="ops-grid" aria-live="polite">
+          <div class="metric"><div class="k">신청 건수</div><div class="v" id="mApps">0</div></div>
+          <div class="metric"><div class="k">총 투입(분)</div><div class="v" id="mMinutes">0</div></div>
+          <div class="metric"><div class="k">시급 환산</div><div class="v" id="mRate">—</div></div>
+        </div>
+
+        <form id="opsForm" style="margin-top:1.25rem">
+          <label>
+            결제 여부
+            <select name="paid">
+              <option value="no">미결제</option>
+              <option value="yes">결제 완료 (5만 원)</option>
+              <option value="refund">환불/취소</option>
+            </select>
+          </label>
+          <div class="ops-grid">
+            <label>
+              모집·상담 (분)
+              <input name="minRecruit" type="number" min="0" step="5" value="0">
+            </label>
+            <label>
+              수정 작업 (분)
+              <input name="minWork" type="number" min="0" step="5" value="0">
+            </label>
+            <label>
+              납품·피드백 (분)
+              <input name="minDeliver" type="number" min="0" step="5" value="0">
+            </label>
+          </div>
+          <label>
+            범위 이탈 여부
+            <select name="scopeCreep">
+              <option value="no">없음 (약속한 범위 유지)</option>
+              <option value="yes">있음 (무제한 수정·추가 요청 발생)</option>
+            </select>
+          </label>
+          <label>
+            한 줄 메모
+            <textarea name="note" maxlength="500" placeholder="무엇이 팔렸고, 무엇이 늘어났는지"></textarea>
+          </label>
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary">기록 저장</button>
+            <button type="button" class="btn btn-ghost" id="exportBtn">JSON 내보내기</button>
+            <button type="button" class="btn btn-ghost" id="resetOpsBtn">기록 초기화</button>
+            <span class="status" id="opsStatus" role="status"></span>
+          </div>
+        </form>
+
+        <div class="verdict" id="verdict" data-state="wait">
+          판정: 아직 데이터 없음. 결제·투입시간·범위 이탈을 기록하면 여기에 나타납니다.
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      <p>두두컴퍼니 파일럿 · 버전 <code id="ver">pilot-2026-09-16</code> · 인접 참고(수익 증거 아님): Focusmate Plus $12/월, Flow Club $40/월.</p>
+      <p><a href="#top">맨 위로</a> · 본 페이지는 매출 확정이 아니라 <strong>한 건 시험</strong>용입니다.</p>
+    </footer>
+  </div>
+
+<script>
+(function () {
+  "use strict";
+
+  var STORAGE_APPS = "dodu_pilot_applications_v1";
+  var STORAGE_OPS = "dodu_pilot_ops_v1";
+  var SEAT_LIMIT = 1;
+
+  function readJson(key, fallback) {
+    try {
+      var raw = localStorage.getItem(key);
+      if (!raw) return fallback;
+      return JSON.parse(raw);
+    } catch (e) {
+      return fallback;
+    }
+  }
+
+  function writeJson(key, value) {
+    localStorage.setItem(key, JSON.stringify(value));
+  }
+
+  function apps() {
+    return readJson(STORAGE_APPS, []);
+  }
+
+  function ops() {
+    return readJson(STORAGE_OPS, {
+      paid: "no",
+      minRecruit: 0,
+      minWork: 0,
+      minDeliver: 0,
+      scopeCreep: "no",
+      note: ""
+    });
+  }
+
+  function seatTaken() {
+    return apps().length >= SEAT_LIMIT;
+  }
+
+  function refreshSeat() {
+    var full = seatTaken();
+    var pill = document.getElementById("seatPill");
+    var submit = document.getElementById("submitBtn");
+    var cta = document.getElementById("ctaApply");
+    pill.dataset.full = full ? "true" : "false";
+    pill.textContent = full ? "파일럿 자리 마감" : "남은 자리 1";
+    submit.disabled = full;
+    if (full) {
+      document.getElementById("applyLead").textContent =
+        "이번 파일럿 자리는 마감되었습니다. 신청 내용은 이 브라우저에 보관됩니다.";
+      cta.textContent = "자리 마감 · 기록 보기";
+      cta.setAttribute("href", "#ops");
+    }
+  }
+
+  function formPayload(form) {
+    var fd = new FormData(form);
+    var obj = {};
+    fd.forEach(function (v, k) { obj[k] = String(v).trim(); });
+    obj.createdAt = new Date().toISOString();
+    return obj;
+  }
+
+  function setStatus(el, msg, isError) {
+    el.textContent = msg;
+    el.classList.toggle("error", !!isError);
+  }
+
+  function totalMinutes(o) {
+    return Number(o.minRecruit || 0) + Number(o.minWork || 0) + Number(o.minDeliver || 0);
+  }
+
+  function formatRate(minutes, paid) {
+    if (paid !== "yes" || minutes <= 0) return "—";
+    var hourly = Math.round((50000 / minutes) * 60);
+    return hourly.toLocaleString("ko-KR") + "원/시";
+  }
+
+  function computeVerdict(o) {
+    var mins = totalMinutes(o);
+    var paid = o.paid;
+    var creep = o.scopeCreep === "yes";
+
+    if (paid === "no" && mins === 0) {
+      return {
+        state: "wait",
+        text: "판정: 아직 데이터 없음. 결제·투입시간·범위 이탈을 기록하면 여기에 나타납니다."
+      };
+    }
+    if (paid === "refund") {
+      return {
+        state: "stop",
+        text: "판정: 환불/취소. 범위·기대치 문구를 고친 뒤 같은 조건으로 1회만 더 시험하세요."
+      };
+    }
+    if (paid === "no" && apps().length > 0) {
+      return {
+        state: "wait",
+        text: "판정: 신청은 있으나 미결제. ‘관심’과 ‘구매’를 구분하고, 결제 장벽(신뢰·범위·가격)을 메모하세요."
+      };
+    }
+    if (paid === "yes" && creep) {
+      return {
+        state: "stop",
+        text: "판정: 결제는 됐으나 범위 이탈. 상품 확장 금지. 수정 횟수·장 수를 더 조이고 재시험하세요."
+      };
+    }
+    if (paid === "yes" && mins > 120) {
+      return {
+        state: "stop",
+        text: "판정: 결제는 됐으나 2시간 초과(총 " + mins + "분). 수익성 미달 신호. 범위를 더 줄이거나 가격을 올리세요."
+      };
+    }
+    if (paid === "yes" && mins > 0 && mins <= 120 && !creep) {
+      return {
+        state: "go",
+        text: "판정: 결제 + 2시간 이내 + 범위 유지. ‘같은 조건 1~2건’만 더 받아 재현성을 보세요. 앱·모임으로 바로 확장하지 마세요."
+      };
+    }
+    if (paid === "yes") {
+      return {
+        state: "wait",
+        text: "판정: 결제 기록됨. 투입 시간을 분 단위로 채워 시급·2시간 기준을 확인하세요."
+      };
+    }
+    return {
+      state: "wait",
+      text: "판정: 관측 중. 한 자리·5만 원·2시간 기준으로만 판단하세요."
+    };
+  }
+
+  function refreshOpsUi() {
+    var o = ops();
+    var form = document.getElementById("opsForm");
+    form.paid.value = o.paid || "no";
+    form.minRecruit.value = o.minRecruit || 0;
+    form.minWork.value = o.minWork || 0;
+    form.minDeliver.value = o.minDeliver || 0;
+    form.scopeCreep.value = o.scopeCreep || "no";
+    form.note.value = o.note || "";
+
+    var mins = totalMinutes(o);
+    document.getElementById("mApps").textContent = String(apps().length);
+    document.getElementById("mMinutes").textContent = String(mins);
+    document.getElementById("mRate").textContent = formatRate(mins, o.paid);
+
+    var v = computeVerdict(o);
+    var box = document.getElementById("verdict");
+    box.dataset.state = v.state;
+    box.textContent = v.text;
+  }
+
+  document.getElementById("applyForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var status = document.getElementById("formStatus");
+    if (seatTaken()) {
+      setStatus(status, "이미 한 자리가 채워졌습니다.", true);
+      return;
+    }
+    var form = e.target;
+    if (!form.checkValidity()) {
+      setStatus(status, "필수 항목을 확인해 주세요.", true);
+      form.reportValidity();
+      return;
+    }
+    var list = apps();
+    list.push(formPayload(form));
+    writeJson(STORAGE_APPS, list);
+    setStatus(status, "신청이 이 브라우저에 저장되었습니다. 운영자에게 내용을 복사해 보내 주세요.", false);
+    form.reset();
+    refreshSeat();
+    refreshOpsUi();
+  });
+
+  document.getElementById("copyBtn").addEventListener("click", function () {
+    var status = document.getElementById("formStatus");
+    var list = apps();
+    var latest = list[list.length - 1];
+    if (!latest) {
+      // 폼에 적힌 내용이라도 복사
+      latest = formPayload(document.getElementById("applyForm"));
+      if (!latest.name && !latest.contact) {
+        setStatus(status, "복사할 신청 내용이 없습니다.", true);
+        return;
+      }
+    }
+    var text = [
+      "[두두컴퍼니 파일럿 신청]",
+      "이름: " + (latest.name || ""),
+      "연락처: " + (latest.contact || ""),
+      "자료: " + (latest.fileUrl || ""),
+      "문제: " + (latest.problem || ""),
+      "희망일: " + (latest.deadline || "(미기입)"),
+      "시각: " + (latest.createdAt || new Date().toISOString())
+    ].join("\n");
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () {
+        setStatus(status, "신청 내용을 클립보드에 복사했습니다.", false);
+      }).catch(function () {
+        setStatus(status, "복사 실패. 수동으로 선택해 주세요.", true);
+      });
+    } else {
+      setStatus(status, "클립보드 API 없음. 아래를 수동 복사하세요.\n" + text, true);
+    }
+  });
+
+  document.getElementById("opsForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var form = e.target;
+    var next = {
+      paid: form.paid.value,
+      minRecruit: Number(form.minRecruit.value || 0),
+      minWork: Number(form.minWork.value || 0),
+      minDeliver: Number(form.minDeliver.value || 0),
+      scopeCreep: form.scopeCreep.value,
+      note: String(form.note.value || "").trim(),
+      updatedAt: new Date().toISOString()
+    };
+    writeJson(STORAGE_OPS, next);
+    setStatus(document.getElementById("opsStatus"), "실험 기록을 저장했습니다.", false);
+    refreshOpsUi();
+  });
+
+  document.getElementById("exportBtn").addEventListener("click", function () {
+    var payload = {
+      version: document.getElementById("ver").textContent,
+      exportedAt: new Date().toISOString(),
+      applications: apps(),
+      ops: ops(),
+      verdict: computeVerdict(ops())
+    };
+    var blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "dodu-pilot-log.json";
+    a.click();
+    URL.revokeObjectURL(a.href);
+    setStatus(document.getElementById("opsStatus"), "JSON을 내려받았습니다.", false);
+  });
+
+  document.getElementById("resetOpsBtn").addEventListener("click", function () {
+    if (!confirm("신청·실험 기록을 모두 지울까요?")) return;
+    localStorage.removeItem(STORAGE_APPS);
+    localStorage.removeItem(STORAGE_OPS);
+    setStatus(document.getElementById("opsStatus"), "초기화했습니다.", false);
+    setStatus(document.getElementById("formStatus"), "", false);
+    document.getElementById("ctaApply").textContent = "한 자리 신청하기";
+    document.getElementById("ctaApply").setAttribute("href", "#apply");
+    document.getElementById("applyLead").textContent =
+      "자료를 첨부할 링크와 수업 맥락을 남겨 주세요. 가능 여부만 회신합니다.";
+    refreshSeat();
+    refreshOpsUi();
+  });
+
+  refreshSeat();
+  refreshOpsUi();
+})();
+</script>
+</body>
+</html>
