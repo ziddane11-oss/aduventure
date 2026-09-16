@@ -960,6 +960,12 @@ const SCENES = {
     ch: 2,
     text: `부두 선술집 '닻과 못'. 뱃사람들의 눈이 일제히 낯선 얼굴에 꽂힌다.\n\n구석 자리에서 검은 코트 자락이 스치고 — 사라졌다. 주인장은 입이 무겁기로 유명하다.`,
     choices: [{
+      echoReq: "peaceful",
+      echo: "1장에서 렌을 살려 보냈다",
+      label: `[인연] 구석에서 당신을 알아본 렌에게 다가간다`,
+      flagDirect: "ren_tip",
+      goto: "wharfRen"
+    }, {
       label: `[기만] "세관입니다. 어젯밤 입항 기록 좀."`,
       check: {
         ability: "CHA",
@@ -991,6 +997,14 @@ const SCENES = {
         text: `놓쳤다. 부두를 한 바퀴 돌아 발자국을 찾는다 — 3번 창고 앞에서 끊긴다.\n\n안쪽은 이미 조용하다. 눈치챘다.`,
         goto: "warehouseB"
       }
+    }]
+  },
+  wharfRen: {
+    ch: 2,
+    text: `렌이 잔을 비우며 씩 웃는다. "빚은 갚는 주의라서."\n\n목소리를 낮춘다. "검은 코트 — 스컬리. 3번 창고에 처박혀 있어. 목에 빚이 걸린 놈이라, 관헌 얘기만 꺼내도 오줌을 지릴 거다."\n\n렌은 동전 한 닢을 탁자에 튕겨 놓고 빗속으로 사라진다. 빚은, 이렇게 갚였다.`,
+    choices: [{
+      label: "렌이 일러준 3번 창고로 향한다",
+      goto: "warehouseA"
     }]
   },
   warehouseA: {
@@ -1063,6 +1077,25 @@ const SCENES = {
     ch: 2,
     text: `검은 코트의 사내 — 스컬리. 궁지에 몰린 눈.\n\n"기다려. 난 심부름꾼이야. 등대를 끄라는 의뢰, 선금 절반, 서명은 S. 그게 전부야."`,
     choices: [{
+      echoReq: "ren_tip",
+      echo: "렌이 일러준 스컬리의 빚",
+      label: `[정보] "네 빚, 스컬리. 렌한테 다 들었다 — 불면 이름은 빼주지."`,
+      check: {
+        ability: "CHA",
+        skill: "persuasion",
+        dc: 9,
+        label: "설득"
+      },
+      success: {
+        text: `스컬리의 얼굴이 무너진다. "…렌, 그 자식." 품에서 편지 뭉치를 던진다.\n\n"발신지는 잿돌 수도원. 서명은 S. 그거면 됐지?" 어깨를 늘어뜨린 채 사라졌다.`,
+        flag: "peaceful2",
+        goto: "ending2"
+      },
+      fail: {
+        text: `"렌? …그 배신자 이름 함부로 놀리지 마." 칼이 번뜩인다.`,
+        goto: "combat2"
+      }
+    }, {
       label: `[설득] "전부 말하면 관헌엔 이름을 빼주지."`,
       check: {
         ability: "CHA",
@@ -1308,6 +1341,19 @@ const CLUES = {
   peaceful2: "스컬리의 편지",
   saved3: "배달부의 마지막 편지",
   chase3: "증거 편지 뭉치"
+};
+
+/* ---------- 나비효과 — 과거의 선택이 특정 장면에서 파급으로 되돌아온다(가시적 인과) ----------
+   각 장면에서 flags 조건을 만족하면 '지난 선택의 여파' 배너를 서사 위에 띄운다. */
+const ECHOES = {
+  wharf: [{
+    req: "peaceful",
+    text: "지난밤 등대에서 놓아준 도굴꾼 렌이 구석 자리에서 당신을 알아본다. 눈이 마주쳤다."
+  }],
+  confront: [{
+    req: "ren_tip",
+    text: "렌이 귀띔한 스컬리의 약점 — 목에 걸린 빚이 떠오른다."
+  }]
 };
 
 /* ---------- 엔딩 도감 ---------- */
@@ -2123,6 +2169,10 @@ const css = `
 .crpg .artifactitem.on { border-color:var(--gold); color:var(--gold); background:rgba(212,169,78,.1); }
 .crpg .choice .tag.artifact { border:1px solid var(--gold); color:var(--gold); background:rgba(212,169,78,.16); }
 .crpg .artifact-get { margin:10px 0 4px; padding:11px 14px; border-radius:8px; text-align:center; font-weight:600; color:var(--gold); border:1px solid var(--gold); background:linear-gradient(180deg, rgba(212,169,78,.16), rgba(212,169,78,.04)); animation:popIn .4s ease; }
+.crpg .echoBanner { display:flex; flex-direction:column; gap:3px; margin:2px 0 14px; padding:10px 13px; border-radius:8px; border:1px solid #6f6aa8; border-left:3px solid #9b8fd6; background:rgba(123,111,176,.12); animation:fadeIn .4s ease; }
+.crpg .echo-h { font-size:11px; letter-spacing:.15em; color:#b9aef0; font-weight:600; }
+.crpg .echo-t { font-size:14px; color:var(--text); font-style:italic; }
+.crpg .choice .tag.echo { border:1px solid #9b8fd6; color:#b9aef0; background:rgba(123,111,176,.16); }
 @media (prefers-reduced-motion: reduce) { .crpg * { animation:none !important; transition:none !important; } }
 `;
 function CRPG() {
@@ -2783,11 +2833,18 @@ function CRPG() {
     key: sceneKey
   }, (sceneKey === "intro" || sceneKey === "intro2" || sceneKey === "intro3") && /*#__PURE__*/React.createElement("div", {
     className: "chBanner"
-  }, "\u2014 ", chapterTitle, " \u2014"), /*#__PURE__*/React.createElement("p", {
+  }, "\u2014 ", chapterTitle, " \u2014"), (ECHOES[sceneKey] || []).filter(e => flags.includes(e.req)).map((e, i) => /*#__PURE__*/React.createElement("div", {
+    key: "echo" + i,
+    className: "echoBanner"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "echo-h"
+  }, "\uD83E\uDD8B \uC9C0\uB09C \uC120\uD0DD\uC758 \uC5EC\uD30C"), /*#__PURE__*/React.createElement("span", {
+    className: "echo-t"
+  }, e.text))), /*#__PURE__*/React.createElement("p", {
     className: "narr"
   }, fmt(scene.text, pc)), /*#__PURE__*/React.createElement("div", {
     className: "choices"
-  }, scene.choices.filter(ch => (!ch.classOnly || pc && ch.classOnly === pc.classKey) && (!ch.loreReq || lore.includes(ch.loreReq)) && (!ch.artifactReq || artifacts.includes(ch.artifactReq))).map((ch, i) => /*#__PURE__*/React.createElement("button", {
+  }, scene.choices.filter(ch => (!ch.classOnly || pc && ch.classOnly === pc.classKey) && (!ch.loreReq || lore.includes(ch.loreReq)) && (!ch.artifactReq || artifacts.includes(ch.artifactReq)) && (!ch.echoReq || flags.includes(ch.echoReq))).map((ch, i) => /*#__PURE__*/React.createElement("button", {
     key: i,
     className: "choice",
     onClick: () => doChoice(ch)
@@ -2801,7 +2858,9 @@ function CRPG() {
     className: "tag lore"
   }, "\u2726 \uC9C0\uB09C \uBAA8\uD5D8\uC758 \uAE30\uC5B5"), ch.artifactReq && /*#__PURE__*/React.createElement("span", {
     className: "tag artifact"
-  }, "\u25C8 " + (ARTIFACTS[ch.artifactReq] ? ARTIFACTS[ch.artifactReq].name : "\uC720\uBB3C")))), sceneKey === "intro" && ch1Cleared && /*#__PURE__*/React.createElement("button", {
+  }, "\u25C8 " + (ARTIFACTS[ch.artifactReq] ? ARTIFACTS[ch.artifactReq].name : "\uC720\uBB3C")), ch.echo && /*#__PURE__*/React.createElement("span", {
+    className: "tag echo"
+  }, "\uD83E\uDD8B " + ch.echo))), sceneKey === "intro" && ch1Cleared && /*#__PURE__*/React.createElement("button", {
     className: "choice",
     onClick: () => goto("intro2")
   }, "(1\uC7A5 \uD074\uB9AC\uC5B4 \uAE30\uB85D \uC788\uC74C) 2\uC7A5\uBD80\uD130 \uC2DC\uC791\uD55C\uB2E4 \u2192"), sceneKey === "intro" && badges.some(b => b.startsWith("2")) && /*#__PURE__*/React.createElement("button", {
