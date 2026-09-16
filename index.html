@@ -754,6 +754,36 @@ const ENEMIES = {
     proficiencies: []
   }
 };
+
+/* ---------- 전투 시제품(1장 도굴꾼) — 적 의도 예고 + 상황따라 갈리는 대응 ----------
+   dmg: [min, die] → min + d(die) - 1 만큼 피해 */
+const LOOTER_INTENTS = {
+  slash: {
+    icon: "\uD83D\uDDE1",
+    tele: "\uB155\uC2AC\uC740 \uCE7C\uC744 \uB0AE\uAC8C \uACB0\uD55C\uB2E4 \u2014 \uBE60\uB978 \uB2E4.",
+    dmg: [1, 4],
+    label: "\uBCA0\uAE30"
+  },
+  hook: {
+    icon: "\u2693",
+    tele: "\uAC08\uACE0\uB9AC\uB97C \uD06C\uAC8C \uCE58\uCF1C\uB4E0\uB2E4 \u2014 \uAC15\uD0C0\uAC00 \uC628\uB2E4.",
+    dmg: [2, 6],
+    label: "\uAC08\uACE0\uB9AC \uAC15\uD0C0"
+  },
+  feint: {
+    icon: "\uD83C\uDF2B\uFE0F",
+    tele: "\uD55C \uBC1C \uBB3C\uB7EC\uB098 \uC228\uC744 \uACE0\uB978\uB2E4 \u2014 \uBE48\uD2C8\uC744 \uB178\uB9B4 \uAE30\uD68C\uC77C\uAE4C.",
+    dmg: [0, 0],
+    heal: [1, 3],
+    label: "\uC228 \uACE0\uB974\uAE30"
+  }
+};
+function rollLooterIntent(hp, maxHp) {
+  const p2 = hp <= Math.ceil(maxHp / 2);
+  const r = d(100);
+  if (p2) return r <= 55 ? "hook" : r <= 90 ? "slash" : "feint";
+  return r <= 60 ? "slash" : r <= 90 ? "hook" : "feint";
+}
 const SCENE_TITLES = {
   intro: "폭풍의 의뢰",
   door: "등대 입구",
@@ -799,6 +829,7 @@ const SCENES = {
       },
       success: {
         text: "계단 둘째 단, 팽팽한 철사. 끝에는 기름통을 쏟는 장치.\n\n누군가 손님을 기다렸다. 철사를 넘는다.",
+        flag: "sawTrap",
         goto: "stairs"
       },
       fail: {
@@ -2123,6 +2154,12 @@ const css = `
 .crpg .artifactitem.on { border-color:var(--gold); color:var(--gold); background:rgba(212,169,78,.1); }
 .crpg .choice .tag.artifact { border:1px solid var(--gold); color:var(--gold); background:rgba(212,169,78,.16); }
 .crpg .artifact-get { margin:10px 0 4px; padding:11px 14px; border-radius:8px; text-align:center; font-weight:600; color:var(--gold); border:1px solid var(--gold); background:linear-gradient(180deg, rgba(212,169,78,.16), rgba(212,169,78,.04)); animation:popIn .4s ease; }
+.crpg .intent { display:flex; flex-direction:column; gap:3px; margin:10px 0; padding:10px 12px; border-radius:8px; border:1px solid var(--line); background:var(--panel2); animation:fadeIn .3s ease; }
+.crpg .intent-h { font-size:11px; letter-spacing:.15em; color:var(--dim); font-weight:600; }
+.crpg .intent-t { font-size:14px; color:var(--text); }
+.crpg .intent.hook { border-color:var(--bad); background:rgba(217,106,95,.12); }
+.crpg .intent.hook .intent-h { color:var(--bad); }
+.crpg .intent.feint { border-color:var(--accent); background:rgba(94,143,184,.1); }
 @media (prefers-reduced-motion: reduce) { .crpg * { animation:none !important; transition:none !important; } }
 `;
 function CRPG() {
@@ -2149,6 +2186,8 @@ function CRPG() {
   const [sfxOn, setSfxOn] = useState(false);
   const [enemy, setEnemy] = useState(null);
   const [clog, setClog] = useState([]);
+  const [enemyIntent, setEnemyIntent] = useState(null);
+  const [trapUsed, setTrapUsed] = useState(false);
   const [badges, setBadges] = useState(() => store.get("aduventure_badges") || []);
   const [newBadge, setNewBadge] = useState(null);
   const SAVE_KEY = "aduventure_save";
@@ -2305,6 +2344,10 @@ function CRPG() {
         t: "⚔ 전투 개시 — " + e.name
       }]);
       setBreathLeft(1);
+      if (target.enemy === "looter") {
+        setTrapUsed(false);
+        setEnemyIntent(rollLooterIntent(e.maxHp, e.maxHp));
+      }
     }
     if (key === "intro2" || key === "intro3") {
       setPc(p => ({
@@ -2397,6 +2440,127 @@ function CRPG() {
   }
 
   // 전투 — 매 턴이 결정: 공격 / 특수기 / 방어 / 숨 고르기
+  // 도굴꾼 전투 시제품 — 적 의도를 보고 대응을 고른다. 얻는 것/감수하는 것이 상황따라 갈린다.
+  function looterAction(action) {
+    setLastResult(null);
+    const foe = ENEMIES.looter;
+    const intent = enemyIntent;
+    const log = [];
+    let eHp = enemy.hp;
+    let curHp = pc.hp;
+    let enemyActs = true;
+    let incomingMult = 1;
+    if (action === "strike") {
+      const atk = rules.attack({
+        attacker: pc,
+        defender: enemy
+      });
+      setStats(s => ({
+        rolls: s.rolls + 1,
+        success: s.success + (atk.hit ? 1 : 0)
+      }));
+      atk.hit ? SFX.good() : SFX.bad();
+      eHp = Math.max(0, enemy.hp - atk.damage);
+      log.push({
+        who: "you",
+        t: "▶ " + atk.detail
+      });
+    } else if (action === "guard") {
+      SFX.good();
+      log.push({
+        who: "you",
+        t: "▶ 자세를 낮추고 갈고리를 받아넘길 준비를 한다"
+      });
+      incomingMult = intent === "hook" ? 0.25 : 0.45;
+    } else if (action === "disrupt") {
+      const res = rules.check({
+        actor: pc,
+        ability: "STR",
+        skill: "athletics",
+        dc: 12
+      });
+      setStats(s => ({
+        rolls: s.rolls + 1,
+        success: s.success + (res.success ? 1 : 0)
+      }));
+      if (res.success) {
+        SFX.good();
+        const dmg = d(6);
+        eHp = Math.max(0, enemy.hp - dmg);
+        enemyActs = false;
+        log.push({
+          who: "you",
+          t: `▶ 파고들어 갈고리 팔을 비튼다 — 성공(주사위 ${res.roll}). ${dmg} 피해, 놈의 동작을 끊었다`
+        });
+      } else {
+        SFX.bad();
+        incomingMult = 1.5;
+        log.push({
+          who: "you",
+          t: `▶ 파고들려다 중심이 무너진다 — 실패(주사위 ${res.roll}). 빈틈을 보인다`
+        });
+      }
+    } else if (action === "trap") {
+      setTrapUsed(true);
+      SFX.good();
+      const dmg = d(4) + 2;
+      eHp = Math.max(0, enemy.hp - dmg);
+      enemyActs = false;
+      log.push({
+        who: "you",
+        t: `▶ 놈을 쏟긴 기름과 철사 쪽으로 몬다 — 철컥, 발이 걸린다. ${dmg} 피해, 갈고리가 허공을 가른다`
+      });
+    }
+    if (eHp <= 0) {
+      setClog(l => [...l, ...log, {
+        who: "sys",
+        t: "✦ 승리"
+      }]);
+      setEnemy({
+        ...enemy,
+        hp: 0,
+        done: true
+      });
+      return;
+    }
+    const half = Math.ceil(foe.maxHp / 2);
+    if (enemy.hp > half && eHp <= half) {
+      log.push({
+        who: "sys",
+        t: "— 궁지에 몰린 렌이 이빨을 드러낸다. 갈고리질이 거칠어진다."
+      });
+    }
+    if (enemyActs) {
+      const info = LOOTER_INTENTS[intent];
+      if (intent === "feint") {
+        const heal = d(info.heal[1]) + info.heal[0] - 1;
+        eHp = Math.min(foe.maxHp, eHp + heal);
+        log.push({
+          who: "foe",
+          t: `◀ 렌: 물러나 숨을 고른다 — HP ${heal} 회복`
+        });
+      } else {
+        let dmg = d(info.dmg[1]) + info.dmg[0] - 1;
+        dmg = Math.max(0, Math.round(dmg * incomingMult));
+        curHp = Math.max(0, curHp - dmg);
+        log.push({
+          who: "foe",
+          t: `◀ 렌의 ${info.label} — ${dmg} 피해` + (incomingMult < 1 ? " (막아냈다)" : incomingMult > 1 ? " (빈틈을 찔렸다)" : "")
+        });
+      }
+    }
+    setPc({
+      ...pc,
+      hp: curHp
+    });
+    setEnemy({
+      ...enemy,
+      hp: eHp,
+      playerDown: curHp <= 0
+    });
+    setClog(l => [...l, ...log]);
+    setEnemyIntent(rollLooterIntent(eHp, foe.maxHp));
+  }
   function combatAction(action) {
     setLastResult(null);
     const foe = ENEMIES[scene.enemy];
@@ -2526,6 +2690,8 @@ function CRPG() {
       success: 0
     });
     setEnemy(null);
+    setEnemyIntent(null);
+    setTrapUsed(false);
     setClog([]);
     setNewBadge(null);
     setRecordFlash(null);
@@ -2822,7 +2988,40 @@ function CRPG() {
   }, clog.map((l, i) => /*#__PURE__*/React.createElement("div", {
     key: i,
     className: l.who
-  }, l.t))), !enemy.done && !enemy.playerDown && /*#__PURE__*/React.createElement("div", {
+  }, l.t))), scene.enemy === "looter" && enemyIntent && !enemy.done && !enemy.playerDown && /*#__PURE__*/React.createElement("div", {
+    className: "intent " + enemyIntent
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "intent-h"
+  }, "\u26A0 \uB80C\uC758 \uB2E4\uC74C \uD589\uB3D9"), /*#__PURE__*/React.createElement("span", {
+    className: "intent-t"
+  }, LOOTER_INTENTS[enemyIntent].icon + " " + LOOTER_INTENTS[enemyIntent].tele)), !enemy.done && !enemy.playerDown && scene.enemy === "looter" && /*#__PURE__*/React.createElement("div", {
+    className: "choices"
+  }, /*#__PURE__*/React.createElement("button", {
+    className: "choice",
+    onClick: () => looterAction("strike")
+  }, "\u2694 ", pc.weapon.name, "(\uC73C)\uB85C \uCE5C\uB2E4 ", /*#__PURE__*/React.createElement("span", {
+    className: "tag"
+  }, "\uD53C\uD574\uB97C \uC900\uB2E4 \xB7 \uC608\uACE0\uB97C \uADF8\uB300\uB85C \uB9DE\uC74C")), /*#__PURE__*/React.createElement("button", {
+    className: "choice",
+    onClick: () => looterAction("guard")
+  }, "\uD83D\uDEE1 \uBC1B\uC544\uB118\uAE38 \uC900\uBE44 ", /*#__PURE__*/React.createElement("span", {
+    className: "tag"
+  }, "\uB2E4\uC74C \uD53C\uD574\u2193(\uAC15\uD0C0\uC5D0 \uD2B9\uD788) \xB7 \uC774\uBC88 \uD0C0\uACA9 \uC5C6\uC74C")), /*#__PURE__*/React.createElement("button", {
+    className: "choice",
+    onClick: () => looterAction("disrupt")
+  }, "\uD83E\uDD3A \uD30C\uACE0\uB4E4\uC5B4 \uB055\uAE30 ", /*#__PURE__*/React.createElement("span", {
+    className: "tag"
+  }, "\uC6B4\uB3D9 ", Math.round(rules.successChance({
+    actor: pc,
+    ability: "STR",
+    skill: "athletics",
+    dc: 12
+  }) * 100), "% \xB7 \uC131\uACF5:\uD589\uB3D9\uCDE8\uC18C / \uC2E4\uD328:\uCD94\uAC00\uD53C\uD574")), flags.includes("sawTrap") && !trapUsed && /*#__PURE__*/React.createElement("button", {
+    className: "choice",
+    onClick: () => looterAction("trap")
+  }, "\uD83D\uDD25 \uAE30\uB984\u00B7\uCCA0\uC0AC \uCABD\uC73C\uB85C \uBAB0\uAE30 ", /*#__PURE__*/React.createElement("span", {
+    className: "tag artifact"
+  }, "\u2726 \uC785\uAD6C\uC5D0\uC11C \uBCF8 \uD568\uC815 \xB7 1\uD68C"))), !enemy.done && !enemy.playerDown && scene.enemy !== "looter" && /*#__PURE__*/React.createElement("div", {
     className: "choices"
   }, /*#__PURE__*/React.createElement("button", {
     className: "choice",
