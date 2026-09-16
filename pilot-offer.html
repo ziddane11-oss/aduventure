@@ -547,23 +547,24 @@
     var mins = totalMinutes(o);
     var paid = o.paid;
     var creep = o.scopeCreep === "yes";
+    var appCount = apps().length;
 
-    if (paid === "no" && mins === 0) {
-      return {
-        state: "wait",
-        text: "판정: 아직 데이터 없음. 결제·투입시간·범위 이탈을 기록하면 여기에 나타납니다."
-      };
-    }
     if (paid === "refund") {
       return {
         state: "stop",
         text: "판정: 환불/취소. 범위·기대치 문구를 고친 뒤 같은 조건으로 1회만 더 시험하세요."
       };
     }
-    if (paid === "no" && apps().length > 0) {
+    if (paid === "no" && appCount > 0) {
       return {
         state: "wait",
         text: "판정: 신청은 있으나 미결제. ‘관심’과 ‘구매’를 구분하고, 결제 장벽(신뢰·범위·가격)을 메모하세요."
+      };
+    }
+    if (paid === "no" && mins === 0 && appCount === 0) {
+      return {
+        state: "wait",
+        text: "판정: 아직 데이터 없음. 결제·투입시간·범위 이탈을 기록하면 여기에 나타납니다."
       };
     }
     if (paid === "yes" && creep) {
