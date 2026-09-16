@@ -706,7 +706,7 @@ const ENEMIES = {
       WIS: 9,
       CHA: 11
     },
-    maxHp: 9,
+    maxHp: 16,
     ac: 12,
     weapon: {
       name: "녹슨 갈고리칼",
@@ -761,28 +761,28 @@ const LOOTER_INTENTS = {
   slash: {
     icon: "\uD83D\uDDE1",
     tele: "\uB155\uC2AC\uC740 \uCE7C\uC744 \uB0AE\uAC8C \uACB0\uD55C\uB2E4 \u2014 \uBE60\uB978 \uB2E4.",
-    dmg: [1, 4],
+    dmg: [2, 3],
     label: "\uBCA0\uAE30"
   },
   hook: {
     icon: "\u2693",
-    tele: "\uAC08\uACE0\uB9AC\uB97C \uD06C\uAC8C \uCE58\uCF1C\uB4E0\uB2E4 \u2014 \uAC15\uD0C0\uAC00 \uC628\uB2E4.",
-    dmg: [2, 6],
+    tele: "\uAC08\uACE0\uB9AC\uB97C \uD06C\uAC8C \uCE58\uCF1C\uB4E0\uB2E4 \u2014 \uB9C9\uC9C0 \uBABB\uD558\uBA74 \uD06C\uAC8C \uB2E4\uCE5C\uB2E4.",
+    dmg: [6, 3],
     label: "\uAC08\uACE0\uB9AC \uAC15\uD0C0"
   },
   feint: {
     icon: "\uD83C\uDF2B\uFE0F",
-    tele: "\uD55C \uBC1C \uBB3C\uB7EC\uB098 \uC228\uC744 \uACE0\uB978\uB2E4 \u2014 \uBE48\uD2C8\uC744 \uB178\uB9B4 \uAE30\uD68C\uC77C\uAE4C.",
+    tele: "\uD55C \uBC1C \uBB3C\uB7EC\uB098 \uC228\uC744 \uACE0\uB978\uB2E4 \u2014 \uB0B4\uBC84\uB824\uB450\uBA74 \uD68C\uBCF5\uD55C\uB2E4.",
     dmg: [0, 0],
-    heal: [1, 3],
+    heal: [2, 3],
     label: "\uC228 \uACE0\uB974\uAE30"
   }
 };
 function rollLooterIntent(hp, maxHp) {
   const p2 = hp <= Math.ceil(maxHp / 2);
   const r = d(100);
-  if (p2) return r <= 55 ? "hook" : r <= 90 ? "slash" : "feint";
-  return r <= 60 ? "slash" : r <= 90 ? "hook" : "feint";
+  if (p2) return r <= 60 ? "hook" : r <= 88 ? "slash" : "feint";
+  return r <= 52 ? "slash" : r <= 82 ? "hook" : "feint";
 }
 const SCENE_TITLES = {
   intro: "폭풍의 의뢰",
@@ -2188,6 +2188,7 @@ function CRPG() {
   const [clog, setClog] = useState([]);
   const [enemyIntent, setEnemyIntent] = useState(null);
   const [trapUsed, setTrapUsed] = useState(false);
+  const [guardBonus, setGuardBonus] = useState(0);
   const [badges, setBadges] = useState(() => store.get("aduventure_badges") || []);
   const [newBadge, setNewBadge] = useState(null);
   const SAVE_KEY = "aduventure_save";
@@ -2346,6 +2347,7 @@ function CRPG() {
       setBreathLeft(1);
       if (target.enemy === "looter") {
         setTrapUsed(false);
+        setGuardBonus(0);
         setEnemyIntent(rollLooterIntent(e.maxHp, e.maxHp));
       }
     }
@@ -2460,19 +2462,22 @@ function CRPG() {
         success: s.success + (atk.hit ? 1 : 0)
       }));
       atk.hit ? SFX.good() : SFX.bad();
-      eHp = Math.max(0, enemy.hp - atk.damage);
+      eHp = Math.max(0, enemy.hp - (atk.damage + (atk.hit ? guardBonus : 0)));
       log.push({
         who: "you",
-        t: "▶ " + atk.detail
+        t: "▶ " + atk.detail + (guardBonus && atk.hit ? ` (+${guardBonus} 받아넘긴 반격)` : "")
       });
+      if (guardBonus) setGuardBonus(0);
     } else if (action === "guard") {
       SFX.good();
+      setGuardBonus(4);
       log.push({
         who: "you",
-        t: "▶ 자세를 낮추고 갈고리를 받아넘길 준비를 한다"
+        t: "▶ 자세를 낮추고 갈고리를 받아넘길 준비를 한다 — 다음 공격에 +4"
       });
-      incomingMult = intent === "hook" ? 0.25 : 0.45;
+      incomingMult = intent === "hook" ? 0.2 : 0.5;
     } else if (action === "disrupt") {
+      if (guardBonus) setGuardBonus(0);
       const res = rules.check({
         actor: pc,
         ability: "STR",
@@ -2494,13 +2499,14 @@ function CRPG() {
         });
       } else {
         SFX.bad();
-        incomingMult = 1.5;
+        incomingMult = 1.3;
         log.push({
           who: "you",
           t: `▶ 파고들려다 중심이 무너진다 — 실패(주사위 ${res.roll}). 빈틈을 보인다`
         });
       }
     } else if (action === "trap") {
+      if (guardBonus) setGuardBonus(0);
       setTrapUsed(true);
       SFX.good();
       const dmg = d(4) + 2;
@@ -2692,6 +2698,7 @@ function CRPG() {
     setEnemy(null);
     setEnemyIntent(null);
     setTrapUsed(false);
+    setGuardBonus(0);
     setClog([]);
     setNewBadge(null);
     setRecordFlash(null);
@@ -3001,7 +3008,7 @@ function CRPG() {
     onClick: () => looterAction("strike")
   }, "\u2694 ", pc.weapon.name, "(\uC73C)\uB85C \uCE5C\uB2E4 ", /*#__PURE__*/React.createElement("span", {
     className: "tag"
-  }, "\uD53C\uD574\uB97C \uC900\uB2E4 \xB7 \uC608\uACE0\uB97C \uADF8\uB300\uB85C \uB9DE\uC74C")), /*#__PURE__*/React.createElement("button", {
+  }, guardBonus ? "\uD53C\uD574 +" + guardBonus + " \xB7 \uC608\uACE0\uB97C \uADF8\uB300\uB85C \uB9DE\uC74C" : "\uD53C\uD574\uB97C \uC900\uB2E4 \xB7 \uC608\uACE0\uB97C \uADF8\uB300\uB85C \uB9DE\uC74C")), /*#__PURE__*/React.createElement("button", {
     className: "choice",
     onClick: () => looterAction("guard")
   }, "\uD83D\uDEE1 \uBC1B\uC544\uB118\uAE38 \uC900\uBE44 ", /*#__PURE__*/React.createElement("span", {
