@@ -789,22 +789,22 @@ const ENEMIES = {
 const LOOTER_INTENTS = {
   slash: {
     icon: "\uD83D\uDDE1",
-    tele: "\uB155\uC2AC\uC740 \uCE7C\uC744 \uB0AE\uAC8C \uACB0\uD55C\uB2E4 \u2014 \uBE60\uB978 \uB2E4.",
+    tele: { ko: "\uB155\uC2AC\uC740 \uCE7C\uC744 \uB0AE\uAC8C \uACB0\uD55C\uB2E4 \u2014 \uBE60\uB978 \uB2E4.", en: "Levels the rusty knife low — quick." },
     dmg: [2, 3],
-    label: "\uBCA0\uAE30"
+    label: { ko: "\uBCA0\uAE30", en: "Slash" }
   },
   hook: {
     icon: "\u2693",
-    tele: "\uAC08\uACE0\uB9AC\uB97C \uD06C\uAC8C \uCE58\uCF1C\uB4E0\uB2E4 \u2014 \uB9C9\uC9C0 \uBABB\uD558\uBA74 \uD06C\uAC8C \uB2E4\uCE5C\uB2E4.",
+    tele: { ko: "\uAC08\uACE0\uB9AC\uB97C \uD06C\uAC8C \uCE58\uCF1C\uB4E0\uB2E4 \u2014 \uB9C9\uC9C0 \uBABB\uD558\uBA74 \uD06C\uAC8C \uB2E4\uCE5C\uB2E4.", en: "Rears the hook back high — block it or take a big hit." },
     dmg: [6, 3],
-    label: "\uAC08\uACE0\uB9AC \uAC15\uD0C0"
+    label: { ko: "\uAC08\uACE0\uB9AC \uAC15\uD0C0", en: "Hook Smash" }
   },
   feint: {
     icon: "\uD83C\uDF2B\uFE0F",
-    tele: "\uD55C \uBC1C \uBB3C\uB7EC\uB098 \uC228\uC744 \uACE0\uB978\uB2E4 \u2014 \uB0B4\uBC84\uB824\uB450\uBA74 \uD68C\uBCF5\uD55C\uB2E4.",
+    tele: { ko: "\uD55C \uBC1C \uBB3C\uB7EC\uB098 \uC228\uC744 \uACE0\uB978\uB2E4 \u2014 \uB0B4\uBC84\uB824\uB450\uBA74 \uD68C\uBCF5\uD55C\uB2E4.", en: "Steps back to catch his breath — leave him be and he recovers." },
     dmg: [0, 0],
     heal: [2, 3],
-    label: "\uC228 \uACE0\uB974\uAE30"
+    label: { ko: "\uC228 \uACE0\uB974\uAE30", en: "Catch Breath" }
   }
 };
 function rollLooterIntent(hp, maxHp) {
@@ -1659,31 +1659,31 @@ const badgeId = (ending, flags) => ending === 1 ? "1" + (flags.includes("peacefu
 /* ---------- 오늘의 도전 — 날짜 기반으로 매일 하나가 결정된다(재방문 유도) ---------- */
 const DAILY_CHALLENGES = [{
   id: "fighter",
-  label: "파이터로 한 장(章)을 끝내기",
+  label: { ko: "파이터로 한 장(章)을 끝내기", en: "Finish a chapter as the Fighter" },
   test: c => c.classKey === "fighter"
 }, {
   id: "rogue",
-  label: "로그로 한 장을 끝내기",
+  label: { ko: "로그로 한 장을 끝내기", en: "Finish a chapter as the Rogue" },
   test: c => c.classKey === "rogue"
 }, {
   id: "wizard",
-  label: "위저드로 한 장을 끝내기",
+  label: { ko: "위저드로 한 장을 끝내기", en: "Finish a chapter as the Wizard" },
   test: c => c.classKey === "wizard"
 }, {
   id: "ace",
-  label: "판정 성공률 80% 이상으로 끝내기",
+  label: { ko: "판정 성공률 80% 이상으로 끝내기", en: "Finish with an 80%+ check success rate" },
   test: c => c.rolls >= 1 && c.rate >= 80
 }, {
   id: "flawless",
-  label: "HP를 한 칸도 잃지 않고 끝내기",
+  label: { ko: "HP를 한 칸도 잃지 않고 끝내기", en: "Finish without losing any HP" },
   test: c => c.hp === c.maxHp
 }, {
   id: "simple",
-  label: "Simple 2d6 룰로 끝내기",
+  label: { ko: "Simple 2d6 룰로 끝내기", en: "Finish using the Simple 2d6 rule" },
   test: c => c.ruleKey === "simple2d6"
 }, {
   id: "clever",
-  label: "판정 6회 이하로 끝내기",
+  label: { ko: "판정 6회 이하로 끝내기", en: "Finish in 6 checks or fewer" },
   test: c => c.rolls >= 1 && c.rolls <= 6
 }];
 const dayKey = () => {
@@ -1700,21 +1700,21 @@ const dayHash = s => {
    회차를 넘어 영구 보관되며, 특정 성취(엔딩+조건)로만 얻는다. */
 const ARTIFACTS = {
   brass_lens: {
-    name: "온전한 황동 렌즈",
+    name: { ko: "온전한 황동 렌즈", en: "The Intact Brass Lens" },
     icon: "\uD83D\uDD2E",
-    how: "1장을 완전 수리로 끝내 등대의 렌즈를 지켜낸다",
+    how: { ko: "1장을 완전 수리로 끝내 등대의 렌즈를 지켜낸다", en: "Finish Ch.1 with a full repair, keeping the lighthouse lens" },
     got: f => f.includes("fixed")
   },
   smuggler_ledger: {
-    name: "밀수 장부 원본",
+    name: { ko: "밀수 장부 원본", en: "The Original Smuggling Ledger" },
     icon: "\uD83D\uDCD2",
-    how: "2장에서 밀수 장부를 손에 넣는다",
+    how: { ko: "2장에서 밀수 장부를 손에 넣는다", en: "Get your hands on the smuggling ledger in Ch.2" },
     got: f => f.includes("ledger")
   },
   evidence_letters: {
-    name: "증거 편지 뭉치",
+    name: { ko: "증거 편지 뭉치", en: "The Bundle of Evidence Letters" },
     icon: "\u2709\uFE0F",
-    how: "3장에서 사람 대신 증거를 택한다",
+    how: { ko: "3장에서 사람 대신 증거를 택한다", en: "In Ch.3, choose the evidence over the person" },
     got: f => f.includes("chase3")
   }
 };
@@ -2952,7 +2952,7 @@ function CRPG() {
         curHp = Math.max(0, curHp - dmg);
         log.push({
           who: "foe",
-          t: `◀ 렌의 ${info.label} — ${dmg} 피해` + (incomingMult < 1 ? " (막아냈다)" : incomingMult > 1 ? " (빈틈을 찔렸다)" : "")
+          t: (lang === "en" ? `◀ Ren's ${tx(info.label)} — ${dmg} dmg` : `◀ 렌의 ${tx(info.label)} — ${dmg} 피해`) + (incomingMult < 1 ? (lang === "en" ? " (blocked)" : " (막아냈다)") : incomingMult > 1 ? (lang === "en" ? " (caught in the open)" : " (빈틈을 찔렸다)") : "")
         });
       }
     }
@@ -3262,7 +3262,7 @@ function CRPG() {
     className: "daily-h"
   }, "\uC624\uB298\uC758 \uB3C4\uC804"), /*#__PURE__*/React.createElement("span", {
     className: "daily-l"
-  }, daily.label), /*#__PURE__*/React.createElement("span", {
+  }, tx(daily.label)), /*#__PURE__*/React.createElement("span", {
     className: "daily-s"
   }, dailyDone ? "\u2714 \uB2EC\uC131" : "\uBBF8\uB2EC\uC131")), /*#__PURE__*/React.createElement("p", {
     className: "bcount"
@@ -3289,8 +3289,8 @@ function CRPG() {
   }, Object.keys(ARTIFACTS).map(k => /*#__PURE__*/React.createElement("span", {
     key: k,
     className: "artifactitem" + (artifacts.includes(k) ? " on" : ""),
-    title: artifacts.includes(k) ? ARTIFACTS[k].name + " \u2014 " + ARTIFACTS[k].how : "??? \u2014 " + ARTIFACTS[k].how
-  }, artifacts.includes(k) ? ARTIFACTS[k].icon + " " + ARTIFACTS[k].name : "\u25C7 ???"))), allBadges && /*#__PURE__*/React.createElement("div", {
+    title: artifacts.includes(k) ? tx(ARTIFACTS[k].name) + " \u2014 " + tx(ARTIFACTS[k].how) : "??? \u2014 " + tx(ARTIFACTS[k].how)
+  }, artifacts.includes(k) ? ARTIFACTS[k].icon + " " + tx(ARTIFACTS[k].name) : "\u25C7 ???"))), allBadges && /*#__PURE__*/React.createElement("div", {
     className: "teaser"
   }, /*#__PURE__*/React.createElement("span", {
     className: "badge on new"
@@ -3405,7 +3405,7 @@ function CRPG() {
     className: "tag lore"
   }, "\u2726 \uC9C0\uB09C \uBAA8\uD5D8\uC758 \uAE30\uC5B5"), ch.artifactReq && /*#__PURE__*/React.createElement("span", {
     className: "tag artifact"
-  }, "\u25C8 " + (ARTIFACTS[ch.artifactReq] ? ARTIFACTS[ch.artifactReq].name : "\uC720\uBB3C")), ch.echo && /*#__PURE__*/React.createElement("span", {
+  }, "\u25C8 " + tx(ARTIFACTS[ch.artifactReq] ? ARTIFACTS[ch.artifactReq].name : "\uC720\uBB3C")), ch.echo && /*#__PURE__*/React.createElement("span", {
     className: "tag echo"
   }, "\uD83E\uDD8B " + tx(ch.echo)))), sceneKey === "intro" && ch1Cleared && /*#__PURE__*/React.createElement("button", {
     className: "choice",
@@ -3434,7 +3434,7 @@ function CRPG() {
     className: "intent-h"
   }, "\u26A0 \uB80C\uC758 \uB2E4\uC74C \uD589\uB3D9"), /*#__PURE__*/React.createElement("span", {
     className: "intent-t"
-  }, LOOTER_INTENTS[enemyIntent].icon + " " + LOOTER_INTENTS[enemyIntent].tele)), !enemy.done && !enemy.playerDown && scene.enemy === "looter" && /*#__PURE__*/React.createElement("div", {
+  }, LOOTER_INTENTS[enemyIntent].icon + " " + tx(LOOTER_INTENTS[enemyIntent].tele))), !enemy.done && !enemy.playerDown && scene.enemy === "looter" && /*#__PURE__*/React.createElement("div", {
     className: "choices"
   }, /*#__PURE__*/React.createElement("button", {
     className: "choice",
