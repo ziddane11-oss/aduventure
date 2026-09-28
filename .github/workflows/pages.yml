@@ -1,0 +1,32 @@
+# GitHub Pages가 이미 이 저장소에 있다. Source를 GitHub Actions로 바꾼 뒤에만 이 워크플로가 공개 URL을 갱신한다.
+name: pages
+on:
+  push:
+    branches:
+      - main
+      - cursor/playtest-startable-6593
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages
+  cancel-in-progress: true
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Stage static files
+        run: |
+          mkdir -p _site
+          cp index.html _site/index.html
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: deployment
+        uses: actions/deploy-pages@v4
