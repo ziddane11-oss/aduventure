@@ -317,6 +317,8 @@ function(a,b,c){if(!Vd(b))throw Error(n(200));return Wd(null,a,b,!1,c)};Q.unmoun
 /* ============================================================
    GAS 피드백 파이프 — v0.7 재구현 (제안/신호/텔레메트리)
    ============================================================ */
+/* 플레이테스트 빌드 태그 — 테스트 중 버전 구분용. 수정할 때마다 뒤 번호를 올린다. */
+const BUILD = "v0.7.3-pt3";
 const GAS_URL = "https://script.google.com/macros/s/AKfycbxFx_m5rhCZmqGoy3JcUUNqEgiObMWNHe9hx-LnZrhzIkfwa9-yJGBWP0lVulptnNQeCQ/exec";
 function gasPost(payload) {
   return fetch(GAS_URL, {
@@ -467,11 +469,105 @@ const SFX = {
   }
 };
 const d = sides => Math.floor(Math.random() * sides) + 1;
-const fmt = (text, pc) => text.split("{이름}").join(pc && pc.name || "용사");
+const fmt = (text, pc) => String(text == null ? "" : text).split("{이름}").join(pc && pc.name || "용사").split("{name}").join(pc && pc.name || "Hero");
+const bi = (ko, en) => ({ ko, en });
+const wname = (w, l) => {
+  const n = w && w.name;
+  if (n && typeof n === "object") return n[l] || n.ko || "";
+  return n || "";
+};
+/* ---------- 다국어 UI 문자열(ko/en). 서사(SCENES)는 각 항목에 {ko,en}로 확장한다. ---------- */
+const UI = {
+  ch1: { ko: "제1장 잿빛 등대", en: "Ch.1 · The Ashen Lighthouse" },
+  ch2: { ko: "제2장 검은 코트", en: "Ch.2 · The Black Coat" },
+  ch3: { ko: "제3장 사라진 종소리", en: "Ch.3 · The Silenced Bell" },
+  langBtn: { ko: "EN", en: "한국어" },
+  fbBtn: { ko: "피드백·그만두기", en: "Feedback / Quit" },
+  fbTitle: { ko: "플레이테스트 피드백", en: "Playtest Feedback" },
+  fbIntro: { ko: "솔직한 경험을 그대로 적어 주세요. 정답은 없고, 좋게 써 주실 필요도 없습니다. 중간에 그만두셨어도 어디서 왜 멈췄는지 적어 주시면 큰 도움이 됩니다.", en: "Please describe your honest experience. There are no right answers, and no need to be kind. If you stopped partway, telling us where and why is just as valuable." },
+  fbQuit: { ko: "지루했거나 그만두고 싶었던 장면과 이유", en: "A scene where you got bored or wanted to quit — and why" },
+  fbChoice: { ko: "가장 고민했던 선택과, 그때 예상했던 결과", en: "The choice you agonized over most, and what you expected would happen" },
+  fbCombat: { ko: "전투에서 고른 행동과 그 이유 (전투를 했다면)", en: "Which actions you chose in combat, and why (if you fought)" },
+  fbConfuse: { ko: "이해하기 어려웠던 설명이나 표현", en: "Any explanation or wording that was hard to understand" },
+  fbMore: { ko: "더 플레이하고 싶은 이유, 또는 그만두고 싶은 이유", en: "Why you'd want to keep playing — or why you'd stop" },
+  fbBug: { ko: "버그가 있었다면: 발생 위치와 재현 방법", en: "If you hit a bug: where it happened and how to reproduce it" },
+  fbSubmit: { ko: "제출(서버로 전송)", en: "Submit (send to server)" },
+  fbExport: { ko: "파일로 저장(.txt)", en: "Save as file (.txt)" },
+  fbCopy: { ko: "클립보드 복사", en: "Copy to clipboard" },
+  fbClose: { ko: "닫기", en: "Close" },
+  fbSending: { ko: "전송 중…", en: "Sending…" },
+  fbSent: { ko: "전송됐습니다. 고맙습니다! 혹시 몰라 '파일로 저장'도 눌러 두시면 안전합니다.", en: "Sent — thank you! As a backup, tapping 'Save as file' too is safest." },
+  fbFail: { ko: "전송에 실패했습니다. 아래 '파일로 저장'이나 '클립보드 복사'로 내용을 보내 주세요.", en: "Sending failed. Please use 'Save as file' or 'Copy to clipboard' and send it to me." },
+  fbCopied: { ko: "복사됐습니다.", en: "Copied." },
+  fbMeta: { ko: "함께 전송되는 정보: 빌드 버전·언어·도달한 장면·중단 위치·플레이 시간(게임 개선용). 계좌 등 지급 정보는 여기에 적지 마세요 — 따로 안내드립니다.", en: "Also sent: build version, language, scenes reached, stop point, play time (to improve the game). Do not enter payment/bank details here — those are handled separately." },
+  fbResume: { ko: "계속 플레이", en: "Keep playing" },
+  fbEmpty: { ko: "한 항목이라도 적어 주세요.", en: "Please fill in at least one field." },
+  sfxOn: { ko: "소리 끄기", en: "Mute" },
+  sfxOff: { ko: "소리 켜기", en: "Unmute" },
+  rulesBtn: { ko: "? 규칙", en: "? Rules" },
+  rulesTitle: { ko: "주사위 읽는 법", en: "How to read the dice" },
+  rulesAria: { ko: "룰 시스템", en: "Rule system" },
+  rulesFoot: { ko: "선택지의 파란 %가 성공 확률. 실패해도 장마다 한 번, 운명 주사위로 다시 굴릴 수 있다.", en: "The blue % on a choice is its success chance. Once per chapter, a Fate die lets you reroll a failure." },
+  rulesGot: { ko: "이해했다, 주사위를 다오", en: "Got it — give me the dice" },
+  special: { ko: "특수기", en: "special" },
+  proficient: { ko: "숙련:", en: "proficient:" },
+  dailyH: { ko: "오늘의 도전", en: "Today's challenge" },
+  dailyDone: { ko: "✔ 달성", en: "✔ Done" },
+  dailyTodo: { ko: "미달성", en: "Not yet" },
+  badgeCount: { ko: "엔딩 도감", en: "Ending codex" },
+  bestRate: { ko: "최고 성공률", en: "best success rate" },
+  checksWord: { ko: "판정", en: "checks" },
+  firstRank: { ko: "초대 랭크 1", en: "first to rank 1" },
+  firstShort: { ko: "초대", en: "first" },
+  loreCount: { ko: "발견한 지식", en: "Lore found" },
+  loreHint: { ko: "지식은 죽어도 사라지지 않는다. 다음 모험에서 새 길을 여는 열쇠가 된다.", en: "Lore survives death. On the next run it becomes a key that opens a new path." },
+  artCount: { ko: "전설의 유물", en: "Legendary artifacts" },
+  teaserTitle: { ko: "★ 히든 칭호 — 잿빛 등대지기", en: "★ Hidden title — Keeper of the Ashen Light" },
+  fate: { ko: "운명🎲", en: "Fate🎲" },
+  loreTag: { ko: "✦ 지난 모험의 기억", en: "✦ memory from a past run" },
+  newBadge: { ko: "★ 새 엔딩 발견 — ", en: "★ New ending — " },
+  heroLine: { ko: "용사", en: "Hero" },
+  successWord: { ko: "성공", en: "successes" },
+  thisRunClues: { ko: "이번 모험의 단서: ", en: "Clues this run: " },
+  none: { ko: "없음", en: "none" },
+  ruleLabel: { ko: "룰: ", en: "Rules: " },
+  newRecord: { ko: "★ 신기록! 이 엔딩의 최고 기록을 갱신했다", en: "★ New record! Best mark for this ending." },
+  artGet: { ko: "◈ 유물 획득 — ", en: "◈ Artifact gained — " },
+  ch2next: { ko: "2장 「검은 코트」 계속 →", en: "Continue to Ch.2 “The Black Coat” →" },
+  ch1again: { ko: "다른 선택으로 1장 다시", en: "Replay Ch.1 with other choices" },
+  ch3next: { ko: "3장 「사라진 종소리」 계속 →", en: "Continue to Ch.3 “The Silenced Bell” →" },
+  ch2again: { ko: "다른 선택으로 2장 다시", en: "Replay Ch.2 with other choices" },
+  ch3again: { ko: "다른 선택으로 3장 다시", en: "Replay Ch.3 with other choices" },
+  fromStart: { ko: "처음(1장)부터", en: "From the beginning (Ch.1)" },
+  gameover: { ko: "모험은 여기서 끊겼다.\n\n하지만 주사위는 다시 굴릴 수 있다.", en: "The adventure ends here.\n\nBut the dice can roll again." },
+  restart: { ko: "처음부터 다시", en: "Start over" },
+  suggestBtn: { ko: "💡 다른 방법 제안하기", en: "💡 Suggest another action" },
+  suggestBody: { ko: "이 장면에서 해보고 싶은 다른 행동이 있다면? 보내기 한 번이면 도착. 채택되면 다음 버전에 실명 크레딧!", en: "Another action you'd try in this scene? One send and it arrives. If we use it, your name goes in the credits." },
+  suggestPh: { ko: "예: 지붕의 밧줄을 타고 올라가고 싶어요", en: "e.g. I want to climb the rope on the roof" },
+  suggestSend: { ko: "보내기", en: "Send" },
+  suggestSending: { ko: "보내는 중…", en: "Sending…" },
+  suggestSent: { ko: "전송됨! 고마워 ✦", en: "Sent — thank you ✦" },
+  suggestCopied: { ko: "전송 실패 — 복사됨! 카톡방에 붙여넣어줘", en: "Send failed — copied. Paste it to me." },
+  suggestClose: { ko: "닫기", en: "Close" },
+  artAlt: { ko: "장면 삽화: ", en: "Scene art: " },
+  titleAlt: { ko: "어두밴처 — 폭풍 속 등대 포스터", en: "Aduventure — lighthouse poster in the storm" },
+  anon: { ko: "익명", en: "anonymous" },
+  nameless: { ko: "이름 없는 용사", en: "Nameless Hero" },
+  footer1: { ko: "어두밴처 — 작명: 브니엘여자고등학교 2학년 물리반 · 포스터: Gemini", en: "Aduventure — named by the year-2 physics class, Peniel Girls' High School · poster: Gemini" },
+  footer2: { ko: "삽화·아이디어 모집 중: 채택작은 실명 크레딧과 함께 게임에 영구 수록", en: "Art and ideas welcome: adopted pieces stay in the game with a named credit" },
+  footer3: { ko: "룰: SRD 5.1 (CC-BY-4.0) 부분집합 · 엔진 ", en: "Rules: SRD 5.1 (CC-BY-4.0) subset · engine " },
+  footer4: { ko: "채택된 제안 — 태희: 창문 순간이동(1장 등대 입구)", en: "Adopted idea — Taehee: window teleport (Ch.1 lighthouse door)" },
+  jumpRoll: { ko: "기록", en: "Roll" },
+  jumpDc: { ko: "장애물", en: "DC" },
+  brand: { ko: "어두밴처", en: "Aduventure" }
+};
 const SRD20 = {
-  name: "SRD d20",
-  desc: "d20 + 보정치 + 숙련(+2) vs DC",
-  tutorial: ["⓪ 판정은 높이뛰기다. 난이도(DC)는 가로 바의 높이, 주사위는 그날의 운, 보정은 평소 실력 — 합쳐서 바를 넘으면 성공.", "① 20면 주사위(d20)를 굴린다 — 1부터 20까지 모두 같은 확률(균등분포).", "② 능력치 보정을 더한다. 보정 = (능력치−10)÷2 내림.", "③ 숙련 기능이면 +2를 더한다.", "★ 20은 무조건 성공, 1은 무조건 실패."],
+  name: { ko: "SRD d20", en: "SRD d20" },
+  desc: { ko: "d20 + 보정치 + 숙련(+2) vs DC", en: "d20 + modifier + proficiency (+2) vs DC" },
+  tutorial: {
+    ko: ["⓪ 판정은 높이뛰기다. 난이도(DC)는 가로 바의 높이, 주사위는 그날의 운, 보정은 평소 실력 — 합쳐서 바를 넘으면 성공.", "① 20면 주사위(d20)를 굴린다 — 1부터 20까지 모두 같은 확률(균등분포).", "② 능력치 보정을 더한다. 보정 = (능력치−10)÷2 내림.", "③ 숙련 기능이면 +2를 더한다.", "★ 20은 무조건 성공, 1은 무조건 실패."],
+    en: ["⓪ A check is a high jump. The DC is the bar, the die is that day's luck, the modifier is your usual skill — together they clear the bar.", "① Roll a twenty-sided die (d20). Every face from 1 to 20 is equally likely.", "② Add your ability modifier. Modifier = floor((score − 10) ÷ 2).", "③ If you're proficient in the skill, add +2.", "★ A 20 always succeeds. A 1 always fails."]
+  },
   abilityMod: s => Math.floor((s - 10) / 2),
   successChance({
     actor,
@@ -501,7 +597,7 @@ const SRD20 = {
       total,
       dc,
       success,
-      detail: `주사위 ${roll} ${mod >= 0 ? "+" : ""}${mod} 보정${prof ? " +2 숙련" : ""} = ${total} → 장애물 ${dc}`
+      detail: bi(`주사위 ${roll} ${mod >= 0 ? "+" : ""}${mod} 보정${prof ? " +2 숙련" : ""} = ${total} → 장애물 ${dc}`, `Die ${roll} ${mod >= 0 ? "+" : ""}${mod} mod${prof ? " +2 prof" : ""} = ${total} → DC ${dc}`)
     };
   },
   attack({
@@ -521,7 +617,7 @@ const SRD20 = {
       hit,
       damage,
       crit,
-      detail: crit ? `주사위 20 치명타! ${w.name} ${damage} 피해` : hit ? `주사위 ${roll}+${mod + 2}=${total} ≥ 방어 ${defender.ac} 명중 — ${damage} 피해` : `주사위 ${roll}+${mod + 2}=${total} < 방어 ${defender.ac} 빗나감`
+      detail: crit ? bi(`주사위 20 치명타! ${wname(w, "ko")} ${damage} 피해`, `Natural 20 — critical! ${wname(w, "en")} deals ${damage}`) : hit ? bi(`주사위 ${roll}+${mod + 2}=${total} ≥ 방어 ${defender.ac} 명중 — ${damage} 피해`, `Die ${roll}+${mod + 2}=${total} ≥ AC ${defender.ac} — hit, ${damage} damage`) : bi(`주사위 ${roll}+${mod + 2}=${total} < 방어 ${defender.ac} 빗나감`, `Die ${roll}+${mod + 2}=${total} < AC ${defender.ac} — miss`)
     };
   }
 };
@@ -539,9 +635,12 @@ const WAYS = {
   12: 1
 };
 const Simple2d6 = {
-  name: "Simple 2d6",
-  desc: "2d6 + 보정치 vs 목표값 (종형 분포)",
-  tutorial: ["⓪ 판정은 높이뛰기다. 목표값은 가로 바의 높이 — 주사위+보정으로 바를 넘으면 성공.", "① 6면 주사위 두 개의 합 — 7 근처가 잘 나오고 2·12는 드물다(종형분포).", "② 보정 = (능력치−10)÷3 내림, 숙련이면 +1.", "★ 합 12는 무조건 성공, 2는 무조건 실패.", "※ 물리 질문: 같은 모험인데 왜 d20과 분포가 다를까?"],
+  name: { ko: "Simple 2d6", en: "Simple 2d6" },
+  desc: { ko: "2d6 + 보정치 vs 목표값 (종형 분포)", en: "2d6 + modifier vs target (a bell curve)" },
+  tutorial: {
+    ko: ["⓪ 판정은 높이뛰기다. 목표값은 가로 바의 높이 — 주사위+보정으로 바를 넘으면 성공.", "① 6면 주사위 두 개의 합 — 7 근처가 잘 나오고 2·12는 드물다(종형분포).", "② 보정 = (능력치−10)÷3 내림, 숙련이면 +1.", "★ 합 12는 무조건 성공, 2는 무조건 실패.", "※ 물리 질문: 같은 모험인데 왜 d20과 분포가 다를까?"],
+    en: ["⓪ A check is a high jump. The target is the bar — die plus modifier clears it and you succeed.", "① The sum of two six-sided dice. Near 7 is common; 2 and 12 are rare (a bell curve).", "② Modifier = floor((score − 10) ÷ 3). Add +1 if proficient.", "★ A sum of 12 always succeeds. A 2 always fails.", "※ A physics question: same adventure — why is the spread different from a d20?"]
+  },
   abilityMod: s => Math.floor((s - 10) / 3),
   toTarget: dc => Math.max(4, Math.round(dc * 0.55)),
   successChance({
@@ -576,7 +675,7 @@ const Simple2d6 = {
       total,
       dc: target,
       success,
-      detail: `주사위 ${r1}+${r2}=${roll} ${mod >= 0 ? "+" : ""}${mod} 보정${prof ? " +1 숙련" : ""} = ${total} → 장애물 ${target}`
+      detail: bi(`주사위 ${r1}+${r2}=${roll} ${mod >= 0 ? "+" : ""}${mod} 보정${prof ? " +1 숙련" : ""} = ${total} → 장애물 ${target}`, `Dice ${r1}+${r2}=${roll} ${mod >= 0 ? "+" : ""}${mod} mod${prof ? " +1 prof" : ""} = ${total} → DC ${target}`)
     };
   },
   attack({
@@ -599,7 +698,7 @@ const Simple2d6 = {
       hit,
       damage,
       crit,
-      detail: crit ? `2d6=12 치명타! ${damage} 피해` : hit ? `2d6=${roll}+${mod} ≥ ${target} 명중 — ${damage} 피해` : `2d6=${roll}+${mod} < ${target} 빗나감`
+      detail: crit ? bi(`2d6=12 치명타! ${damage} 피해`, `2d6=12 — critical! ${damage} damage`) : hit ? bi(`2d6=${roll}+${mod} ≥ ${target} 명중 — ${damage} 피해`, `2d6=${roll}+${mod} ≥ ${target} — hit, ${damage} damage`) : bi(`2d6=${roll}+${mod} < ${target} 빗나감`, `2d6=${roll}+${mod} < ${target} — miss`)
     };
   }
 };
@@ -613,9 +712,9 @@ const RULE_SYSTEMS = {
    ============================================================ */
 const CLASSES = {
   fighter: {
-    name: "파이터",
+    name: { ko: "파이터", en: "Fighter" },
     icon: "⚔",
-    blurb: "정면 돌파. 단단한 갑옷과 정직한 검.",
+    blurb: { ko: "정면 돌파. 단단한 갑옷과 정직한 검.", en: "Head-on. Solid armor, an honest blade." },
     abilities: {
       STR: 16,
       DEX: 13,
@@ -627,16 +726,16 @@ const CLASSES = {
     maxHp: 12,
     ac: 16,
     weapon: {
-      name: "롱소드",
+      name: { ko: "롱소드", en: "Longsword" },
       die: 8,
       ability: "STR"
     },
     proficiencies: ["athletics", "intimidation", "perception"]
   },
   rogue: {
-    name: "로그",
+    name: { ko: "로그", en: "Rogue" },
     icon: "🗡",
-    blurb: "그림자와 혀. 싸움은 시작되기 전에 끝낸다.",
+    blurb: { ko: "그림자와 혀. 싸움은 시작되기 전에 끝낸다.", en: "Shadow and silver tongue. End the fight before it begins." },
     abilities: {
       STR: 10,
       DEX: 16,
@@ -648,16 +747,16 @@ const CLASSES = {
     maxHp: 9,
     ac: 14,
     weapon: {
-      name: "단검",
+      name: { ko: "단검", en: "Dagger" },
       die: 4,
       ability: "DEX"
     },
     proficiencies: ["stealth", "deception", "perception", "persuasion"]
   },
   wizard: {
-    name: "위저드",
+    name: { ko: "위저드", en: "Wizard" },
     icon: "✦",
-    blurb: "세계는 방정식이다. 풀 수 있다면 다시 쓸 수도 있다.",
+    blurb: { ko: "세계는 방정식이다. 풀 수 있다면 다시 쓸 수도 있다.", en: "The world is an equation. Solve it, and you can rewrite it." },
     abilities: {
       STR: 8,
       DEX: 13,
@@ -669,7 +768,7 @@ const CLASSES = {
     maxHp: 8,
     ac: 12,
     weapon: {
-      name: "파이어 볼트",
+      name: { ko: "파이어 볼트", en: "Fire Bolt" },
       die: 10,
       ability: "INT"
     },
@@ -677,27 +776,27 @@ const CLASSES = {
   }
 };
 const SKILL_NAMES = {
-  perception: "지각",
-  persuasion: "설득",
-  intimidation: "위협",
-  investigation: "조사",
-  athletics: "운동",
-  stealth: "은신",
-  deception: "기만",
-  arcana: "비전학",
-  history: "역사"
+  perception: { ko: "지각", en: "Perception" },
+  persuasion: { ko: "설득", en: "Persuasion" },
+  intimidation: { ko: "위협", en: "Intimidation" },
+  investigation: { ko: "조사", en: "Investigation" },
+  athletics: { ko: "운동", en: "Athletics" },
+  stealth: { ko: "은신", en: "Stealth" },
+  deception: { ko: "기만", en: "Deception" },
+  arcana: { ko: "비전학", en: "Arcana" },
+  history: { ko: "역사", en: "History" }
 };
 const ABILITY_NAMES = {
-  STR: "근력",
-  DEX: "민첩",
-  CON: "건강",
-  INT: "지능",
-  WIS: "지혜",
-  CHA: "매력"
+  STR: { ko: "근력", en: "STR" },
+  DEX: { ko: "민첩", en: "DEX" },
+  CON: { ko: "건강", en: "CON" },
+  INT: { ko: "지능", en: "INT" },
+  WIS: { ko: "지혜", en: "WIS" },
+  CHA: { ko: "매력", en: "CHA" }
 };
 const ENEMIES = {
   looter: {
-    name: "도굴꾼 '갈고리' 렌",
+    name: { ko: "도굴꾼 '갈고리' 렌", en: "'Hook' Ren, the Grave-robber" },
     abilities: {
       STR: 12,
       DEX: 14,
@@ -706,17 +805,17 @@ const ENEMIES = {
       WIS: 9,
       CHA: 11
     },
-    maxHp: 9,
+    maxHp: 16,
     ac: 12,
     weapon: {
-      name: "녹슨 갈고리칼",
+      name: { ko: "녹슨 갈고리칼", en: "Rusty Hook-knife" },
       die: 4,
       ability: "DEX"
     },
     proficiencies: []
   },
   smuggler: {
-    name: "검은 코트 '스컬리'",
+    name: { ko: "검은 코트 '스컬리'", en: "'Scully' the Black Coat" },
     abilities: {
       STR: 13,
       DEX: 15,
@@ -728,14 +827,14 @@ const ENEMIES = {
     maxHp: 11,
     ac: 13,
     weapon: {
-      name: "선장의 단검",
+      name: { ko: "선장의 단검", en: "Captain's Dagger" },
       die: 6,
       ability: "DEX"
     },
     proficiencies: []
   },
   falsemonk: {
-    name: "가짜 수도사 '회색 형제'",
+    name: { ko: "가짜 수도사 '회색 형제'", en: "the False Monk, 'Grey Brother'" },
     abilities: {
       STR: 14,
       DEX: 12,
@@ -747,50 +846,92 @@ const ENEMIES = {
     maxHp: 10,
     ac: 12,
     weapon: {
-      name: "철제 촛대",
+      name: { ko: "철제 촛대", en: "Iron Candlestick" },
       die: 6,
       ability: "STR"
     },
     proficiencies: []
   }
 };
+
+/* ---------- 전투 시제품(1장 도굴꾼) — 적 의도 예고 + 상황따라 갈리는 대응 ----------
+   dmg: [min, die] → min + d(die) - 1 만큼 피해 */
+const LOOTER_INTENTS = {
+  slash: {
+    icon: "\uD83D\uDDE1",
+    tele: { ko: "\uB155\uC2AC\uC740 \uCE7C\uC744 \uB0AE\uAC8C \uACB0\uD55C\uB2E4 \u2014 \uBE60\uB978 \uB2E4.", en: "Levels the rusty knife low — quick." },
+    dmg: [2, 3],
+    label: { ko: "\uBCA0\uAE30", en: "Slash" }
+  },
+  hook: {
+    icon: "\u2693",
+    tele: { ko: "\uAC08\uACE0\uB9AC\uB97C \uD06C\uAC8C \uCE58\uCF1C\uB4E0\uB2E4 \u2014 \uB9C9\uC9C0 \uBABB\uD558\uBA74 \uD06C\uAC8C \uB2E4\uCE5C\uB2E4.", en: "Rears the hook back high — block it or take a big hit." },
+    dmg: [6, 3],
+    label: { ko: "\uAC08\uACE0\uB9AC \uAC15\uD0C0", en: "Hook Smash" }
+  },
+  feint: {
+    icon: "\uD83C\uDF2B\uFE0F",
+    tele: { ko: "\uD55C \uBC1C \uBB3C\uB7EC\uB098 \uC228\uC744 \uACE0\uB978\uB2E4 \u2014 \uB0B4\uBC84\uB824\uB450\uBA74 \uD68C\uBCF5\uD55C\uB2E4.", en: "Steps back to catch his breath — leave him be and he recovers." },
+    dmg: [0, 0],
+    heal: [2, 3],
+    label: { ko: "\uC228 \uACE0\uB974\uAE30", en: "Catch Breath" }
+  }
+};
+function rollLooterIntent(hp, maxHp) {
+  const p2 = hp <= Math.ceil(maxHp / 2);
+  const r = d(100);
+  if (p2) return r <= 60 ? "hook" : r <= 88 ? "slash" : "feint";
+  return r <= 52 ? "slash" : r <= 82 ? "hook" : "feint";
+}
 const SCENE_TITLES = {
-  intro: "폭풍의 의뢰",
-  door: "등대 입구",
-  stairs: "기계실",
-  combat: "도굴꾼과 전투",
-  top: "등실",
-  ending: "1장 엔딩",
-  intro2: "다음 날 아침",
-  wharf: "부두 선술집",
-  warehouseA: "3번 창고(은밀)",
-  warehouseB: "3번 창고(정면)",
-  confront: "검은 코트와 대면",
-  combat2: "스컬리와 전투",
-  ending2: "2장 엔딩",
-  intro3: "침묵하는 수도원",
-  cloister: "회랑",
-  belltower: "종탑",
-  undercroft: "지하 저장고",
-  combat3: "가짜 수도사와 전투",
-  rescue: "수문과 딜레마",
-  ending3: "3장 엔딩"
+  intro: { ko: "폭풍의 의뢰", en: "The Storm's Charge" },
+  door: { ko: "등대 입구", en: "Lighthouse Door" },
+  stairs: { ko: "기계실", en: "The Mechanism Room" },
+  combat: { ko: "도굴꾼과 전투", en: "Fight with the Grave-robber" },
+  top: { ko: "등실", en: "The Lantern Room" },
+  ending: { ko: "1장 엔딩", en: "End of Ch.1" },
+  intro2: { ko: "다음 날 아침", en: "The Next Morning" },
+  wharf: { ko: "부두 선술집", en: "The Wharf Tavern" },
+  warehouseA: { ko: "3번 창고(은밀)", en: "Warehouse 3 (quiet)" },
+  warehouseB: { ko: "3번 창고(정면)", en: "Warehouse 3 (front)" },
+  confront: { ko: "검은 코트와 대면", en: "Facing the Black Coat" },
+  combat2: { ko: "스컬리와 전투", en: "Fight with Scully" },
+  ending2: { ko: "2장 엔딩", en: "End of Ch.2" },
+  intro3: { ko: "침묵하는 수도원", en: "The Silent Monastery" },
+  cloister: { ko: "회랑", en: "The Cloister" },
+  belltower: { ko: "종탑", en: "The Bell Tower" },
+  undercroft: { ko: "지하 저장고", en: "The Undercroft" },
+  combat3: { ko: "가짜 수도사와 전투", en: "Fight with the False Monk" },
+  rescue: { ko: "수문과 딜레마", en: "The Sluice and the Choice" },
+  ending3: { ko: "3장 엔딩", en: "End of Ch.3" }
 };
 const SCENES = {
   /* ---------- 제1장 잿빛 등대 ---------- */
   intro: {
     ch: 1,
-    text: `당신은 폭풍을 피해 항구 마을 소금여울에 들어온 떠돌이 모험가다.\n\n그런데 마을의 등대가 사흘째 꺼져 있다. 등대지기 노인은 응답이 없고, 폭풍은 그칠 기미가 없다.\n\n촌장이 낡은 열쇠를 쥐여 준다. "{이름}, 부탁할 사람이 자네뿐이야. 오늘 밤 안에 불을 올리지 못하면, 새벽에 들어오는 어선 셋이 암초로 직행하네."\n\n빗속 절벽 길의 끝 — 잿빛 등대가 죽은 이빨처럼 서 있다.`,
+    text: {
+      ko: `당신은 폭풍을 피해 항구 마을 소금여울에 들어온 떠돌이 모험가다.\n\n그런데 마을의 등대가 사흘째 꺼져 있다. 등대지기 노인은 응답이 없고, 폭풍은 그칠 기미가 없다.\n\n촌장이 낡은 열쇠를 쥐여 준다. "{이름}, 부탁할 사람이 자네뿐이야. 오늘 밤 안에 불을 올리지 못하면, 새벽에 들어오는 어선 셋이 암초로 직행하네."\n\n빗속 절벽 길의 끝 — 잿빛 등대가 죽은 이빨처럼 서 있다.`,
+      en: `You're a wandering adventurer who slipped into the harbor town of Saltmarsh to wait out the storm.\n\nBut the town's lighthouse has stood dark for three days. The old keeper doesn't answer, and the storm won't break.\n\nThe village chief presses a worn key into your hand. "{name}, you're the only one left to ask. If the light isn't burning by dawn, three fishing boats will sail straight onto the rocks."\n\nAt the end of the rain-lashed cliff path, the ashen lighthouse stands like a dead tooth.`
+    },
     choices: [{
-      label: "등대 문을 연다",
+      label: {
+        ko: "등대 문을 연다",
+        en: "Open the lighthouse door"
+      },
       goto: "door"
     }]
   },
   door: {
     ch: 1,
-    text: `문은 열려 있었다. 안은 칠흑. 소금 냄새에 섞인 — 기름 냄새.\n\n바닥이 번들거린다.`,
+    text: {
+      ko: `문은 열려 있었다. 안은 칠흑. 소금 냄새에 섞인 — 기름 냄새.\n\n바닥이 번들거린다.`,
+      en: `The door was already open. Inside, pitch black. Under the smell of salt — oil.\n\nThe floor glistens.`
+    },
     choices: [{
-      label: "어둠 속을 살핀다",
+      label: {
+        ko: "어둠 속을 살핀다",
+        en: "Search the darkness"
+      },
       check: {
         ability: "WIS",
         skill: "perception",
@@ -798,16 +939,26 @@ const SCENES = {
         label: "지각"
       },
       success: {
-        text: "계단 둘째 단, 팽팽한 철사. 끝에는 기름통을 쏟는 장치.\n\n누군가 손님을 기다렸다. 철사를 넘는다.",
+        text: {
+          ko: "계단 둘째 단, 팽팽한 철사. 끝에는 기름통을 쏟는 장치.\n\n누군가 손님을 기다렸다. 철사를 넘는다.",
+          en: "On the second step, a taut wire — rigged to tip a barrel of oil.\n\nSomeone was expecting a guest. You step over the wire."
+        },
+        flag: "sawTrap",
         goto: "stairs"
       },
       fail: {
-        text: "어둠뿐이다. 계단을 딛는 순간 — 철컥.\n\n기름이 쏟아지고, 미끄러진다.",
+        text: {
+          ko: "어둠뿐이다. 계단을 딛는 순간 — 철컥.\n\n기름이 쏟아지고, 미끄러진다.",
+          en: "Only darkness. The instant your foot finds the stair — click.\n\nOil spills, and you go down."
+        },
         damage: [1, 4],
         goto: "stairs"
       }
     }, {
-      label: "[운동] 함정이 있든 말든, 어둠을 가로질러 내달린다",
+      label: {
+        ko: "[운동] 함정이 있든 말든, 어둠을 가로질러 내달린다",
+        en: "[Athletics] Trap or not, sprint straight through the dark"
+      },
       check: {
         ability: "STR",
         skill: "athletics",
@@ -815,18 +966,27 @@ const SCENES = {
         label: "운동"
       },
       success: {
-        text: `발끝이 철사를 스치기 직전 — 도약. 장치가 헛되이 철컥거리는 소리를 뒤로 하고 계단에 올라선다.`,
+        text: {
+          ko: `발끝이 철사를 스치기 직전 — 도약. 장치가 헛되이 철컥거리는 소리를 뒤로 하고 계단에 올라선다.`,
+          en: `A heartbeat before your toe grazes the wire — you leap. The trap clacks uselessly behind you as you land on the stairs.`
+        },
         goto: "stairs"
       },
       fail: {
-        text: `정강이에 철사가 걸린다. 기름통이 정통으로 쏟아지고, 계단 아래까지 굴렀다.`,
+        text: {
+          ko: `정강이에 철사가 걸린다. 기름통이 정통으로 쏟아지고, 계단 아래까지 굴렀다.`,
+          en: `The wire catches your shin. The barrel dumps oil square onto you, and you roll to the foot of the stairs.`
+        },
         damage: [2, 4],
         goto: "stairs"
       }
     }, {
       classOnly: "wizard",
       credit: "제안: 태희",
-      label: "창문으로 순간이동한다 — 저 문은 함정일 것이다",
+      label: {
+        ko: "창문으로 순간이동한다 — 저 문은 함정일 것이다",
+        en: "Blink through the window — that door must be a trap"
+      },
       check: {
         ability: "INT",
         skill: "arcana",
@@ -834,11 +994,17 @@ const SCENES = {
         label: "비전학"
       },
       success: {
-        text: `짧은 주문. 세계의 문법에서 '벽'이라는 단어가 잠시 지워진다.\n\n안개처럼 흩어졌다가 — 창틀 안쪽에서 다시 조립된다. 기름 웅덩이도, 철사도, 발자국 하나 없이 지나쳤다.`,
+        text: {
+          ko: `짧은 주문. 세계의 문법에서 '벽'이라는 단어가 잠시 지워진다.\n\n안개처럼 흩어졌다가 — 창틀 안쪽에서 다시 조립된다. 기름 웅덩이도, 철사도, 발자국 하나 없이 지나쳤다.`,
+          en: `A short incantation. For a moment the word "wall" is erased from the world's grammar.\n\nYou scatter like mist — and reassemble inside the window frame. Past the oil, past the wire, without leaving a single footprint.`
+        },
         goto: "stairs"
       },
       fail: {
-        text: `주문이 혀끝에서 미끄러진다. 몸의 절반만 창을 통과했다 —\n\n나머지 절반이 창틀에 부딪히고, 젖은 바닥에 어깨부터 떨어진다. 이 등대가 창문으로 손님을 받은 건 처음일 것이다.`,
+        text: {
+          ko: `주문이 혀끝에서 미끄러진다. 몸의 절반만 창을 통과했다 —\n\n나머지 절반이 창틀에 부딪히고, 젖은 바닥에 어깨부터 떨어진다. 이 등대가 창문으로 손님을 받은 건 처음일 것이다.`,
+          en: `The spell slips off your tongue. Only half of you makes it through the window —\n\nthe other half slams into the frame, and you drop shoulder-first onto the wet floor. Surely the first guest this lighthouse has ever taken through a window.`
+        },
         damage: [1, 4],
         goto: "stairs"
       }
@@ -846,10 +1012,16 @@ const SCENES = {
   },
   stairs: {
     ch: 1,
-    text: `나선 계단 중간층, 등불이 새어 나온다.\n\n비쩍 마른 사내가 등대의 황동 렌즈를 자루에 쑤셔 넣고 있다. 허리춤의 갈고리칼.\n\n"…재수도 없지. 못 본 걸로 하고 내려가. 응?"`,
+    text: {
+      ko: `나선 계단 중간층, 등불이 새어 나온다.\n\n비쩍 마른 사내가 등대의 황동 렌즈를 자루에 쑤셔 넣고 있다. 허리춤의 갈고리칼.\n\n"…재수도 없지. 못 본 걸로 하고 내려가. 응?"`,
+      en: `Halfway up the spiral stairs, lamplight leaks out.\n\nA gaunt man is stuffing the lighthouse's brass lens into a sack. A hook-knife hangs at his belt.\n\n"…just my luck. Pretend you never saw this and walk back down. Yeah?"`
+    },
     choices: [{
       loreReq: "ledger",
-      label: `[기억] "네 이름, 부두 밀수 장부에서 봤다. 렌즈 두고 사라져."`,
+      label: {
+        ko: `[기억] "네 이름, 부두 밀수 장부에서 봤다. 렌즈 두고 사라져."`,
+        en: `[Memory] "I saw your name in the smuggling ledger at the docks. Drop the lens and vanish."`
+      },
       check: {
         ability: "CHA",
         skill: "persuasion",
@@ -857,16 +1029,25 @@ const SCENES = {
         label: "설득"
       },
       success: {
-        text: `사내의 얼굴이 하얗게 질린다. "…그걸 어떻게." 자루를 팽개치고 빗속으로 달아난다.`,
+        text: {
+          ko: `사내의 얼굴이 하얗게 질린다. "…그걸 어떻게." 자루를 팽개치고 빗속으로 달아난다.`,
+          en: `The man goes white. "…how do you know that." He flings the sack down and bolts into the rain.`
+        },
         flag: "peaceful",
         goto: "top"
       },
       fail: {
-        text: `"허풍이군." 갈고리칼이 호를 그린다.`,
+        text: {
+          ko: `"허풍이군." 갈고리칼이 호를 그린다.`,
+          en: `"Bluffing." The hook-knife carves an arc.`
+        },
         goto: "combat"
       }
     }, {
-      label: `[설득] "렌즈를 두고 가면, 나도 못 본 걸로 하지."`,
+      label: {
+        ko: `[설득] "렌즈를 두고 가면, 나도 못 본 걸로 하지."`,
+        en: `[Persuade] "Leave the lens, and I never saw a thing."`
+      },
       check: {
         ability: "CHA",
         skill: "persuasion",
@@ -874,16 +1055,25 @@ const SCENES = {
         label: "설득"
       },
       success: {
-        text: `사내의 눈이 자루와 출구 사이를 오간다. 침을 뱉고, 자루를 내려놓는다.\n\n"노인은 내가 안 그랬어. 왔을 땐 이미 쓰러져 있었고, 등불 기관은 박살 나 있었다고."\n\n사내는 빗속으로 사라진다.`,
+        text: {
+          ko: `사내의 눈이 자루와 출구 사이를 오간다. 침을 뱉고, 자루를 내려놓는다.\n\n"노인은 내가 안 그랬어. 왔을 땐 이미 쓰러져 있었고, 등불 기관은 박살 나 있었다고."\n\n사내는 빗속으로 사라진다.`,
+          en: `His eyes dart between the sack and the exit. He spits, and sets the sack down.\n\n"I didn't touch the old man. He was already down when I got here, and the light's mechanism was already smashed."\n\nThe man vanishes into the rain.`
+        },
         flag: "peaceful",
         goto: "top"
       },
       fail: {
-        text: `"말로? 늦었어."\n\n갈고리칼이 호를 그린다.`,
+        text: {
+          ko: `"말로? 늦었어."\n\n갈고리칼이 호를 그린다.`,
+          en: `"Talk? Too late for that."\n\nThe hook-knife carves an arc.`
+        },
         goto: "combat"
       }
     }, {
-      label: "[전투] 무기를 뽑는다",
+      label: {
+        ko: "[전투] 무기를 뽑는다",
+        en: "[Fight] Draw your weapon"
+      },
       goto: "combat"
     }]
   },
@@ -892,19 +1082,31 @@ const SCENES = {
     combat: true,
     enemy: "looter",
     victory: {
-      text: `사내가 무릎을 꿇는다.\n\n"졌다… 노인은 내 짓이 아냐. 기관은 이미 박살 나 있었어."\n\n절뚝이며 빗속으로 사라진다.`,
+      text: {
+        ko: `사내가 무릎을 꿇는다.\n\n"졌다… 노인은 내 짓이 아냐. 기관은 이미 박살 나 있었어."\n\n절뚝이며 빗속으로 사라진다.`,
+        en: `The man drops to his knees.\n\n"I yield… the old man wasn't my doing. The mechanism was already wrecked."\n\nHe limps off into the rain.`
+      },
       goto: "top"
     },
     defeat: {
-      text: `시야가 어두워진다…\n\n눈을 뜨니 새벽. 등대는 끝내 켜지지 못했다.`,
+      text: {
+        ko: `시야가 어두워진다…\n\n눈을 뜨니 새벽. 등대는 끝내 켜지지 못했다.`,
+        en: `Your vision darkens…\n\nYou wake at dawn. The lighthouse was never lit.`
+      },
       goto: "gameover"
     }
   },
   top: {
     ch: 1,
-    text: `꼭대기 등실. 등대지기 노인이 쓰러져 있다 — 숨은 붙어 있다. 손에는 스패너. 습격이 아니라 수리 중 사고다.\n\n기관의 톱니 하나가 축에서 빠져 회전부에 박혀 있다. 어선들에게 남은 시간이 없다.`,
+    text: {
+      ko: `꼭대기 등실. 등대지기 노인이 쓰러져 있다 — 숨은 붙어 있다. 손에는 스패너. 습격이 아니라 수리 중 사고다.\n\n기관의 톱니 하나가 축에서 빠져 회전부에 박혀 있다. 어선들에게 남은 시간이 없다.`,
+      en: `The lantern room at the top. The old keeper lies collapsed — still breathing, a wrench in his hand. Not an attack; an accident mid-repair.\n\nOne gear has slipped off its axle and jammed the rotor. The fishing boats are almost out of time.`
+    },
     choices: [{
-      label: "기관을 분석해 톱니를 복원한다",
+      label: {
+        ko: "기관을 분석해 톱니를 복원한다",
+        en: "Analyze the mechanism and refit the gear"
+      },
       check: {
         ability: "INT",
         skill: "investigation",
@@ -912,17 +1114,26 @@ const SCENES = {
         label: "조사"
       },
       success: {
-        text: `톱니의 마모 방향을 읽는다. 빠진 게 아니라 — 빼낸 것이다.\n\n역순으로 끼우자 기관이 숨을 쉬듯 돈다. 불이 켜진다. 완벽하게.`,
+        text: {
+          ko: `톱니의 마모 방향을 읽는다. 빠진 게 아니라 — 빼낸 것이다.\n\n역순으로 끼우자 기관이 숨을 쉬듯 돈다. 불이 켜진다. 완벽하게.`,
+          en: `You read the wear on the gear. It didn't slip — it was pulled out.\n\nRefit in reverse, and the mechanism turns like a breath. The light comes on. Perfectly.`
+        },
         flag: "fixed",
         goto: "ending"
       },
       fail: {
-        text: `복잡하다. 억지로 끼우자 기관이 비명을 지르며 돈다.\n\n불이 켜진다. 덜덜 떨면서.`,
+        text: {
+          ko: `복잡하다. 억지로 끼우자 기관이 비명을 지르며 돈다.\n\n불이 켜진다. 덜덜 떨면서.`,
+          en: `Too intricate. Forced back in, the mechanism turns with a screech.\n\nThe light comes on — shuddering.`
+        },
         flag: "jury",
         goto: "ending"
       }
     }, {
-      label: "[운동] 회전부를 맨손으로 붙잡아 멈추고 톱니를 뽑는다",
+      label: {
+        ko: "[운동] 회전부를 맨손으로 붙잡아 멈추고 톱니를 뽑는다",
+        en: "[Athletics] Grip the rotor bare-handed to stop it and pull the gear"
+      },
       check: {
         ability: "STR",
         skill: "athletics",
@@ -930,13 +1141,19 @@ const SCENES = {
         label: "운동"
       },
       success: {
-        text: `톱니가 손바닥을 긁으며 빠져나온다. 피가 맺히지만 — 기관은 매끄럽게 돈다.\n\n불이 켜진다. 완벽하게.`,
+        text: {
+          ko: `톱니가 손바닥을 긁으며 빠져나온다. 피가 맺히지만 — 기관은 매끄럽게 돈다.\n\n불이 켜진다. 완벽하게.`,
+          en: `The gear scrapes free across your palm. Blood wells up — but the mechanism runs smooth.\n\nThe light comes on. Perfectly.`
+        },
         damage: [1, 2],
         flag: "fixed",
         goto: "ending"
       },
       fail: {
-        text: `기관이 손을 튕겨낸다. 하는 수 없이 톱니를 억지로 박아 넣었다.\n\n불이 켜진다. 덜덜 떨면서.`,
+        text: {
+          ko: `기관이 손을 튕겨낸다. 하는 수 없이 톱니를 억지로 박아 넣었다.\n\n불이 켜진다. 덜덜 떨면서.`,
+          en: `The mechanism throws your hand off. With no choice, you jam the gear back in.\n\nThe light comes on — shuddering.`
+        },
         damage: [1, 4],
         flag: "jury",
         goto: "ending"
@@ -950,17 +1167,41 @@ const SCENES = {
   /* ---------- 제2장 검은 코트 ---------- */
   intro2: {
     ch: 2,
-    text: `다음 날 아침. 등대지기 노인이 깨어났다.\n\n"뒤에서 맞았네. 검은 코트… 항구 쪽으로 달아났지."\n\n등대를 끈 자는 사람이다. 그리고 아직 마을에 있다.`,
+    text: {
+      ko: `다음 날 아침. 등대지기 노인이 깨어났다.\n\n"뒤에서 맞았네. 검은 코트… 항구 쪽으로 달아났지."\n\n등대를 끈 자는 사람이다. 그리고 아직 마을에 있다.`,
+      en: `The next morning. The old keeper has come to.\n\n"Struck from behind. A black coat… ran off toward the harbor."\n\nWhoever put out the light was a person. And they're still in town.`
+    },
     choices: [{
-      label: "부두로 간다",
+      label: {
+        ko: "부두로 간다",
+        en: "Head to the docks"
+      },
       goto: "wharf"
     }]
   },
   wharf: {
     ch: 2,
-    text: `부두 선술집 '닻과 못'. 뱃사람들의 눈이 일제히 낯선 얼굴에 꽂힌다.\n\n구석 자리에서 검은 코트 자락이 스치고 — 사라졌다. 주인장은 입이 무겁기로 유명하다.`,
+    text: {
+      ko: `부두 선술집 '닻과 못'. 뱃사람들의 눈이 일제히 낯선 얼굴에 꽂힌다.\n\n구석 자리에서 검은 코트 자락이 스치고 — 사라졌다. 주인장은 입이 무겁기로 유명하다.`,
+      en: `The dockside tavern "Anchor & Nail." Every sailor's eyes lock onto the unfamiliar face at once.\n\nIn a corner, the hem of a black coat brushes past — and is gone. The owner is famous for keeping his mouth shut.`
+    },
     choices: [{
-      label: `[기만] "세관입니다. 어젯밤 입항 기록 좀."`,
+      echoReq: "peaceful",
+      echo: {
+        ko: "1장에서 렌을 살려 보냈다",
+        en: "You spared Ren in Ch.1"
+      },
+      label: {
+        ko: `[인연] 구석에서 당신을 알아본 렌에게 다가간다`,
+        en: `[Bond] Approach Ren, who recognizes you from the corner`
+      },
+      flagDirect: "ren_tip",
+      goto: "wharfRen"
+    }, {
+      label: {
+        ko: `[기만] "세관입니다. 어젯밤 입항 기록 좀."`,
+        en: `[Deceive] "Customs. Show me last night's arrival log."`
+      },
       check: {
         ability: "CHA",
         skill: "deception",
@@ -968,15 +1209,24 @@ const SCENES = {
         label: "기만"
       },
       success: {
-        text: `주인장이 잔을 닦으며 턱짓한다.\n\n"물어본 적 없는 걸로 하지. — 3번 창고."`,
+        text: {
+          ko: `주인장이 잔을 닦으며 턱짓한다.\n\n"물어본 적 없는 걸로 하지. — 3번 창고."`,
+          en: `The owner wipes a glass and jerks his chin.\n\n"You never asked me. — Warehouse 3."`
+        },
         goto: "warehouseA"
       },
       fail: {
-        text: `"세관? 세관은 외상값부터 갚고 와."\n\n웃음거리가 됐다. 발로 뛰어 흔적을 쫓는다 — 발자국이 3번 창고 앞에서 끊긴다. 안쪽은 이미 조용하다. 눈치챘다.`,
+        text: {
+          ko: `"세관? 세관은 외상값부터 갚고 와."\n\n웃음거리가 됐다. 발로 뛰어 흔적을 쫓는다 — 발자국이 3번 창고 앞에서 끊긴다. 안쪽은 이미 조용하다. 눈치챘다.`,
+          en: `"Customs? Customs can pay its tab first."\n\nYou're the joke of the room. You chase the trail on foot — the footprints stop at Warehouse 3. Inside is already quiet. They know you're coming.`
+        },
         goto: "warehouseB"
       }
     }, {
-      label: "[지각] 조용히 자리 잡고 살핀다",
+      label: {
+        ko: "[지각] 조용히 자리 잡고 살핀다",
+        en: "[Perceive] Take a quiet seat and watch"
+      },
       check: {
         ability: "WIS",
         skill: "perception",
@@ -984,20 +1234,46 @@ const SCENES = {
         label: "지각"
       },
       success: {
-        text: `검은 코트가 뒷문으로 빠지며 주인장에게 동전을 던진다. 허리춤에 열쇠 — 3번 창고.\n\n조용히 따라붙는다.`,
+        text: {
+          ko: `검은 코트가 뒷문으로 빠지며 주인장에게 동전을 던진다. 허리춤에 열쇠 — 3번 창고.\n\n조용히 따라붙는다.`,
+          en: `The black coat slips out the back, flipping the owner a coin. A key at the belt — Warehouse 3.\n\nYou follow, quietly.`
+        },
         goto: "warehouseA"
       },
       fail: {
-        text: `놓쳤다. 부두를 한 바퀴 돌아 발자국을 찾는다 — 3번 창고 앞에서 끊긴다.\n\n안쪽은 이미 조용하다. 눈치챘다.`,
+        text: {
+          ko: `놓쳤다. 부두를 한 바퀴 돌아 발자국을 찾는다 — 3번 창고 앞에서 끊긴다.\n\n안쪽은 이미 조용하다. 눈치챘다.`,
+          en: `You lose them. Circling the docks, you pick up footprints — they stop at Warehouse 3.\n\nInside is already quiet. They know you're coming.`
+        },
         goto: "warehouseB"
       }
     }]
   },
+  wharfRen: {
+    ch: 2,
+    text: {
+      ko: `렌이 잔을 비우며 씩 웃는다. "빚은 갚는 주의라서."\n\n목소리를 낮춘다. "검은 코트 — 스컬리. 3번 창고에 처박혀 있어. 목에 빚이 걸린 놈이라, 관헌 얘기만 꺼내도 오줌을 지릴 거다."\n\n렌은 동전 한 닢을 탁자에 튕겨 놓고 빗속으로 사라진다. 빚은, 이렇게 갚였다.`,
+      en: `Ren drains his cup and grins. "I pay my debts."\n\nHe drops his voice. "The black coat — Scully. Holed up in Warehouse 3. He's in debt up to his neck; just mention the authorities and he'll wet himself."\n\nRen flicks a coin onto the table and vanishes into the rain. A debt, repaid.`
+    },
+    choices: [{
+      label: {
+        ko: "렌이 일러준 3번 창고로 향한다",
+        en: "Head to Warehouse 3, as Ren told you"
+      },
+      goto: "warehouseA"
+    }]
+  },
   warehouseA: {
     ch: 2,
-    text: `3번 창고. 문틈으로 등불.\n\n안에서 낮은 목소리 — "등대는 처리했고, 오늘 밤 배가 들어온다."`,
+    text: {
+      ko: `3번 창고. 문틈으로 등불.\n\n안에서 낮은 목소리 — "등대는 처리했고, 오늘 밤 배가 들어온다."`,
+      en: `Warehouse 3. Lamplight through the gap in the door.\n\nA low voice inside — "The lighthouse is dealt with, and the ship comes in tonight."`
+    },
     choices: [{
-      label: "[은신] 들키지 않고 증거를 챙긴다",
+      label: {
+        ko: "[은신] 들키지 않고 증거를 챙긴다",
+        en: "[Stealth] Take the evidence unseen"
+      },
       check: {
         ability: "DEX",
         skill: "stealth",
@@ -1005,24 +1281,39 @@ const SCENES = {
         label: "은신"
       },
       success: {
-        text: `그림자 사이로 스며든다. 탁자 위 — 밀수 장부.\n\n발주자 서명란에 글자 하나. 'S'.\n\n장부를 품에 넣는 순간, 등불이 이쪽을 향한다.`,
+        text: {
+          ko: `그림자 사이로 스며든다. 탁자 위 — 밀수 장부.\n\n발주자 서명란에 글자 하나. 'S'.\n\n장부를 품에 넣는 순간, 등불이 이쪽을 향한다.`,
+          en: `You slip between the shadows. On the table — a smuggling ledger.\n\nIn the client's signature line, a single letter. "S."\n\nThe instant you tuck it away, a lamp swings toward you.`
+        },
         flag: "ledger",
         goto: "confront"
       },
       fail: {
-        text: `발끝에 빈 술병이 걸린다 — 쨍그랑.\n\n"누구냐!"`,
+        text: {
+          ko: `발끝에 빈 술병이 걸린다 — 쨍그랑.\n\n"누구냐!"`,
+          en: `Your toe catches an empty bottle — crash.\n\n"Who's there!"`
+        },
         goto: "combat2"
       }
     }, {
-      label: "[전투] 문을 박차고 들어간다",
+      label: {
+        ko: "[전투] 문을 박차고 들어간다",
+        en: "[Fight] Kick the door in"
+      },
       goto: "combat2"
     }]
   },
   warehouseB: {
     ch: 2,
-    text: `3번 창고. 문이 반쯤 열려 있다 — 함정 냄새.\n\n안에서 숨소리가 멎어 있다.`,
+    text: {
+      ko: `3번 창고. 문이 반쯤 열려 있다 — 함정 냄새.\n\n안에서 숨소리가 멎어 있다.`,
+      en: `Warehouse 3. The door hangs half open — it reeks of a trap.\n\nInside, the breathing has gone still.`
+    },
     choices: [{
-      label: "[운동] 선수를 쳐서 들이친다",
+      label: {
+        ko: "[운동] 선수를 쳐서 들이친다",
+        en: "[Athletics] Strike first and charge in"
+      },
       check: {
         ability: "STR",
         skill: "athletics",
@@ -1030,17 +1321,26 @@ const SCENES = {
         label: "운동"
       },
       success: {
-        text: `문을 어깨로 부수며 굴러 들어간다.\n\n검은 코트가 칼을 뽑기 전에 멱살을 잡아 벽에 박았다.`,
+        text: {
+          ko: `문을 어깨로 부수며 굴러 들어간다.\n\n검은 코트가 칼을 뽑기 전에 멱살을 잡아 벽에 박았다.`,
+          en: `You shoulder the door open and roll inside.\n\nBefore the black coat can draw, you catch his collar and pin him to the wall.`
+        },
         flag: "grip",
         goto: "confront"
       },
       fail: {
-        text: `어둠 속에서 각목이 날아든다.\n\n별이 보인다.`,
+        text: {
+          ko: `어둠 속에서 각목이 날아든다.\n\n별이 보인다.`,
+          en: `A club flies out of the dark.\n\nYou see stars.`
+        },
         damage: [1, 4],
         goto: "combat2"
       }
     }, {
-      label: "[지각] 어둠 속 매복의 숨소리를 먼저 읽는다",
+      label: {
+        ko: "[지각] 어둠 속 매복의 숨소리를 먼저 읽는다",
+        en: "[Perceive] Read the ambusher's breathing in the dark first"
+      },
       check: {
         ability: "WIS",
         skill: "perception",
@@ -1048,12 +1348,18 @@ const SCENES = {
         label: "지각"
       },
       success: {
-        text: `문 안쪽 왼편, 억눌린 숨소리. 각목의 궤적이 그려지기도 전에 — 손목을 꺾어 제압했다.`,
+        text: {
+          ko: `문 안쪽 왼편, 억눌린 숨소리. 각목의 궤적이 그려지기도 전에 — 손목을 꺾어 제압했다.`,
+          en: `Just inside, to the left: a stifled breath. Before the club can even begin its swing — you twist the wrist and pin him.`
+        },
         flag: "grip",
         goto: "confront"
       },
       fail: {
-        text: `숨소리를 놓쳤다. 각목이 어깨를 강타한다.`,
+        text: {
+          ko: `숨소리를 놓쳤다. 각목이 어깨를 강타한다.`,
+          en: `You miss the breath. The club cracks across your shoulder.`
+        },
         damage: [1, 4],
         goto: "combat2"
       }
@@ -1061,9 +1367,46 @@ const SCENES = {
   },
   confront: {
     ch: 2,
-    text: `검은 코트의 사내 — 스컬리. 궁지에 몰린 눈.\n\n"기다려. 난 심부름꾼이야. 등대를 끄라는 의뢰, 선금 절반, 서명은 S. 그게 전부야."`,
+    text: {
+      ko: `검은 코트의 사내 — 스컬리. 궁지에 몰린 눈.\n\n"기다려. 난 심부름꾼이야. 등대를 끄라는 의뢰, 선금 절반, 서명은 S. 그게 전부야."`,
+      en: `The man in the black coat — Scully. Cornered eyes.\n\n"Wait — I'm just the errand boy. A contract to kill the light, half paid up front, signed 'S.' That's everything I know."`
+    },
     choices: [{
-      label: `[설득] "전부 말하면 관헌엔 이름을 빼주지."`,
+      echoReq: "ren_tip",
+      echo: {
+        ko: "렌이 일러준 스컬리의 빚",
+        en: "Scully's debt, from Ren's tip"
+      },
+      label: {
+        ko: `[정보] "네 빚, 스컬리. 렌한테 다 들었다 — 불면 이름은 빼주지."`,
+        en: `[Info] "Your debt, Scully. Ren told me all of it — talk, and I keep your name out of it."`
+      },
+      check: {
+        ability: "CHA",
+        skill: "persuasion",
+        dc: 9,
+        label: "설득"
+      },
+      success: {
+        text: {
+          ko: `스컬리의 얼굴이 무너진다. "…렌, 그 자식." 품에서 편지 뭉치를 던진다.\n\n"발신지는 잿돌 수도원. 서명은 S. 그거면 됐지?" 어깨를 늘어뜨린 채 사라졌다.`,
+          en: `Scully's face crumbles. "…Ren, that bastard." He throws down a bundle of letters.\n\n"Sent from Ashstone Monastery. Signed 'S.' Enough for you?" He slinks off, shoulders sagging.`
+        },
+        flag: "peaceful2",
+        goto: "ending2"
+      },
+      fail: {
+        text: {
+          ko: `"렌? …그 배신자 이름 함부로 놀리지 마." 칼이 번뜩인다.`,
+          en: `"Ren? …don't you dare throw that traitor's name at me." A blade flashes.`
+        },
+        goto: "combat2"
+      }
+    }, {
+      label: {
+        ko: `[설득] "전부 말하면 관헌엔 이름을 빼주지."`,
+        en: `[Persuade] "Tell me everything, and I'll keep your name from the law."`
+      },
       check: {
         ability: "CHA",
         skill: "persuasion",
@@ -1071,16 +1414,25 @@ const SCENES = {
         label: "설득"
       },
       success: {
-        text: `스컬리가 품에서 편지 뭉치를 꺼내 던진다.\n\n"발신지는 내륙이야. — 잿돌 수도원."\n\n사내는 어둠 속으로 사라졌다.`,
+        text: {
+          ko: `스컬리가 품에서 편지 뭉치를 꺼내 던진다.\n\n"발신지는 내륙이야. — 잿돌 수도원."\n\n사내는 어둠 속으로 사라졌다.`,
+          en: `Scully draws a bundle of letters from his coat and tosses it over.\n\n"It came from inland. — Ashstone Monastery."\n\nThe man melts into the dark.`
+        },
         flag: "peaceful2",
         goto: "ending2"
       },
       fail: {
-        text: `"…미안하지만, 입이 가벼우면 오래 못 살아."\n\n칼이 번뜩인다.`,
+        text: {
+          ko: `"…미안하지만, 입이 가벼우면 오래 못 살아."\n\n칼이 번뜩인다.`,
+          en: `"…sorry, but loose lips don't live long."\n\nA blade flashes.`
+        },
         goto: "combat2"
       }
     }, {
-      label: "[전투] 묶어서 관헌에 넘긴다",
+      label: {
+        ko: "[전투] 묶어서 관헌에 넘긴다",
+        en: "[Fight] Subdue him and hand him to the law"
+      },
       goto: "combat2"
     }]
   },
@@ -1089,11 +1441,17 @@ const SCENES = {
     combat: true,
     enemy: "smuggler",
     victory: {
-      text: `스컬리가 벽에 기대 미끄러진다.\n\n"…돈을 받았을 뿐이야. 등대를 꺼라, 배가 들어온다 — 그게 다야.\n\n발주한 놈은 편지로만 왔어. 서명은 S. 발신지는 잿돌 수도원."`,
+      text: {
+        ko: `스컬리가 벽에 기대 미끄러진다.\n\n"…돈을 받았을 뿐이야. 등대를 꺼라, 배가 들어온다 — 그게 다야.\n\n발주한 놈은 편지로만 왔어. 서명은 S. 발신지는 잿돌 수도원."`,
+        en: `Scully slides down the wall.\n\n"…I just took the money. Kill the light, a ship comes in — that's all.\n\nThe client only ever came by letter. Signed 'S.' Sent from Ashstone Monastery."`
+      },
       goto: "ending2"
     },
     defeat: {
-      text: `차가운 창고 바닥…\n\n눈을 뜨니 스컬리도, 장부도 사라졌다. 단서가 끊겼다.`,
+      text: {
+        ko: `차가운 창고 바닥…\n\n눈을 뜨니 스컬리도, 장부도 사라졌다. 단서가 끊겼다.`,
+        en: `The cold warehouse floor…\n\nYou wake to find Scully gone, the ledger gone. The trail is dead.`
+      },
       goto: "gameover"
     }
   },
@@ -1104,17 +1462,29 @@ const SCENES = {
   /* ---------- 제3장 사라진 종소리 ---------- */
   intro3: {
     ch: 3,
-    text: `이틀을 걸어 잿돌 수도원에 닿았다. 정오 — 종이 울려야 할 시간인데, 침묵뿐이다.\n\n산 아래 주막의 노파가 말했었다. "종이 멈춘 뒤로, 그 길을 지난 여행자들이 돌아오지 않아."`,
+    text: {
+      ko: `이틀을 걸어 잿돌 수도원에 닿았다. 정오 — 종이 울려야 할 시간인데, 침묵뿐이다.\n\n산 아래 주막의 노파가 말했었다. "종이 멈춘 뒤로, 그 길을 지난 여행자들이 돌아오지 않아."`,
+      en: `Two days' walk brought you to the Ashstone Monastery. Noon — the hour the bell should ring. Silence.\n\nThe old woman at the inn below the mountain had said, "Since the bell stopped, travelers who take that road don't come back."`
+    },
     choices: [{
-      label: "수도원 문을 지나 회랑으로",
+      label: {
+        ko: "수도원 문을 지나 회랑으로",
+        en: "Pass through the monastery gate into the cloister"
+      },
       goto: "cloister"
     }]
   },
   cloister: {
     ch: 3,
-    text: `회랑은 비어 있다. 기도 시간도 아닌데 수도사가 한 명도 없다.\n\n바닥의 촛농 자국, 흐트러진 발자국들.`,
+    text: {
+      ko: `회랑은 비어 있다. 기도 시간도 아닌데 수도사가 한 명도 없다.\n\n바닥의 촛농 자국, 흐트러진 발자국들.`,
+      en: `The cloister is empty. Not even prayer hour — and not a single monk.\n\nWax drips on the floor. Footprints, scattered.`
+    },
     choices: [{
-      label: "[조사] 흔적이 향하는 곳을 추적한다",
+      label: {
+        ko: "[조사] 흔적이 향하는 곳을 추적한다",
+        en: "[Investigate] Follow where the traces lead"
+      },
       check: {
         ability: "INT",
         skill: "investigation",
@@ -1122,16 +1492,25 @@ const SCENES = {
         label: "조사"
       },
       success: {
-        text: `발자국은 종탑이 아니라 — 부엌 뒤 지하 저장고 방향으로 모인다.\n\n촛농은 밤마다 같은 길을 오간 흔적이다. 종탑부터 확인하고 내려가자.`,
+        text: {
+          ko: `발자국은 종탑이 아니라 — 부엌 뒤 지하 저장고 방향으로 모인다.\n\n촛농은 밤마다 같은 길을 오간 흔적이다. 종탑부터 확인하고 내려가자.`,
+          en: `The footprints don't go to the bell tower — they gather toward the undercroft behind the kitchen.\n\nThe wax is a trail walked every night. Check the tower first, then go down.`
+        },
         flag: "trail",
         goto: "belltower"
       },
       fail: {
-        text: `발자국이 서로 엉켜 방향을 잃었다.\n\n일단 소리의 근원 — 침묵하는 종탑으로 오른다.`,
+        text: {
+          ko: `발자국이 서로 엉켜 방향을 잃었다.\n\n일단 소리의 근원 — 침묵하는 종탑으로 오른다.`,
+          en: `The footprints tangle and you lose the trail.\n\nFor now, you climb toward the source of the silence — the dead bell tower.`
+        },
         goto: "belltower"
       }
     }, {
-      label: "[지각] 멈춰 서서 회랑의 소리에 귀 기울인다",
+      label: {
+        ko: "[지각] 멈춰 서서 회랑의 소리에 귀 기울인다",
+        en: "[Perception] Stand still and listen to the cloister"
+      },
       check: {
         ability: "WIS",
         skill: "perception",
@@ -1139,26 +1518,41 @@ const SCENES = {
         label: "지각"
       },
       success: {
-        text: `바람 소리 밑, 돌 너머에서 — 희미한 신음. 발밑 어딘가에 사람이 있다.\n\n위치를 가늠하러 종탑부터 오른다.`,
+        text: {
+          ko: `바람 소리 밑, 돌 너머에서 — 희미한 신음. 발밑 어딘가에 사람이 있다.\n\n위치를 가늠하러 종탑부터 오른다.`,
+          en: `Under the wind, beyond the stone — a faint moan. Someone is below your feet.\n\nYou climb the tower first, to fix where.`
+        },
         flag: "trail",
         goto: "belltower"
       },
       fail: {
-        text: `들리는 건 바람뿐이다.\n\n침묵하는 종탑으로 오른다.`,
+        text: {
+          ko: `들리는 건 바람뿐이다.\n\n침묵하는 종탑으로 오른다.`,
+          en: `Only the wind.\n\nYou climb the silent tower.`
+        },
         goto: "belltower"
       }
     }]
   },
   belltower: {
     ch: 3,
-    text: `종탑 꼭대기. 종은 멀쩡하다 — 줄이 끊겨 있을 뿐.\n\n구석에 늙은 종탑 관리인이 웅크려 있다. 입술이 떨린다. "나, 나는 아무것도 못 봤소."`,
+    text: {
+      ko: `종탑 꼭대기. 종은 멀쩡하다 — 줄이 끊겨 있을 뿐.\n\n구석에 늙은 종탑 관리인이 웅크려 있다. 입술이 떨린다. "나, 나는 아무것도 못 봤소."`,
+      en: `The top of the bell tower. The bell is whole — only the rope is cut.\n\nAn old keeper huddles in the corner. His lips shake. "I— I saw nothing."`
+    },
     choices: [{
       artifactReq: "brass_lens",
-      label: `[유물] 되찾은 황동 렌즈로 정오의 빛을 모아 종탑 창밖 — 산 아래로 신호를 보낸다`,
+      label: {
+        ko: `[유물] 되찾은 황동 렌즈로 정오의 빛을 모아 종탑 창밖 — 산 아래로 신호를 보낸다`,
+        en: `[Artifact] Gather noon light through the recovered brass lens and signal down the mountain from the tower window`
+      },
       flagDirect: "keeper",
       goto: "undercroft"
     }, {
-      label: "[지각] 관리인의 떨리는 시선을 따라간다",
+      label: {
+        ko: "[지각] 관리인의 떨리는 시선을 따라간다",
+        en: "[Perception] Follow the keeper's shaking gaze"
+      },
       check: {
         ability: "WIS",
         skill: "perception",
@@ -1166,16 +1560,25 @@ const SCENES = {
         label: "지각"
       },
       success: {
-        text: `관리인의 눈이 자꾸 한 곳을 향한다 — 종 줄 아래, 먼지가 닦인 바닥문.\n\n"…부탁이오. 그들이 내 종을 끊었소. 종이 울리면 마을에서 알아챌 테니까."\n\n관리인은 적이 아니라 인질이었다.`,
+        text: {
+          ko: `관리인의 눈이 자꾸 한 곳을 향한다 — 종 줄 아래, 먼지가 닦인 바닥문.\n\n"…부탁이오. 그들이 내 종을 끊었소. 종이 울리면 마을에서 알아챌 테니까."\n\n관리인은 적이 아니라 인질이었다.`,
+          en: `His eyes keep going to one spot — a trapdoor under the bell-rope, the dust wiped clean.\n\n"…please. They cut my bell. If it rang, the village would know."\n\nThe keeper wasn't an enemy. He was a hostage.`
+        },
         flag: "keeper",
         goto: "undercroft"
       },
       fail: {
-        text: `관리인은 입을 다물었다.\n\n돌아서는 순간, 발밑에서 둔탁한 소리 — 바닥 어딘가가 비어 있다. 종 줄 아래 바닥문을 찾아냈다.`,
+        text: {
+          ko: `관리인은 입을 다물었다.\n\n돌아서는 순간, 발밑에서 둔탁한 소리 — 바닥 어딘가가 비어 있다. 종 줄 아래 바닥문을 찾아냈다.`,
+          en: `The keeper shuts his mouth.\n\nAs you turn, a dull sound underfoot — somewhere the floor is hollow. You find the trapdoor under the bell-rope.`
+        },
         goto: "undercroft"
       }
     }, {
-      label: "[위협] 멱살을 잡고 다그친다",
+      label: {
+        ko: "[위협] 멱살을 잡고 다그친다",
+        en: "[Intimidate] Grab him by the collar and press"
+      },
       check: {
         ability: "CHA",
         skill: "intimidation",
@@ -1183,20 +1586,32 @@ const SCENES = {
         label: "위협"
       },
       success: {
-        text: `관리인이 울음을 터뜨리며 종 줄 아래 바닥문을 가리킨다.\n\n"제발… 나는 모르는 일로 해주시오."\n\n위치는 얻었지만, 노인의 눈에서 신뢰가 사라졌다.`,
+        text: {
+          ko: `관리인이 울음을 터뜨리며 종 줄 아래 바닥문을 가리킨다.\n\n"제발… 나는 모르는 일로 해주시오."\n\n위치는 얻었지만, 노인의 눈에서 신뢰가 사라졌다.`,
+          en: `The keeper bursts into tears and points to the trapdoor under the rope.\n\n"Please… pretend I know nothing."\n\nYou have the place. Trust is gone from the old man's eyes.`
+        },
         goto: "undercroft"
       },
       fail: {
-        text: `관리인은 입을 꾹 다문다. 노인을 겁박한 손이 부끄럽다.\n\n돌아서는 길, 발밑의 빈 소리 — 바닥문을 스스로 찾아냈다.`,
+        text: {
+          ko: `관리인은 입을 꾹 다문다. 노인을 겁박한 손이 부끄럽다.\n\n돌아서는 길, 발밑의 빈 소리 — 바닥문을 스스로 찾아냈다.`,
+          en: `He clamps his mouth shut. Your hand feels ashamed for scaring an old man.\n\nOn the way back, a hollow sound underfoot — you find the trapdoor yourself.`
+        },
         goto: "undercroft"
       }
     }]
   },
   undercroft: {
     ch: 3,
-    text: `바닥문 아래, 지하 저장고. 횃불 하나가 복도를 지키고 — 회색 수도복의 사내가 철창 앞을 서성인다.\n\n철창 안에 사람들이 있다. 사라진 여행자들, 그리고 우편 가방을 끌어안은 배달부.`,
+    text: {
+      ko: `바닥문 아래, 지하 저장고. 횃불 하나가 복도를 지키고 — 회색 수도복의 사내가 철창 앞을 서성인다.\n\n철창 안에 사람들이 있다. 사라진 여행자들, 그리고 우편 가방을 끌어안은 배달부.`,
+      en: `Below the trapdoor, the undercroft. One torch holds the corridor — a man in grey monk's robes paces before iron bars.\n\nPeople are in the cell. The missing travelers, and a courier clutching a mailbag.`
+    },
     choices: [{
-      label: "[은신] 그림자로 돌아 열쇠를 빼낸다",
+      label: {
+        ko: "[은신] 그림자로 돌아 열쇠를 빼낸다",
+        en: "[Stealth] Circle through shadow and lift the keys"
+      },
       check: {
         ability: "DEX",
         skill: "stealth",
@@ -1204,16 +1619,25 @@ const SCENES = {
         label: "은신"
       },
       success: {
-        text: `사내의 허리춤에서 열쇠 고리가 소리 없이 빠져나온다.\n\n철창이 열리고, 갇힌 이들이 숨을 죽인 채 빠져나온다.`,
+        text: {
+          ko: `사내의 허리춤에서 열쇠 고리가 소리 없이 빠져나온다.\n\n철창이 열리고, 갇힌 이들이 숨을 죽인 채 빠져나온다.`,
+          en: `The key ring slides silent off his belt.\n\nThe cell opens, and those inside slip out holding their breath.`
+        },
         flag: "quiet3",
         goto: "rescue"
       },
       fail: {
-        text: `열쇠 고리가 짤랑 — 사내가 홱 돌아본다.\n\n"쥐새끼가 들어왔군."`,
+        text: {
+          ko: `열쇠 고리가 짤랑 — 사내가 홱 돌아본다.\n\n"쥐새끼가 들어왔군."`,
+          en: `The keys jingle — he whirls.\n\n"A rat got in."`
+        },
         goto: "combat3"
       }
     }, {
-      label: "[전투] 횃불을 걷어차고 덮친다",
+      label: {
+        ko: "[전투] 횃불을 걷어차고 덮친다",
+        en: "[Fight] Kick the torch and rush him"
+      },
       goto: "combat3"
     }]
   },
@@ -1222,23 +1646,38 @@ const SCENES = {
     combat: true,
     enemy: "falsemonk",
     victory: {
-      text: `사내가 촛대를 떨어뜨리고 쓰러진다. 수도복 안에는 — 부두에서 본 것과 같은 검은 코트.\n\n열쇠를 빼앗아 철창을 연다. 여행자들이, 그리고 배달부가 비틀거리며 나온다.`,
+      text: {
+        ko: `사내가 촛대를 떨어뜨리고 쓰러진다. 수도복 안에는 — 부두에서 본 것과 같은 검은 코트.\n\n열쇠를 빼앗아 철창을 연다. 여행자들이, 그리고 배달부가 비틀거리며 나온다.`,
+        en: `He drops the candlestick and falls. Under the robes — the same black coat you saw at the docks.\n\nYou take the keys and open the cell. The travelers, and the courier, stagger out.`
+      },
       goto: "rescue"
     },
     defeat: {
-      text: `촛대가 시야를 가른다…\n\n눈을 뜨니 철창 안. 이번엔 갇힌 쪽이 너다.`,
+      text: {
+        ko: `촛대가 시야를 가른다…\n\n눈을 뜨니 철창 안. 이번엔 갇힌 쪽이 너다.`,
+        en: `The candlestick splits your sight…\n\nYou wake behind the bars. This time you're the one locked in.`
+      },
       goto: "gameover"
     }
   },
   rescue: {
     ch: 3,
-    text: `그때 — 지하 깊은 곳에서 굉음. 수문이 열렸다.\n\n물이 차오르며 탁자 위 편지 뭉치가 쓸려 나간다. 저게 놈들의 증거다.\n\n배달부는 다리를 절고, 물은 빠르게 차오른다. 시간은 하나를 고를 만큼만 남았다.`,
+    text: {
+      ko: `그때 — 지하 깊은 곳에서 굉음. 수문이 열렸다.\n\n물이 차오르며 탁자 위 편지 뭉치가 쓸려 나간다. 저게 놈들의 증거다.\n\n배달부는 다리를 절고, 물은 빠르게 차오른다. 시간은 하나를 고를 만큼만 남았다.`,
+      en: `Then — a roar from deep below. A sluice gate has opened.\n\nWater rises and sweeps a bundle of letters off the table. That's their evidence.\n\nThe courier is limping, and the water climbs fast. Time enough to choose only one.`
+    },
     choices: [{
-      label: "사람을 택한다 — 배달부를 부축해 먼저 나간다",
+      label: {
+        ko: "사람을 택한다 — 배달부를 부축해 먼저 나간다",
+        en: "Choose the person — help the courier out first"
+      },
       goto: "ending3",
       flagDirect: "saved3"
     }, {
-      label: "증거를 택한다 — 떠내려가는 편지를 쫓는다",
+      label: {
+        ko: "증거를 택한다 — 떠내려가는 편지를 쫓는다",
+        en: "Choose the evidence — chase the letters being swept away"
+      },
       goto: "ending3",
       flagDirect: "chase3"
     }]
@@ -1252,137 +1691,171 @@ const SCENES = {
   }
 };
 function buildEnding1(flags) {
-  const L = ["수평선 너머, 어선 셋이 등대를 향해 뱃머리를 돌린다."];
-  L.push(flags.includes("peaceful") ? "도굴꾼은 피 없이 떠났다. 그의 말이 남는다 — '기관은 이미 박살 나 있었어.'" : "핏자국은 비가 지울 것이다. 그의 말은 남는다 — '기관은 이미 박살 나 있었어.'");
-  L.push(flags.includes("fixed") ? "그리고 {이름}, 너는 안다. 톱니는 빠진 게 아니라 — 빼낸 것이다." : "임시로 돌린 기관은 언제 또 멈출지 모른다. 처음 멈춘 자도, 어딘가에 있다.");
-  L.push("\n— 제1장 「잿빛 등대」 끝.");
-  return L.join("\n\n");
+  const ko = ["수평선 너머, 어선 셋이 등대를 향해 뱃머리를 돌린다."];
+  const en = ["Beyond the horizon, three fishing boats turn their bows toward the lighthouse."];
+  ko.push(flags.includes("peaceful") ? "도굴꾼은 피 없이 떠났다. 그의 말이 남는다 — '기관은 이미 박살 나 있었어.'" : "핏자국은 비가 지울 것이다. 그의 말은 남는다 — '기관은 이미 박살 나 있었어.'");
+  en.push(flags.includes("peaceful") ? "The grave-robber left without bloodshed. His words remain — \"The mechanism was already smashed.\"" : "The rain will wash the blood away. His words remain — \"The mechanism was already smashed.\"");
+  ko.push(flags.includes("fixed") ? "그리고 {이름}, 너는 안다. 톱니는 빠진 게 아니라 — 빼낸 것이다." : "임시로 돌린 기관은 언제 또 멈출지 모른다. 처음 멈춘 자도, 어딘가에 있다.");
+  en.push(flags.includes("fixed") ? "And {name}, you know. The gear wasn't missing — it was pulled out." : "The jury-rigged mechanism could seize again at any time. Whoever stopped it the first time is still out there.");
+  ko.push("\n— 제1장 「잿빛 등대」 끝.");
+  en.push("\n— End of Chapter 1, \"The Ashen Lighthouse.\"");
+  return bi(ko.join("\n\n"), en.join("\n\n"));
 }
 function buildEnding2(flags) {
-  const L = [];
-  L.push(flags.includes("peaceful2") ? "스컬리는 떠났다. 대신 편지가 남았다." : "스컬리는 관헌의 손에 넘어갔다. 그리고 편지가 남았다.");
-  if (flags.includes("ledger")) L.push("품속의 장부에는 입항 일정과 뱃이름이 빼곡하다 — 움직일 수 없는 증거다.");
-  L.push("모든 단서가 한 곳을 가리킨다. 내륙의 잿돌 수도원, 서명 'S'.\n\n등대는 시작일 뿐이었다.");
-  L.push("\n— 제2장 「검은 코트」 끝. {이름}의 어두밴처는 계속된다.");
-  return L.join("\n\n");
+  const ko = [];
+  const en = [];
+  ko.push(flags.includes("peaceful2") ? "스컬리는 떠났다. 대신 편지가 남았다." : "스컬리는 관헌의 손에 넘어갔다. 그리고 편지가 남았다.");
+  en.push(flags.includes("peaceful2") ? "Scully is gone. A letter remains in his place." : "Scully is in the authorities' hands. And a letter remains.");
+  if (flags.includes("ledger")) {
+    ko.push("품속의 장부에는 입항 일정과 뱃이름이 빼곡하다 — 움직일 수 없는 증거다.");
+    en.push("The ledger in your coat is packed with arrival times and ship names — evidence that won't budge.");
+  }
+  ko.push("모든 단서가 한 곳을 가리킨다. 내륙의 잿돌 수도원, 서명 'S'.\n\n등대는 시작일 뿐이었다.");
+  en.push("Every clue points to one place. The Ashstone Monastery, inland, signed \"S\".\n\nThe lighthouse was only the beginning.");
+  ko.push("\n— 제2장 「검은 코트」 끝. {이름}의 어두밴처는 계속된다.");
+  en.push("\n— End of Chapter 2, \"The Black Coat.\" {name}'s Aduventure goes on.");
+  return bi(ko.join("\n\n"), en.join("\n\n"));
 }
 function buildEnding3(flags) {
-  const L = [];
+  const ko = [];
+  const en = [];
   if (flags.includes("saved3")) {
-    L.push("배달부를 업고 물을 헤쳐 나왔다. 증거는 대부분 물에 녹았다 — 한 장만 빼고.");
-    L.push("배달부가 떨리는 손으로 품에서 꺼낸 마지막 편지. \"이건… 내가 배달할 뻔한 거요.\"");
+    ko.push("배달부를 업고 물을 헤쳐 나왔다. 증거는 대부분 물에 녹았다 — 한 장만 빼고.");
+    en.push("You hauled the courier out through the water. Most of the evidence dissolved — all but one page.");
+    ko.push("배달부가 떨리는 손으로 품에서 꺼낸 마지막 편지. \"이건… 내가 배달할 뻔한 거요.\"");
+    en.push("With a shaking hand the courier draws a last letter from his coat. \"This… I nearly delivered it.\"");
   } else {
-    L.push("물살을 거슬러 편지 뭉치를 건졌다. 돌아보니 배달부는 여행자들의 부축을 받아 스스로 기어 나오고 있었다.");
-    L.push("그의 눈빛이 말한다 — 잊지 않겠다고. 품 안의 편지들은 묵직하다.");
+    ko.push("물살을 거슬러 편지 뭉치를 건졌다. 돌아보니 배달부는 여행자들의 부축을 받아 스스로 기어 나오고 있었다.");
+    en.push("You fought the current and pulled out the bundle of letters. When you look back, travelers are helping the courier crawl out on his own.");
+    ko.push("그의 눈빛이 말한다 — 잊지 않겠다고. 품 안의 편지들은 묵직하다.");
+    en.push("His eyes say he won't forget. The letters in your coat are heavy.");
   }
-  L.push("그리고 편지 뒷면. 지도가 그려져 있다 — 소금여울에서 잿돌 수도원까지, {이름}이 지나온 길 그대로.");
-  L.push("아직 가지 않은 길 하나가 붉은 선으로 이어져 있다. 그 끝에 적힌 글자.\n\n'{이름} — 도착 예정.'");
-  L.push("내가 쫓는 것인가, 유인당하는 것인가.");
-  L.push(flags.includes("keeper") ? "등 뒤에서, 다시 이어진 줄을 타고 — 종이 울린다." : "등 뒤에서, 누군가 끊긴 줄을 다시 잇고 있다.");
-  L.push("\n— 제3장 「사라진 종소리」 끝.");
-  return L.join("\n\n");
+  ko.push("그리고 편지 뒷면. 지도가 그려져 있다 — 소금여울에서 잿돌 수도원까지, {이름}이 지나온 길 그대로.");
+  en.push("And on the back of a letter, a map — from Saltmarsh to the Ashstone Monastery, the same road {name} has walked.");
+  ko.push("아직 가지 않은 길 하나가 붉은 선으로 이어져 있다. 그 끝에 적힌 글자.\n\n'{이름} — 도착 예정.'");
+  en.push("One road you have not walked runs on in red ink. At its end, the words:\n\n\"{name} — expected to arrive.\"");
+  ko.push("내가 쫓는 것인가, 유인당하는 것인가.");
+  en.push("Am I the hunter, or the one being led?");
+  ko.push(flags.includes("keeper") ? "등 뒤에서, 다시 이어진 줄을 타고 — 종이 울린다." : "등 뒤에서, 누군가 끊긴 줄을 다시 잇고 있다.");
+  en.push(flags.includes("keeper") ? "Behind you, along the line you tied back together — a bell rings." : "Behind you, someone is tying the cut line back together.");
+  ko.push("\n— 제3장 「사라진 종소리」 끝.");
+  en.push("\n— End of Chapter 3, \"The Silenced Bell.\"");
+  return bi(ko.join("\n\n"), en.join("\n\n"));
 }
 const SPECIALS = {
   fighter: {
-    name: "강타",
-    tag: "명중↓ 피해+1d6"
+    name: { ko: "강타", en: "Power Strike" },
+    tag: { ko: "명중↓ 피해+1d6", en: "–to hit, +1d6 dmg" }
   },
   rogue: {
-    name: "급소 찌르기",
-    tag: "명중 시 피해 2배"
+    name: { ko: "급소 찌르기", en: "Vital Strike" },
+    tag: { ko: "명중 시 피해 2배", en: "double dmg on hit" }
   },
   wizard: {
-    name: "마법 화살",
-    tag: "자동 명중 1d8+2"
+    name: { ko: "마법 화살", en: "Magic Missile" },
+    tag: { ko: "자동 명중 1d8+2", en: "auto-hit 1d8+2" }
   }
 };
-const TEASER = "잿돌 수도원에서 회수한 편지의 봉인이 풀렸다 — \"등대는 시험이었다. 통과한 자에게는, 이제 내가 직접 간다. — S\"";
+const TEASER = bi("잿돌 수도원에서 회수한 편지의 봉인이 풀렸다 — \"등대는 시험이었다. 통과한 자에게는, 이제 내가 직접 간다. — S\"", "The seal on a letter recovered from the Ashstone Monastery has broken — \"The lighthouse was a test. For the one who passed, I am coming myself. — S\"");
 const CLUES = {
-  peaceful: "도굴꾼의 증언",
-  fixed: "일부러 빼낸 톱니",
-  trail: "지하로 향한 발자국",
-  keeper: "종탑 관리인의 신뢰",
-  ledger: "밀수 장부",
-  grip: "선제 제압의 기억",
-  quiet3: "소리 없는 구출",
-  peaceful2: "스컬리의 편지",
-  saved3: "배달부의 마지막 편지",
-  chase3: "증거 편지 뭉치"
+  peaceful: { ko: "도굴꾼의 증언", en: "The grave-robber's testimony" },
+  fixed: { ko: "일부러 빼낸 톱니", en: "A gear pulled out on purpose" },
+  trail: { ko: "지하로 향한 발자국", en: "Footprints leading underground" },
+  keeper: { ko: "종탑 관리인의 신뢰", en: "The bell-keeper's trust" },
+  ledger: { ko: "밀수 장부", en: "The smuggling ledger" },
+  grip: { ko: "선제 제압의 기억", en: "Memory of a preemptive takedown" },
+  quiet3: { ko: "소리 없는 구출", en: "A silent rescue" },
+  peaceful2: { ko: "스컬리의 편지", en: "Scully's letters" },
+  saved3: { ko: "배달부의 마지막 편지", en: "The courier's last letter" },
+  chase3: { ko: "증거 편지 뭉치", en: "A bundle of evidence letters" }
+};
+
+/* ---------- 나비효과 — 과거의 선택이 특정 장면에서 파급으로 되돌아온다(가시적 인과) ----------
+   각 장면에서 flags 조건을 만족하면 '지난 선택의 여파' 배너를 서사 위에 띄운다. */
+const ECHOES = {
+  wharf: [{
+    req: "peaceful",
+    text: { ko: "지난밤 등대에서 놓아준 도굴꾼 렌이 구석 자리에서 당신을 알아본다. 눈이 마주쳤다.", en: "Ren, the grave-robber you let go at the lighthouse last night, spots you from a corner seat. Your eyes meet." }
+  }],
+  confront: [{
+    req: "ren_tip",
+    text: { ko: "렌이 귀띔한 스컬리의 약점 — 목에 걸린 빚이 떠오른다.", en: "Scully's weakness, the one Ren tipped you off about — the debt around his neck comes to mind." }
+  }]
 };
 
 /* ---------- 엔딩 도감 ---------- */
 const BADGES = [{
   id: "1pf",
   ch: 1,
-  name: "침묵의 교섭가",
-  how: "1장: 평화 + 완전 수리",
+  name: { ko: "침묵의 교섭가", en: "The Silent Negotiator" },
+  how: { ko: "1장: 평화 + 완전 수리", en: "Ch.1: peace + full repair" },
   first: "은서"
 }, {
   id: "1pj",
   ch: 1,
-  name: "말빨과 응급처치",
-  how: "1장: 평화 + 임시 수리"
+  name: { ko: "말빨과 응급처치", en: "Silver Tongue, Field Repair" },
+  how: { ko: "1장: 평화 + 임시 수리", en: "Ch.1: peace + jury-rig" }
 }, {
   id: "1cf",
   ch: 1,
-  name: "강철과 톱니",
-  how: "1장: 전투 + 완전 수리"
+  name: { ko: "강철과 톱니", en: "Steel and Gears" },
+  how: { ko: "1장: 전투 + 완전 수리", en: "Ch.1: combat + full repair" }
 }, {
   id: "1cj",
   ch: 1,
-  name: "피와 임시방편",
-  how: "1장: 전투 + 임시 수리"
+  name: { ko: "피와 임시방편", en: "Blood and a Stopgap" },
+  how: { ko: "1장: 전투 + 임시 수리", en: "Ch.1: combat + jury-rig" }
 }, {
   id: "2p",
   ch: 2,
-  name: "그림자 협상가",
-  how: "2장: 설득으로 해결"
+  name: { ko: "그림자 협상가", en: "The Shadow Negotiator" },
+  how: { ko: "2장: 설득으로 해결", en: "Ch.2: settled by persuasion" }
 }, {
   id: "2c",
   ch: 2,
-  name: "부두의 집행자",
-  how: "2장: 전투로 해결"
+  name: { ko: "부두의 집행자", en: "Enforcer of the Wharf" },
+  how: { ko: "2장: 전투로 해결", en: "Ch.2: settled by combat" }
 }, {
   id: "3s",
   ch: 3,
-  name: "사람을 택한 자",
-  how: "3장: 배달부를 구한다"
+  name: { ko: "사람을 택한 자", en: "The One Who Chose the Person" },
+  how: { ko: "3장: 배달부를 구한다", en: "Ch.3: save the courier" }
 }, {
   id: "3e",
   ch: 3,
-  name: "증거를 택한 자",
-  how: "3장: 편지를 쫓는다"
+  name: { ko: "증거를 택한 자", en: "The One Who Chose the Evidence" },
+  how: { ko: "3장: 편지를 쫓는다", en: "Ch.3: chase the letters" }
 }];
 const badgeId = (ending, flags) => ending === 1 ? "1" + (flags.includes("peaceful") ? "p" : "c") + (flags.includes("fixed") ? "f" : "j") : ending === 2 ? "2" + (flags.includes("peaceful2") ? "p" : "c") : "3" + (flags.includes("saved3") ? "s" : "e");
 
 /* ---------- 오늘의 도전 — 날짜 기반으로 매일 하나가 결정된다(재방문 유도) ---------- */
 const DAILY_CHALLENGES = [{
   id: "fighter",
-  label: "파이터로 한 장(章)을 끝내기",
+  label: { ko: "파이터로 한 장(章)을 끝내기", en: "Finish a chapter as the Fighter" },
   test: c => c.classKey === "fighter"
 }, {
   id: "rogue",
-  label: "로그로 한 장을 끝내기",
+  label: { ko: "로그로 한 장을 끝내기", en: "Finish a chapter as the Rogue" },
   test: c => c.classKey === "rogue"
 }, {
   id: "wizard",
-  label: "위저드로 한 장을 끝내기",
+  label: { ko: "위저드로 한 장을 끝내기", en: "Finish a chapter as the Wizard" },
   test: c => c.classKey === "wizard"
 }, {
   id: "ace",
-  label: "판정 성공률 80% 이상으로 끝내기",
+  label: { ko: "판정 성공률 80% 이상으로 끝내기", en: "Finish with an 80%+ check success rate" },
   test: c => c.rolls >= 1 && c.rate >= 80
 }, {
   id: "flawless",
-  label: "HP를 한 칸도 잃지 않고 끝내기",
+  label: { ko: "HP를 한 칸도 잃지 않고 끝내기", en: "Finish without losing any HP" },
   test: c => c.hp === c.maxHp
 }, {
   id: "simple",
-  label: "Simple 2d6 룰로 끝내기",
+  label: { ko: "Simple 2d6 룰로 끝내기", en: "Finish using the Simple 2d6 rule" },
   test: c => c.ruleKey === "simple2d6"
 }, {
   id: "clever",
-  label: "판정 6회 이하로 끝내기",
+  label: { ko: "판정 6회 이하로 끝내기", en: "Finish in 6 checks or fewer" },
   test: c => c.rolls >= 1 && c.rolls <= 6
 }];
 const dayKey = () => {
@@ -1399,21 +1872,21 @@ const dayHash = s => {
    회차를 넘어 영구 보관되며, 특정 성취(엔딩+조건)로만 얻는다. */
 const ARTIFACTS = {
   brass_lens: {
-    name: "온전한 황동 렌즈",
+    name: { ko: "온전한 황동 렌즈", en: "The Intact Brass Lens" },
     icon: "\uD83D\uDD2E",
-    how: "1장을 완전 수리로 끝내 등대의 렌즈를 지켜낸다",
+    how: { ko: "1장을 완전 수리로 끝내 등대의 렌즈를 지켜낸다", en: "Finish Ch.1 with a full repair, keeping the lighthouse lens" },
     got: f => f.includes("fixed")
   },
   smuggler_ledger: {
-    name: "밀수 장부 원본",
+    name: { ko: "밀수 장부 원본", en: "The Original Smuggling Ledger" },
     icon: "\uD83D\uDCD2",
-    how: "2장에서 밀수 장부를 손에 넣는다",
+    how: { ko: "2장에서 밀수 장부를 손에 넣는다", en: "Get your hands on the smuggling ledger in Ch.2" },
     got: f => f.includes("ledger")
   },
   evidence_letters: {
-    name: "증거 편지 뭉치",
+    name: { ko: "증거 편지 뭉치", en: "The Bundle of Evidence Letters" },
     icon: "\u2709\uFE0F",
-    how: "3장에서 사람 대신 증거를 택한다",
+    how: { ko: "3장에서 사람 대신 증거를 택한다", en: "In Ch.3, choose the evidence over the person" },
     got: f => f.includes("chase3")
   }
 };
@@ -1823,12 +2296,15 @@ function MonasteryScene({
 function JumpBar({
   total,
   dc,
-  success
+  success,
+  lang
 }) {
   const max = Math.max(total, dc) * 1.3;
+  const rollWord = lang === "en" ? "Roll" : "기록";
+  const dcWord = lang === "en" ? "DC" : "장애물";
   return /*#__PURE__*/React.createElement("div", {
     className: "jump",
-    "aria-label": `기록 ${total}, 장애물 ${dc}`
+    "aria-label": `${rollWord} ${total}, ${dcWord} ${dc}`
   }, /*#__PURE__*/React.createElement("div", {
     className: "track"
   }, /*#__PURE__*/React.createElement("i", {
@@ -1843,18 +2319,123 @@ function JumpBar({
     }
   })), /*#__PURE__*/React.createElement("span", {
     className: "jlbl"
-  }, "\uAE30\uB85D ", total, " \xB7 \uC7A5\uC560\uBB3C ", dc));
+  }, rollWord, " ", total, " \xB7 ", dcWord, " ", dc));
 }
 
 /* ---------- 제안하기 (서버 없이: 클립보드 → 카톡 붙여넣기) ---------- */
+function PlaytestFeedback(props) {
+  const ui = props.ui,
+    build = props.build,
+    session = props.session;
+  const [q, setQ] = useState({
+    quit: "",
+    choice: "",
+    combat: "",
+    confuse: "",
+    more: "",
+    bug: ""
+  });
+  const [status, setStatus] = useState("idle");
+  const set = (k, v) => setQ(o => Object.assign({}, o, {
+    [k]: v
+  }));
+  const compose = () => {
+    const L = [];
+    L.push("=== Aduventure 어두밴처 playtest feedback ===");
+    L.push("build: " + build + " | lang: " + session.lang);
+    L.push("reached: " + session.reached.join(" > "));
+    L.push("stop: " + session.stop + " | minutes: " + session.minutes);
+    L.push("");
+    L.push("[quit/bored] " + q.quit);
+    L.push("[hardest choice + expected] " + q.choice);
+    L.push("[combat actions + why] " + q.combat);
+    L.push("[confusing] " + q.confuse);
+    L.push("[keep/stop reason] " + q.more);
+    L.push("[bug] " + q.bug);
+    return L.join("\n");
+  };
+  const hasContent = () => Object.keys(q).some(k => q[k].trim());
+  const submit = () => {
+    if (!hasContent()) {
+      setStatus("empty");
+      return;
+    }
+    setStatus("sending");
+    gasPost({
+      type: "playtest_feedback",
+      build: build,
+      lang: session.lang,
+      reached: session.reached,
+      stop: session.stop,
+      minutes: session.minutes,
+      answers: q,
+      at: new Date().toISOString()
+    }).then(ok => setStatus(ok ? "sent" : "fail")).catch(() => setStatus("fail"));
+  };
+  const exportTxt = () => {
+    try {
+      const blob = new Blob([compose()], {
+        type: "text/plain;charset=utf-8"
+      });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "aduventure_feedback_" + build + "_" + Date.now() + ".txt";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    } catch (e) {}
+  };
+  const copy = () => {
+    try {
+      navigator.clipboard.writeText(compose());
+      setStatus("copied");
+    } catch (e) {}
+  };
+  const field = (key, k) => /*#__PURE__*/React.createElement("label", {
+    className: "fbField",
+    key: key
+  }, /*#__PURE__*/React.createElement("span", null, ui(k)), /*#__PURE__*/React.createElement("textarea", {
+    rows: 2,
+    value: q[key],
+    onChange: e => set(key, e.target.value)
+  }));
+  return /*#__PURE__*/React.createElement("div", {
+    className: "fbModal",
+    role: "dialog"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "fbCard"
+  }, /*#__PURE__*/React.createElement("h3", null, ui("fbTitle"), " ", /*#__PURE__*/React.createElement("span", {
+    className: "fbBuild"
+  }, build)), /*#__PURE__*/React.createElement("p", {
+    className: "fbIntro"
+  }, ui("fbIntro")), field("quit", "fbQuit"), field("choice", "fbChoice"), field("combat", "fbCombat"), field("confuse", "fbConfuse"), field("more", "fbMore"), field("bug", "fbBug"), /*#__PURE__*/React.createElement("p", {
+    className: "fbMetaNote"
+  }, ui("fbMeta")), (status === "sent" || status === "fail" || status === "copied" || status === "empty") && /*#__PURE__*/React.createElement("p", {
+    className: "fbStatus " + status
+  }, status === "sent" ? ui("fbSent") : status === "fail" ? ui("fbFail") : status === "copied" ? ui("fbCopied") : ui("fbEmpty")), /*#__PURE__*/React.createElement("div", {
+    className: "fbBtns"
+  }, /*#__PURE__*/React.createElement("button", {
+    className: "fbPrimary",
+    disabled: status === "sending",
+    onClick: submit
+  }, status === "sending" ? ui("fbSending") : ui("fbSubmit")), /*#__PURE__*/React.createElement("button", {
+    onClick: exportTxt
+  }, ui("fbExport")), /*#__PURE__*/React.createElement("button", {
+    onClick: copy
+  }, ui("fbCopy")), /*#__PURE__*/React.createElement("button", {
+    onClick: props.onClose
+  }, ui("fbClose")))));
+}
 function SuggestBox({
   sceneKey,
-  pc
+  pc,
+  lang,
+  ui
 }) {
   const [open, setOpen] = useState(false);
   const [text, setText] = useState("");
   const [status, setStatus] = useState("idle"); // idle | sending | sent | copied
-  const who = pc && pc.name || "익명";
+  const who = pc && pc.name || (lang === "en" ? "anonymous" : "익명");
   function openBox() {
     setOpen(true);
     setStatus("idle");
@@ -1889,12 +2470,13 @@ function SuggestBox({
     const body = text.trim();
     if (!body || status === "sending") return;
     setStatus("sending");
-    const msg = `[어두밴처 제안] 장면: ${SCENE_TITLES[sceneKey] || sceneKey} / 제안: ${body} / 제안자: ${who}`;
+    const sceneTitle = SCENE_TITLES[sceneKey] && typeof SCENE_TITLES[sceneKey] === "object" ? (SCENE_TITLES[sceneKey][lang] || SCENE_TITLES[sceneKey].ko) : (SCENE_TITLES[sceneKey] || sceneKey);
+    const msg = (lang === "en" ? `[Aduventure suggestion] scene: ${sceneTitle} / idea: ${body} / from: ${who}` : `[어두밴처 제안] 장면: ${sceneTitle} / 제안: ${body} / 제안자: ${who}`);
     let p;
     try {
       p = gasPost({
         type: "suggest",
-        scene: SCENE_TITLES[sceneKey] || sceneKey,
+        scene: sceneTitle,
         who: who,
         text: body,
         extra: ""
@@ -1916,27 +2498,27 @@ function SuggestBox({
   if (!open) return /*#__PURE__*/React.createElement("button", {
     className: "sgToggle",
     onClick: openBox
-  }, "💡 다른 방법 제안하기");
+  }, ui("suggestBtn"));
   return /*#__PURE__*/React.createElement("div", {
     className: "sgBox"
-  }, /*#__PURE__*/React.createElement("p", null, "이 장면에서 해보고 싶은 다른 행동이 있다면? 보내기 한 번이면 도착. 채택되면 다음 버전에 실명 크레딧!"), /*#__PURE__*/React.createElement("textarea", {
+  }, /*#__PURE__*/React.createElement("p", null, ui("suggestBody")), /*#__PURE__*/React.createElement("textarea", {
     value: text,
     maxLength: 200,
     rows: 2,
     onChange: e => setText(e.target.value),
-    placeholder: "예: 지붕의 밧줄을 타고 올라가고 싶어요"
+    placeholder: ui("suggestPh")
   }), /*#__PURE__*/React.createElement("div", {
     className: "sgRow"
   }, /*#__PURE__*/React.createElement("button", {
     onClick: send,
     disabled: !text.trim() || status === "sending"
-  }, status === "sending" ? "보내는 중…" : status === "sent" ? "전송됨! 고마워 ✦" : status === "copied" ? "전송 실패 — 복사됨! 카톡방에 붙여넣어줘" : "보내기"), /*#__PURE__*/React.createElement("button", {
+  }, status === "sending" ? ui("suggestSending") : status === "sent" ? ui("suggestSent") : status === "copied" ? ui("suggestCopied") : ui("suggestSend")), /*#__PURE__*/React.createElement("button", {
     className: "ghost",
     onClick: () => {
       setOpen(false);
       setStatus("idle");
     }
-  }, "닫기")));
+  }, ui("suggestClose"))));
 }
 
 /* ============================================================
@@ -2123,6 +2705,33 @@ const css = `
 .crpg .artifactitem.on { border-color:var(--gold); color:var(--gold); background:rgba(212,169,78,.1); }
 .crpg .choice .tag.artifact { border:1px solid var(--gold); color:var(--gold); background:rgba(212,169,78,.16); }
 .crpg .artifact-get { margin:10px 0 4px; padding:11px 14px; border-radius:8px; text-align:center; font-weight:600; color:var(--gold); border:1px solid var(--gold); background:linear-gradient(180deg, rgba(212,169,78,.16), rgba(212,169,78,.04)); animation:popIn .4s ease; }
+.crpg .intent { display:flex; flex-direction:column; gap:3px; margin:10px 0; padding:10px 12px; border-radius:8px; border:1px solid var(--line); background:var(--panel2); animation:fadeIn .3s ease; }
+.crpg .intent-h { font-size:11px; letter-spacing:.15em; color:var(--dim); font-weight:600; }
+.crpg .intent-t { font-size:14px; color:var(--text); }
+.crpg .intent.hook { border-color:var(--bad); background:rgba(217,106,95,.12); }
+.crpg .intent.hook .intent-h { color:var(--bad); }
+.crpg .intent.feint { border-color:var(--accent); background:rgba(94,143,184,.1); }
+.crpg .echoBanner { display:flex; flex-direction:column; gap:3px; margin:2px 0 14px; padding:10px 13px; border-radius:8px; border:1px solid #6f6aa8; border-left:3px solid #9b8fd6; background:rgba(123,111,176,.12); animation:fadeIn .4s ease; }
+.crpg .echo-h { font-size:11px; letter-spacing:.15em; color:#b9aef0; font-weight:600; }
+.crpg .echo-t { font-size:14px; color:var(--text); font-style:italic; }
+.crpg .choice .tag.echo { border:1px solid #9b8fd6; color:#b9aef0; background:rgba(123,111,176,.16); }
+.crpg .fbModal { position:fixed; inset:0; z-index:100; background:rgba(8,12,20,.82); display:flex; align-items:flex-start; justify-content:center; overflow-y:auto; padding:24px 12px; }
+.crpg .fbCard { width:100%; max-width:560px; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:18px; margin:auto; }
+.crpg .fbCard h3 { color:var(--gold); font-size:17px; margin-bottom:4px; }
+.crpg .fbBuild { font-size:11px; color:var(--dim); font-weight:400; font-family:'IBM Plex Mono',monospace; }
+.crpg .fbIntro { font-size:13px; color:var(--text); line-height:1.7; margin-bottom:12px; }
+.crpg .fbField { display:flex; flex-direction:column; gap:4px; margin-bottom:10px; }
+.crpg .fbField span { font-size:13px; color:var(--dim); }
+.crpg .fbField textarea { width:100%; resize:vertical; background:var(--panel2); border:1px solid var(--line); border-radius:6px; color:var(--text); font-family:inherit; font-size:14px; padding:8px 10px; line-height:1.6; }
+.crpg .fbMetaNote { font-size:11.5px; color:var(--dim); line-height:1.6; margin:6px 0 10px; }
+.crpg .fbStatus { font-size:13px; padding:8px 10px; border-radius:6px; margin-bottom:10px; line-height:1.6; }
+.crpg .fbStatus.sent { color:var(--good); border:1px solid var(--good); }
+.crpg .fbStatus.fail { color:var(--bad); border:1px solid var(--bad); }
+.crpg .fbStatus.copied, .crpg .fbStatus.empty { color:var(--gold); border:1px solid var(--gold); }
+.crpg .fbBtns { display:flex; flex-wrap:wrap; gap:8px; }
+.crpg .fbBtns button { flex:1; min-width:120px; background:var(--panel2); border:1px solid var(--line); border-radius:8px; color:var(--text); font-family:inherit; font-size:14px; padding:10px; cursor:pointer; }
+.crpg .fbBtns .fbPrimary { border-color:var(--gold); color:var(--gold); font-weight:600; }
+.crpg .fbBtns button:hover { border-color:var(--accent); }
 @media (prefers-reduced-motion: reduce) { .crpg * { animation:none !important; transition:none !important; } }
 `;
 function CRPG() {
@@ -2147,8 +2756,15 @@ function CRPG() {
   const [tutOpen, setTutOpen] = useState(false);
   const [tutSeen, setTutSeen] = useState(false);
   const [sfxOn, setSfxOn] = useState(false);
+  const [lang, setLang] = useState(() => store.get("aduventure_lang") || "ko");
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [reached, setReached] = useState([]);
+  const startedRef = useRef(Date.now());
   const [enemy, setEnemy] = useState(null);
   const [clog, setClog] = useState([]);
+  const [enemyIntent, setEnemyIntent] = useState(null);
+  const [trapUsed, setTrapUsed] = useState(false);
+  const [guardBonus, setGuardBonus] = useState(0);
   const [badges, setBadges] = useState(() => store.get("aduventure_badges") || []);
   const [newBadge, setNewBadge] = useState(null);
   const SAVE_KEY = "aduventure_save";
@@ -2165,6 +2781,13 @@ function CRPG() {
   useEffect(() => {
     clogRef.current?.scrollTo(0, 99999);
   }, [clog]);
+  useEffect(() => {
+    if (sceneKey) setReached(r => r.includes(sceneKey) ? r : [...r, sceneKey]);
+  }, [sceneKey]);
+  useEffect(() => {
+    document.documentElement.lang = lang === "en" ? "en" : "ko";
+    document.title = (lang === "en" ? "Aduventure " : "어두밴처 ") + BUILD;
+  }, [lang]);
   const scene = SCENES[sceneKey];
   const chapter = scene?.ch || 1;
   const hasCheckChoices = scene?.choices?.some(c => c.check);
@@ -2284,11 +2907,11 @@ function CRPG() {
       ...c,
       classKey: key,
       hp: c.maxHp,
-      name: nameInput.trim() || "이름 없는 용사"
+      name: nameInput.trim() || (lang === "en" ? "Nameless Hero" : "이름 없는 용사")
     });
     setFate(1);
     setSpecialLeft(2);
-    tele("start", "intro", nameInput.trim() || "이름 없는 용사", key);
+    tele("start", "intro", nameInput.trim() || (lang === "en" ? "Nameless Hero" : "이름 없는 용사"), key);
   }
   function goto(key, extraFlag) {
     setShowCalc(false);
@@ -2302,9 +2925,14 @@ function CRPG() {
       });
       setClog([{
         who: "sys",
-        t: "⚔ 전투 개시 — " + e.name
+        t: (lang === "en" ? "⚔ Battle — " : "⚔ 전투 개시 — ") + tx(e.name)
       }]);
       setBreathLeft(1);
+      if (target.enemy === "looter") {
+        setTrapUsed(false);
+        setGuardBonus(0);
+        setEnemyIntent(rollLooterIntent(e.maxHp, e.maxHp));
+      }
     }
     if (key === "intro2" || key === "intro3") {
       setPc(p => ({
@@ -2336,16 +2964,16 @@ function CRPG() {
         ...p,
         hp: Math.max(0, p.hp - dmg)
       }));
-      extra = `\n\n(${dmg} 피해)`;
+      extra = lang === "en" ? `\n\n(${dmg} damage)` : `\n\n(${dmg} 피해)`;
     }
     if (branch.flag) {
       setFlags(f => f.includes(branch.flag) ? f : [...f, branch.flag]);
-      if (CLUES[branch.flag]) extra += `\n\n✦ 단서 획득 — ${CLUES[branch.flag]}`;
+      if (CLUES[branch.flag]) extra += (lang === "en" ? `\n\n✦ Clue found — ${tx(CLUES[branch.flag])}` : `\n\n✦ 단서 획득 — ${tx(CLUES[branch.flag])}`);
     }
     setLastResult({
       dice: res,
       label,
-      text: branch.text + extra,
+      text: fmt(tx(branch.text), pc) + extra,
       kind: res.success ? "good" : "bad"
     });
     goto(branch.goto, branch.flag);
@@ -2371,7 +2999,7 @@ function CRPG() {
         }));
         if (res.success) {
           SFX.good();
-          applyBranch(choice.success, res, choice.check.label);
+          applyBranch(choice.success, res, choice.check.skill);
         } else if (fateAvail) {
           SFX.bad();
           setPending({
@@ -2380,7 +3008,7 @@ function CRPG() {
           });
         } else {
           SFX.bad();
-          applyBranch(choice.fail, res, choice.check.label);
+          applyBranch(choice.fail, res, choice.check.skill);
         }
       }
     }, 70);
@@ -2397,6 +3025,131 @@ function CRPG() {
   }
 
   // 전투 — 매 턴이 결정: 공격 / 특수기 / 방어 / 숨 고르기
+  // 도굴꾼 전투 시제품 — 적 의도를 보고 대응을 고른다. 얻는 것/감수하는 것이 상황따라 갈린다.
+  function looterAction(action) {
+    setLastResult(null);
+    const foe = ENEMIES.looter;
+    const intent = enemyIntent;
+    const log = [];
+    let eHp = enemy.hp;
+    let curHp = pc.hp;
+    let enemyActs = true;
+    let incomingMult = 1;
+    if (action === "strike") {
+      const atk = rules.attack({
+        attacker: pc,
+        defender: enemy
+      });
+      setStats(s => ({
+        rolls: s.rolls + 1,
+        success: s.success + (atk.hit ? 1 : 0)
+      }));
+      atk.hit ? SFX.good() : SFX.bad();
+      eHp = Math.max(0, enemy.hp - (atk.damage + (atk.hit ? guardBonus : 0)));
+      log.push({
+        who: "you",
+        t: bi("▶ " + atk.detail.ko + (guardBonus && atk.hit ? ` (+${guardBonus} 받아넘긴 반격)` : ""), "▶ " + atk.detail.en + (guardBonus && atk.hit ? ` (+${guardBonus} riposte)` : ""))
+      });
+      if (guardBonus) setGuardBonus(0);
+    } else if (action === "guard") {
+      SFX.good();
+      setGuardBonus(4);
+      log.push({
+        who: "you",
+        t: bi("▶ 자세를 낮추고 갈고리를 받아넘길 준비를 한다 — 다음 공격에 +4", "▶ You drop your stance, ready to turn the hook — +4 on your next strike")
+      });
+      incomingMult = intent === "hook" ? 0.2 : 0.5;
+    } else if (action === "disrupt") {
+      if (guardBonus) setGuardBonus(0);
+      const res = rules.check({
+        actor: pc,
+        ability: "STR",
+        skill: "athletics",
+        dc: 12
+      });
+      setStats(s => ({
+        rolls: s.rolls + 1,
+        success: s.success + (res.success ? 1 : 0)
+      }));
+      if (res.success) {
+        SFX.good();
+        const dmg = d(6);
+        eHp = Math.max(0, enemy.hp - dmg);
+        enemyActs = false;
+        log.push({
+          who: "you",
+          t: bi(`▶ 파고들어 갈고리 팔을 비튼다 — 성공(주사위 ${res.roll}). ${dmg} 피해, 놈의 동작을 끊었다`, `▶ You close and twist the hook-arm — success (die ${res.roll}). ${dmg} damage, his move is cut off`)
+        });
+      } else {
+        SFX.bad();
+        incomingMult = 1.3;
+        log.push({
+          who: "you",
+          t: bi(`▶ 파고들려다 중심이 무너진다 — 실패(주사위 ${res.roll}). 빈틈을 보인다`, `▶ You lunge and lose your balance — fail (die ${res.roll}). You're open`)
+        });
+      }
+    } else if (action === "trap") {
+      if (guardBonus) setGuardBonus(0);
+      setTrapUsed(true);
+      SFX.good();
+      const dmg = d(4) + 2;
+      eHp = Math.max(0, enemy.hp - dmg);
+      enemyActs = false;
+      log.push({
+        who: "you",
+        t: bi(`▶ 놈을 쏟긴 기름과 철사 쪽으로 몬다 — 철컥, 발이 걸린다. ${dmg} 피해, 갈고리가 허공을 가른다`, `▶ You drive him into the spilled oil and wire — a click, his foot catches. ${dmg} damage, the hook cuts empty air`)
+      });
+    }
+    if (eHp <= 0) {
+      setClog(l => [...l, ...log, {
+        who: "sys",
+        t: bi("✦ 승리", "✦ Victory")
+      }]);
+      setEnemy({
+        ...enemy,
+        hp: 0,
+        done: true
+      });
+      return;
+    }
+    const half = Math.ceil(foe.maxHp / 2);
+    if (enemy.hp > half && eHp <= half) {
+      log.push({
+        who: "sys",
+        t: bi("— 궁지에 몰린 렌이 이빨을 드러낸다. 갈고리질이 거칠어진다.", "— Cornered, Ren bares his teeth. The hook swings wilder.")
+      });
+    }
+    if (enemyActs) {
+      const info = LOOTER_INTENTS[intent];
+      if (intent === "feint") {
+        const heal = d(info.heal[1]) + info.heal[0] - 1;
+        eHp = Math.min(foe.maxHp, eHp + heal);
+        log.push({
+          who: "foe",
+          t: bi(`◀ 렌: 물러나 숨을 고른다 — HP ${heal} 회복`, `◀ Ren steps back to catch his breath — recovers ${heal} HP`)
+        });
+      } else {
+        let dmg = d(info.dmg[1]) + info.dmg[0] - 1;
+        dmg = Math.max(0, Math.round(dmg * incomingMult));
+        curHp = Math.max(0, curHp - dmg);
+        log.push({
+          who: "foe",
+          t: (lang === "en" ? `◀ Ren's ${tx(info.label)} — ${dmg} dmg` : `◀ 렌의 ${tx(info.label)} — ${dmg} 피해`) + (incomingMult < 1 ? (lang === "en" ? " (blocked)" : " (막아냈다)") : incomingMult > 1 ? (lang === "en" ? " (caught in the open)" : " (빈틈을 찔렸다)") : "")
+        });
+      }
+    }
+    setPc({
+      ...pc,
+      hp: curHp
+    });
+    setEnemy({
+      ...enemy,
+      hp: eHp,
+      playerDown: curHp <= 0
+    });
+    setClog(l => [...l, ...log]);
+    setEnemyIntent(rollLooterIntent(eHp, foe.maxHp));
+  }
   function combatAction(action) {
     setLastResult(null);
     const foe = ENEMIES[scene.enemy];
@@ -2413,7 +3166,7 @@ function CRPG() {
           atk = {
             hit: true,
             damage: dmg,
-            detail: `마법 화살 — 빗나갈 수 없는 빛, ${dmg} 피해`
+            detail: bi(`마법 화살 — 빗나갈 수 없는 빛, ${dmg} 피해`, `Magic Missile — a light that cannot miss, ${dmg} damage`)
           };
         } else if (pc.classKey === "rogue") {
           const base = rules.attack({
@@ -2423,10 +3176,10 @@ function CRPG() {
           atk = base.hit ? {
             ...base,
             damage: base.damage * 2,
-            detail: `급소 찌르기! ${base.detail} → 피해 2배 = ${base.damage * 2}`
+            detail: bi(`급소 찌르기! ${base.detail.ko} → 피해 2배 = ${base.damage * 2}`, `Vital Strike! ${base.detail.en} → double damage = ${base.damage * 2}`)
           } : {
             ...base,
-            detail: "급소 찌르기 — " + base.detail
+            detail: bi("급소 찌르기 — " + base.detail.ko, "Vital Strike — " + base.detail.en)
           };
         } else {
           const base = rules.attack({
@@ -2441,11 +3194,11 @@ function CRPG() {
             atk = {
               ...base,
               damage: base.damage + bonus,
-              detail: `강타! ${base.detail} +추가 ${bonus}`
+              detail: bi(`강타! ${base.detail.ko} +추가 ${bonus}`, `Power Strike! ${base.detail.en} +${bonus} extra`)
             };
           } else atk = {
             ...base,
-            detail: "강타 — 크게 휘둘렀지만 " + base.detail
+            detail: bi("강타 — 크게 휘둘렀지만 " + base.detail.ko, "Power Strike — a wide swing, but " + base.detail.en)
           };
         }
       } else {
@@ -2462,12 +3215,12 @@ function CRPG() {
       eHp = Math.max(0, enemy.hp - atk.damage);
       log.push({
         who: "you",
-        t: "▶ " + atk.detail
+        t: bi("▶ " + atk.detail.ko, "▶ " + atk.detail.en)
       });
       if (eHp <= 0) {
         setClog(l => [...l, ...log, {
           who: "sys",
-          t: "✦ 승리"
+          t: bi("✦ 승리", "✦ Victory")
         }]);
         setEnemy({
           ...enemy,
@@ -2479,7 +3232,7 @@ function CRPG() {
     } else if (isDef) {
       log.push({
         who: "you",
-        t: "▶ 자세를 낮추고 일격에 대비한다"
+        t: bi("▶ 자세를 낮추고 일격에 대비한다", "▶ You drop low and brace for the blow")
       });
     } else if (action === "breath") {
       setBreathLeft(0);
@@ -2487,7 +3240,7 @@ function CRPG() {
       curHp = Math.min(pc.maxHp, curHp + heal);
       log.push({
         who: "you",
-        t: `▶ 거리를 벌리고 숨을 고른다 — HP ${heal} 회복`
+        t: bi(`▶ 거리를 벌리고 숨을 고른다 — HP ${heal} 회복`, `▶ You give ground and catch your breath — recover ${heal} HP`)
       });
     }
     const def = rules.attack({
@@ -2499,7 +3252,7 @@ function CRPG() {
     });
     log.push({
       who: "foe",
-      t: "◀ " + foe.name + ": " + def.detail + (isDef ? " (방어 태세)" : "")
+      t: bi("◀ " + (foe.name.ko || foe.name) + ": " + def.detail.ko + (isDef ? " (방어 태세)" : ""), "◀ " + (foe.name.en || foe.name) + ": " + def.detail.en + (isDef ? " (guarding)" : ""))
     });
     curHp = Math.max(0, curHp - def.damage);
     setPc({
@@ -2526,6 +3279,9 @@ function CRPG() {
       success: 0
     });
     setEnemy(null);
+    setEnemyIntent(null);
+    setTrapUsed(false);
+    setGuardBonus(0);
     setClog([]);
     setNewBadge(null);
     setRecordFlash(null);
@@ -2575,23 +3331,46 @@ function CRPG() {
   const art = STUDENT_ART[sceneKey];
   const ch1Cleared = badges.some(b => b.startsWith("1"));
   const allBadges = badges.length >= BADGES.length;
-  const chapterTitle = chapter === 3 ? "제3장 사라진 종소리" : chapter === 2 ? "제2장 검은 코트" : "제1장 잿빛 등대";
+  const tx = v => v && typeof v === "object" && !Array.isArray(v) && ("ko" in v || "en" in v) ? (v[lang] || v.ko || v.en || "") : v;
+  const ui = k => UI[k] && (UI[k][lang] || UI[k].ko) || k;
+  const chapterTitle = chapter === 3 ? ui("ch3") : chapter === 2 ? ui("ch2") : ui("ch1");
   return /*#__PURE__*/React.createElement("div", {
     className: "crpg"
-  }, /*#__PURE__*/React.createElement("style", null, css), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("style", null, css), feedbackOpen && /*#__PURE__*/React.createElement(PlaytestFeedback, {
+    ui: ui,
+    build: BUILD,
+    session: {
+      lang: lang,
+      reached: reached,
+      stop: sceneKey,
+      minutes: Math.round((Date.now() - startedRef.current) / 60000)
+    },
+    onClose: () => setFeedbackOpen(false)
+  }), /*#__PURE__*/React.createElement("div", {
     className: "frame"
-  }, /*#__PURE__*/React.createElement("header", null, /*#__PURE__*/React.createElement("h1", null, "\uC5B4\uB450\uBC34\uCC98", /*#__PURE__*/React.createElement("span", null, chapterTitle, " \xB7 v0.7.3")), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("header", null, /*#__PURE__*/React.createElement("h1", null, ui("brand"), /*#__PURE__*/React.createElement("span", null, chapterTitle, " \xB7 ", BUILD)), /*#__PURE__*/React.createElement("div", {
     className: "hctrl"
   }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
+      const nl = lang === "ko" ? "en" : "ko";
+      setLang(nl);
+      store.set("aduventure_lang", nl);
+    },
+    title: "language / 언어",
+    "aria-label": "language"
+  }, ui("langBtn")), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setFeedbackOpen(true),
+    title: ui("fbBtn")
+  }, "🗒"), /*#__PURE__*/React.createElement("button", {
     onClick: () => setSfxOn(SFX.toggle()),
-    title: "\uC18C\uB9AC \uCF1C\uAE30/\uB044\uAE30"
+    title: sfxOn ? ui("sfxOn") : ui("sfxOff")
   }, sfxOn ? "🔊" : "🔇"), /*#__PURE__*/React.createElement("button", {
     onClick: () => setTutOpen(o => !o),
-    title: "\uC8FC\uC0AC\uC704 \uC77D\uB294 \uBC95"
-  }, "? \uADDC\uCE59"), /*#__PURE__*/React.createElement("select", {
+    title: ui("rulesTitle")
+  }, ui("rulesBtn")), /*#__PURE__*/React.createElement("select", {
     value: ruleKey,
     onChange: e => setRuleKey(e.target.value),
-    "aria-label": "\uB8F0 \uC2DC\uC2A4\uD15C"
+    "aria-label": ui("rulesAria")
   }, /*#__PURE__*/React.createElement("option", {
     value: "srd20"
   }, "SRD d20"), /*#__PURE__*/React.createElement("option", {
@@ -2599,13 +3378,13 @@ function CRPG() {
   }, "Simple 2d6")))), art ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("img", {
     className: "artimg",
     src: art,
-    alt: "장면 삽화: " + (SCENE_TITLES[sceneKey] || sceneKey)
+    alt: ui("artAlt") + (tx(SCENE_TITLES[sceneKey]) || sceneKey)
   }), ART_CREDIT[sceneKey] && /*#__PURE__*/React.createElement("div", {
     className: "artcredit"
   }, ART_CREDIT[sceneKey])) : !pc ? /*#__PURE__*/React.createElement("img", {
     className: "titleArt",
     src: TITLE_ART,
-    alt: "\uC5B4\uB450\uBC34\uCC98 \u2014 \uD3ED\uD48D \uC18D \uB4F1\uB300 \uD3EC\uC2A4\uD130"
+    alt: ui("titleAlt")
   }) : chapter === 3 ? /*#__PURE__*/React.createElement(MonasteryScene, {
     stage: monasteryStage(sceneKey)
   }) : chapter === 2 ? /*#__PURE__*/React.createElement(HarborScene, {
@@ -2614,42 +3393,42 @@ function CRPG() {
     stage: lightStage(pc, sceneKey, flags)
   }), tutOpen && /*#__PURE__*/React.createElement("div", {
     className: "tut"
-  }, /*#__PURE__*/React.createElement("h4", null, "\uC8FC\uC0AC\uC704 \uC77D\uB294 \uBC95 \u2014 ", rules.name), rules.tutorial.map((line, i) => /*#__PURE__*/React.createElement("p", {
+  }, /*#__PURE__*/React.createElement("h4", null, ui("rulesTitle"), " \u2014 ", tx(rules.name)), (rules.tutorial[lang] || rules.tutorial.ko).map((line, i) => /*#__PURE__*/React.createElement("p", {
     key: i
   }, line)), /*#__PURE__*/React.createElement("p", {
     style: {
       marginTop: 8,
       color: "#5e8fb8"
     }
-  }, "\uC120\uD0DD\uC9C0\uC758 \uD30C\uB780 %\uAC00 \uC131\uACF5 \uD655\uB960. \uC2E4\uD328\uD574\uB3C4 \uC7A5\uB9C8\uB2E4 \uD55C \uBC88, \uC6B4\uBA85 \uC8FC\uC0AC\uC704\uB85C \uB2E4\uC2DC \uAD74\uB9B4 \uC218 \uC788\uB2E4."), /*#__PURE__*/React.createElement("button", {
+  }, ui("rulesFoot")), /*#__PURE__*/React.createElement("button", {
     onClick: () => {
       setTutOpen(false);
       setTutSeen(true);
     }
-  }, "\uC774\uD574\uD588\uB2E4, \uC8FC\uC0AC\uC704\uB97C \uB2E4\uC624")), !pc && /*#__PURE__*/React.createElement("div", {
+  }, ui("rulesGot"))), !pc && /*#__PURE__*/React.createElement("div", {
     className: "scene"
   }, /*#__PURE__*/React.createElement("div", {
     className: "about"
-  }, /*#__PURE__*/React.createElement("p", null, "\uC8FC\uC0AC\uC704\uB85C \uC6B4\uBA85\uC744 \uC815\uD558\uB294 \uBBF8\uC2A4\uD130\uB9AC \uD14D\uC2A4\uD2B8 \uC5B4\uB4DC\uBCA4\uCC98."), /*#__PURE__*/React.createElement("p", null, "\uD3ED\uD48D\uC758 \uBC24, \uD56D\uAD6C \uB9C8\uC744\uC758 \uB4F1\uB300\uAC00 \uAEBC\uC84C\uB2E4. \uC0C8\uBCBD\uAE4C\uC9C0 \uBD88\uC744 \uC62C\uB9AC\uC9C0 \uBABB\uD558\uBA74 \uC5B4\uC120 \uC138 \uCC99\uC774 \uC554\uCD08\uB85C \uD5A5\uD55C\uB2E4."), /*#__PURE__*/React.createElement("p", null, "\uC774\uB984\uC744 \uC0C8\uAE30\uACE0 \uC9C1\uC5C5\uC744 \uACE0\uB974\uBA74 \u2014 \uBAA8\uD5D8\uC774 \uC2DC\uC791\uB41C\uB2E4. \uC120\uD0DD\uC9C0\uC758 \uD30C\uB780 %\uB294 \uC131\uACF5 \uD655\uB960\uC774\uB2E4.")), savedGame && savedGame.pc && /*#__PURE__*/React.createElement("button", {
+  }, /*#__PURE__*/React.createElement("p", null, lang === "en" ? "A mystery text adventure where dice decide your fate." : "\uC8FC\uC0AC\uC704\uB85C \uC6B4\uBA85\uC744 \uC815\uD558\uB294 \uBBF8\uC2A4\uD130\uB9AC \uD14D\uC2A4\uD2B8 \uC5B4\uB4DC\uBCA4\uCC98."), /*#__PURE__*/React.createElement("p", null, lang === "en" ? "On a stormy night, a harbor town's lighthouse has gone dark. If it isn't lit by dawn, three fishing boats will run onto the rocks." : "\uD3ED\uD48D\uC758 \uBC24, \uD56D\uAD6C \uB9C8\uC744\uC758 \uB4F1\uB300\uAC00 \uAEBC\uC84C\uB2E4. \uC0C8\uBCBD\uAE4C\uC9C0 \uBD88\uC744 \uC62C\uB9AC\uC9C0 \uBABB\uD558\uBA74 \uC5B4\uC120 \uC138 \uCC99\uC774 \uC554\uCD08\uB85C \uD5A5\uD55C\uB2E4."), /*#__PURE__*/React.createElement("p", null, lang === "en" ? "Enter a name and pick a class — and the adventure begins. The blue % on a choice is its success chance." : "\uC774\uB984\uC744 \uC0C8\uAE30\uACE0 \uC9C1\uC5C5\uC744 \uACE0\uB974\uBA74 \u2014 \uBAA8\uD5D8\uC774 \uC2DC\uC791\uB41C\uB2E4. \uC120\uD0DD\uC9C0\uC758 \uD30C\uB780 %\uB294 \uC131\uACF5 \uD655\uB960\uC774\uB2E4.")), savedGame && savedGame.pc && /*#__PURE__*/React.createElement("button", {
     className: "continueBtn",
     onClick: continueGame,
-    title: "\uC800\uC7A5\uB41C \uBAA8\uD5D8\uC744 \uC774\uC5B4\uC11C \uD55C\uB2E4"
-  }, "\u21BB \uC774\uC5B4\uC11C \uD558\uAE30", /*#__PURE__*/React.createElement("span", {
+    title: lang === "en" ? "Resume your saved run" : "\uC800\uC7A5\uB41C \uBAA8\uD5D8\uC744 \uC774\uC5B4\uC11C \uD55C\uB2E4"
+  }, lang === "en" ? "\u21BB Continue" : "\u21BB \uC774\uC5B4\uC11C \uD558\uAE30", /*#__PURE__*/React.createElement("span", {
     className: "cont-meta"
-  }, (SCENES[savedGame.sceneKey]?.ch === 3 ? "\uC81C3\uC7A5" : SCENES[savedGame.sceneKey]?.ch === 2 ? "\uC81C2\uC7A5" : "\uC81C1\uC7A5") + " \xB7 " + savedGame.pc.name + " (" + (CLASSES[savedGame.pc.classKey] ? CLASSES[savedGame.pc.classKey].name : "\uC6A9\uC0AC") + ")")), /*#__PURE__*/React.createElement("label", {
+  }, (SCENES[savedGame.sceneKey]?.ch === 3 ? (lang === "en" ? "Ch.3" : "\uC81C3\uC7A5") : SCENES[savedGame.sceneKey]?.ch === 2 ? (lang === "en" ? "Ch.2" : "\uC81C2\uC7A5") : (lang === "en" ? "Ch.1" : "\uC81C1\uC7A5")) + " \xB7 " + savedGame.pc.name + " (" + tx(CLASSES[savedGame.pc.classKey] ? CLASSES[savedGame.pc.classKey].name : "\uC6A9\uC0AC") + ")")), /*#__PURE__*/React.createElement("label", {
     className: "nameLb"
-  }, "\uC6A9\uC0AC\uC758 \uC774\uB984\uC740?"), /*#__PURE__*/React.createElement("input", {
+  }, lang === "en" ? "Your hero's name?" : "\uC6A9\uC0AC\uC758 \uC774\uB984\uC740?"), /*#__PURE__*/React.createElement("input", {
     className: "nameIn",
     value: nameInput,
     maxLength: 12,
     onChange: e => setNameInput(e.target.value),
-    placeholder: "\uC774\uB984\uC744 \uC0C8\uAE30\uBA74 \uC774\uC57C\uAE30\uC5D0 \uB0A8\uB294\uB2E4"
+    placeholder: lang === "en" ? "A name you write stays in the story" : "\uC774\uB984\uC744 \uC0C8\uAE30\uBA74 \uC774\uC57C\uAE30\uC5D0 \uB0A8\uB294\uB2E4"
   }), /*#__PURE__*/React.createElement("p", {
     className: "narr",
     style: {
       marginTop: 14
     }
-  }, "\uADF8\uB9AC\uACE0 \uB2F9\uC2E0\uC740 \u2014"), /*#__PURE__*/React.createElement("div", {
+  }, lang === "en" ? "And you are —" : "\uADF8\uB9AC\uACE0 \uB2F9\uC2E0\uC740 \u2014"), /*#__PURE__*/React.createElement("div", {
     className: "pick"
   }, Object.entries(CLASSES).map(([k, c]) => /*#__PURE__*/React.createElement("button", {
     key: k,
@@ -2657,53 +3436,53 @@ function CRPG() {
     onClick: () => pickClass(k)
   }, /*#__PURE__*/React.createElement("div", {
     className: "ci"
-  }, c.icon), /*#__PURE__*/React.createElement("h2", null, c.name), /*#__PURE__*/React.createElement("p", null, c.blurb), /*#__PURE__*/React.createElement("div", {
+  }, c.icon), /*#__PURE__*/React.createElement("h2", null, tx(c.name)), /*#__PURE__*/React.createElement("p", null, tx(c.blurb)), /*#__PURE__*/React.createElement("div", {
     className: "st"
-  }, "HP ", c.maxHp, " \xB7 AC ", c.ac, " \xB7 ", c.weapon.name, " \xB7 \uD2B9\uC218\uAE30 ", SPECIALS[k].name, /*#__PURE__*/React.createElement("br", null), "\uC219\uB828: ", c.proficiencies.map(s => SKILL_NAMES[s]).join(" · "))))), /*#__PURE__*/React.createElement("div", {
+  }, "HP ", c.maxHp, " \xB7 AC ", c.ac, " \xB7 ", tx(c.weapon.name), " \xB7 ", ui("special"), " ", tx(SPECIALS[k].name), /*#__PURE__*/React.createElement("br", null), ui("proficient"), " ", c.proficiencies.map(s => tx(SKILL_NAMES[s])).join(" · "))))), /*#__PURE__*/React.createElement("div", {
     className: "daily" + (dailyDone ? " done" : "")
   }, /*#__PURE__*/React.createElement("span", {
     className: "daily-h"
-  }, "\uC624\uB298\uC758 \uB3C4\uC804"), /*#__PURE__*/React.createElement("span", {
+  }, ui("dailyH")), /*#__PURE__*/React.createElement("span", {
     className: "daily-l"
-  }, daily.label), /*#__PURE__*/React.createElement("span", {
+  }, tx(daily.label)), /*#__PURE__*/React.createElement("span", {
     className: "daily-s"
-  }, dailyDone ? "\u2714 \uB2EC\uC131" : "\uBBF8\uB2EC\uC131")), /*#__PURE__*/React.createElement("p", {
+  }, dailyDone ? ui("dailyDone") : ui("dailyTodo"))), /*#__PURE__*/React.createElement("p", {
     className: "bcount"
-  }, "\uC5D4\uB529 \uB3C4\uAC10 ", badges.length, "/", BADGES.length), /*#__PURE__*/React.createElement("div", {
+  }, ui("badgeCount"), " ", badges.length, "/", BADGES.length), /*#__PURE__*/React.createElement("div", {
     className: "badges"
   }, BADGES.map(b => /*#__PURE__*/React.createElement("span", {
     key: b.id,
     className: "badge" + (badges.includes(b.id) ? " on" : ""),
-    title: badges.includes(b.id) ? b.how + (records[b.id] ? " · 최고 성공률 " + records[b.id].rate + "% (판정 " + records[b.id].rolls + "회)" : "") + (b.first ? " — 초대 랭크 1: " + b.first : "") : "???"
-  }, badges.includes(b.id) ? "★ " + b.name + (b.first ? " · 초대 " + b.first : "") : "???"))), /*#__PURE__*/React.createElement("p", {
+    title: badges.includes(b.id) ? tx(b.how) + (records[b.id] ? (lang === "en" ? " · best success rate " + records[b.id].rate + "% (" + records[b.id].rolls + " checks)" : " · 최고 성공률 " + records[b.id].rate + "% (판정 " + records[b.id].rolls + "회)") : "") + (b.first ? (lang === "en" ? " — first to rank 1: " : " — 초대 랭크 1: ") + b.first : "") : "???"
+  }, badges.includes(b.id) ? "★ " + tx(b.name) + (b.first ? (lang === "en" ? " · first " : " · 초대 ") + b.first : "") : "???"))), /*#__PURE__*/React.createElement("p", {
     className: "bcount"
-  }, "\uBC1C\uACAC\uD55C \uC9C0\uC2DD ", lore.length, "/", Object.keys(CLUES).length), /*#__PURE__*/React.createElement("div", {
+  }, ui("loreCount"), " ", lore.length, "/", Object.keys(CLUES).length), /*#__PURE__*/React.createElement("div", {
     className: "lorebook"
   }, Object.keys(CLUES).map(k => /*#__PURE__*/React.createElement("span", {
     key: k,
     className: "loreitem" + (lore.includes(k) ? " on" : ""),
-    title: lore.includes(k) ? CLUES[k] : "\uC544\uC9C1 \uBC1C\uACAC\uD558\uC9C0 \uBABB\uD55C \uC9C0\uC2DD \u2014 \uBAA8\uD5D8\uC744 \uAC70\uB4ED\uD558\uBA70 \uCC3E\uC544\uB77C"
-  }, lore.includes(k) ? "\u2726 " + CLUES[k] : "???"))), lore.length > 0 && /*#__PURE__*/React.createElement("p", {
+    title: lore.includes(k) ? tx(CLUES[k]) : (lang === "en" ? "Not yet discovered — find it across your runs" : "\uC544\uC9C1 \uBC1C\uACAC\uD558\uC9C0 \uBABB\uD55C \uC9C0\uC2DD \u2014 \uBAA8\uD5D8\uC744 \uAC70\uB4ED\uD558\uBA70 \uCC3E\uC544\uB77C")
+  }, lore.includes(k) ? "\u2726 " + tx(CLUES[k]) : "???"))), lore.length > 0 && /*#__PURE__*/React.createElement("p", {
     className: "lore-hint"
-  }, "\uC9C0\uC2DD\uC740 \uC8FD\uC5B4\uB3C4 \uC0AC\uB77C\uC9C0\uC9C0 \uC54A\uB294\uB2E4. \uB2E4\uC74C \uBAA8\uD5D8\uC5D0\uC11C \uC0C8 \uAE38\uC744 \uC5EC\uB294 \uC5F4\uC1E0\uAC00 \uB41C\uB2E4."), /*#__PURE__*/React.createElement("p", {
+  }, ui("loreHint")), /*#__PURE__*/React.createElement("p", {
     className: "bcount"
-  }, "\uC804\uC124\uC758 \uC720\uBB3C ", artifacts.length, "/", Object.keys(ARTIFACTS).length), /*#__PURE__*/React.createElement("div", {
+  }, ui("artCount"), " ", artifacts.length, "/", Object.keys(ARTIFACTS).length), /*#__PURE__*/React.createElement("div", {
     className: "artifactbook"
   }, Object.keys(ARTIFACTS).map(k => /*#__PURE__*/React.createElement("span", {
     key: k,
     className: "artifactitem" + (artifacts.includes(k) ? " on" : ""),
-    title: artifacts.includes(k) ? ARTIFACTS[k].name + " \u2014 " + ARTIFACTS[k].how : "??? \u2014 " + ARTIFACTS[k].how
-  }, artifacts.includes(k) ? ARTIFACTS[k].icon + " " + ARTIFACTS[k].name : "\u25C7 ???"))), allBadges && /*#__PURE__*/React.createElement("div", {
+    title: artifacts.includes(k) ? tx(ARTIFACTS[k].name) + " \u2014 " + tx(ARTIFACTS[k].how) : "??? \u2014 " + tx(ARTIFACTS[k].how)
+  }, artifacts.includes(k) ? ARTIFACTS[k].icon + " " + tx(ARTIFACTS[k].name) : "\u25C7 ???"))), allBadges && /*#__PURE__*/React.createElement("div", {
     className: "teaser"
   }, /*#__PURE__*/React.createElement("span", {
     className: "badge on new"
-  }, "\u2605 \uD788\uB4E0 \uCE6D\uD638 \u2014 \uC7BF\uBE5B \uB4F1\uB300\uC9C0\uAE30"), /*#__PURE__*/React.createElement("p", null, TEASER))), pc && /*#__PURE__*/React.createElement("div", {
+  }, ui("teaserTitle")), /*#__PURE__*/React.createElement("p", null, tx(TEASER)))), pc && /*#__PURE__*/React.createElement("div", {
     className: "sheet"
   }, /*#__PURE__*/React.createElement("span", {
     className: "nm"
   }, pc.icon, " ", pc.name, " ", /*#__PURE__*/React.createElement("em", {
     className: "cls"
-  }, CLASSES[pc.classKey].name)), /*#__PURE__*/React.createElement("div", {
+  }, tx(CLASSES[pc.classKey].name))), /*#__PURE__*/React.createElement("div", {
     className: "hpbar"
   }, /*#__PURE__*/React.createElement("i", {
     style: {
@@ -2711,17 +3490,17 @@ function CRPG() {
     }
   })), /*#__PURE__*/React.createElement("span", {
     className: "ab"
-  }, "HP ", pc.hp, "/", pc.maxHp, " \xB7 AC ", pc.ac, " \xB7 \uC6B4\uBA85\uD83C\uDFB2", fate, " \xB7 ", SPECIALS[pc.classKey].name, "\xD7", specialLeft), /*#__PURE__*/React.createElement("span", {
+  }, "HP ", pc.hp, "/", pc.maxHp, " \xB7 AC ", pc.ac, " \xB7 ", ui("fate"), fate, " \xB7 ", tx(SPECIALS[pc.classKey].name), "\xD7", specialLeft), /*#__PURE__*/React.createElement("span", {
     className: "ab"
-  }, Object.entries(pc.abilities).map(([a, v]) => `${ABILITY_NAMES[a]}${v}(${rules.abilityMod(v) >= 0 ? "+" : ""}${rules.abilityMod(v)})`).join(" ")), flags.some(f => CLUES[f]) && /*#__PURE__*/React.createElement("span", {
+  }, Object.entries(pc.abilities).map(([a, v]) => `${tx(ABILITY_NAMES[a])}${v}(${rules.abilityMod(v) >= 0 ? "+" : ""}${rules.abilityMod(v)})`).join(" ")), flags.some(f => CLUES[f]) && /*#__PURE__*/React.createElement("span", {
     className: "ab clueLine"
-  }, "\u2726 \uB2E8\uC11C: ", flags.filter(f => CLUES[f]).map(f => CLUES[f]).join(" · "))), pc && rolling && /*#__PURE__*/React.createElement("div", {
+  }, lang === "en" ? "\u2726 Clues: " : "\u2726 \uB2E8\uC11C: ", flags.filter(f => CLUES[f]).map(f => tx(CLUES[f])).join(" · "))), pc && rolling && /*#__PURE__*/React.createElement("div", {
     className: "diceWrap"
   }, /*#__PURE__*/React.createElement("div", {
     className: "die rolling"
   }, rollFace), /*#__PURE__*/React.createElement("div", {
     className: "diceMeta"
-  }, "\uC6B4\uBA85\uC774 \uAD6C\uB974\uACE0 \uC788\uB2E4\u2026")), pc && lastResult && !rolling && !pending && /*#__PURE__*/React.createElement("div", {
+  }, lang === "en" ? "Fate is rolling…" : "\uC6B4\uBA85\uC774 \uAD6C\uB974\uACE0 \uC788\uB2E4\u2026")), pc && lastResult && !rolling && !pending && /*#__PURE__*/React.createElement("div", {
     className: "resWrap"
   }, /*#__PURE__*/React.createElement("button", {
     className: "resChip",
@@ -2730,15 +3509,16 @@ function CRPG() {
     className: "chipDie " + lastResult.kind
   }, lastResult.dice.roll), /*#__PURE__*/React.createElement("b", {
     className: lastResult.kind
-  }, lastResult.label, " ", lastResult.dice.success ? "성공" : "실패"), /*#__PURE__*/React.createElement("span", {
+  }, SKILL_NAMES[lastResult.label] ? tx(SKILL_NAMES[lastResult.label]) : lastResult.label, " ", lastResult.dice.success ? (lang === "en" ? "Success" : "성공") : (lang === "en" ? "Fail" : "실패")), /*#__PURE__*/React.createElement("span", {
     className: "chipMore"
-  }, showCalc ? "접기 ▴" : "자세히 ▾")), showCalc && /*#__PURE__*/React.createElement("div", {
+  }, showCalc ? (lang === "en" ? "Hide ▴" : "접기 ▴") : (lang === "en" ? "Details ▾" : "자세히 ▾"))), showCalc && /*#__PURE__*/React.createElement("div", {
     className: "resDetail"
   }, /*#__PURE__*/React.createElement(JumpBar, {
     total: lastResult.dice.total,
     dc: lastResult.dice.dc,
-    success: lastResult.dice.success
-  }), /*#__PURE__*/React.createElement("div", null, lastResult.dice.detail)), /*#__PURE__*/React.createElement("div", {
+    success: lastResult.dice.success,
+    lang: lang
+  }), /*#__PURE__*/React.createElement("div", null, tx(lastResult.dice.detail))), /*#__PURE__*/React.createElement("div", {
     className: "result " + lastResult.kind
   }, fmt(lastResult.text, pc)), /*#__PURE__*/React.createElement("div", {
     className: "divider",
@@ -2751,14 +3531,15 @@ function CRPG() {
     className: "diceMeta"
   }, /*#__PURE__*/React.createElement("b", {
     className: "bad"
-  }, pending.choice.check.label, " \uC2E4\uD328\u2026"), /*#__PURE__*/React.createElement(JumpBar, {
+  }, tx(SKILL_NAMES[pending.choice.check.skill] || pending.choice.check.label), lang === "en" ? " failed…" : " \uC2E4\uD328\u2026"), /*#__PURE__*/React.createElement(JumpBar, {
     total: pending.res.total,
     dc: pending.res.dc,
-    success: false
+    success: false,
+    lang: lang
   }), /*#__PURE__*/React.createElement("button", {
     className: "calcToggle",
     onClick: () => setShowCalc(s => !s)
-  }, showCalc ? "계산 닫기" : "계산 보기"), showCalc && /*#__PURE__*/React.createElement("div", null, pending.res.detail))), /*#__PURE__*/React.createElement("div", {
+  }, showCalc ? (lang === "en" ? "Hide math" : "계산 닫기") : (lang === "en" ? "Show math" : "계산 보기")), showCalc && /*#__PURE__*/React.createElement("div", null, tx(pending.res.detail)))), /*#__PURE__*/React.createElement("div", {
     className: "choices"
   }, /*#__PURE__*/React.createElement("button", {
     className: "choice fate",
@@ -2769,91 +3550,135 @@ function CRPG() {
       tele("fate_used", sceneKey, pc && pc.name, c.check.label);
       resolveCheck(c, false);
     }
-  }, "\uD83C\uDFB2 \uC6B4\uBA85 \uC8FC\uC0AC\uC704 \u2014 \uAC19\uC740 \uD310\uC815\uC744 \uB2E4\uC2DC \uAD74\uB9B0\uB2E4 ", /*#__PURE__*/React.createElement("span", {
+  }, lang === "en" ? "\uD83C\uDFB2 Fate die — reroll the same check " : "\uD83C\uDFB2 \uC6B4\uBA85 \uC8FC\uC0AC\uC704 \u2014 \uAC19\uC740 \uD310\uC815\uC744 \uB2E4\uC2DC \uAD74\uB9B0\uB2E4 ", /*#__PURE__*/React.createElement("span", {
     className: "tag"
-  }, "\uC774 \uC7A5\uC5D0\uC11C 1\uD68C\uBFD0")), /*#__PURE__*/React.createElement("button", {
+  }, lang === "en" ? "once per chapter" : "\uC774 \uC7A5\uC5D0\uC11C 1\uD68C\uBFD0")), /*#__PURE__*/React.createElement("button", {
     className: "choice",
     onClick: () => {
       const p = pending;
       setPending(null);
-      applyBranch(p.choice.fail, p.res, p.choice.check.label);
+      applyBranch(p.choice.fail, p.res, p.choice.check.skill);
     }
-  }, "\uACB0\uACFC\uB97C \uBC1B\uC544\uB4E4\uC778\uB2E4 \u2192"))), pc && scene && !scene.combat && !scene.ending && !scene.gameover && !rolling && !pending && /*#__PURE__*/React.createElement("div", {
+  }, lang === "en" ? "Accept the outcome \u2192" : "\uACB0\uACFC\uB97C \uBC1B\uC544\uB4E4\uC778\uB2E4 \u2192"))), pc && scene && !scene.combat && !scene.ending && !scene.gameover && !rolling && !pending && /*#__PURE__*/React.createElement("div", {
     className: "scene",
     key: sceneKey
   }, (sceneKey === "intro" || sceneKey === "intro2" || sceneKey === "intro3") && /*#__PURE__*/React.createElement("div", {
     className: "chBanner"
-  }, "\u2014 ", chapterTitle, " \u2014"), /*#__PURE__*/React.createElement("p", {
+  }, "\u2014 ", chapterTitle, " \u2014"), (ECHOES[sceneKey] || []).filter(e => flags.includes(e.req)).map((e, i) => /*#__PURE__*/React.createElement("div", {
+    key: "echo" + i,
+    className: "echoBanner"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "echo-h"
+  }, lang === "en" ? "\uD83E\uDD8B Ripples of a past choice" : "\uD83E\uDD8B \uC9C0\uB09C \uC120\uD0DD\uC758 \uC5EC\uD30C"), /*#__PURE__*/React.createElement("span", {
+    className: "echo-t"
+  }, tx(e.text)))), /*#__PURE__*/React.createElement("p", {
     className: "narr"
-  }, fmt(scene.text, pc)), /*#__PURE__*/React.createElement("div", {
+  }, fmt(tx(scene.text), pc)), /*#__PURE__*/React.createElement("div", {
     className: "choices"
-  }, scene.choices.filter(ch => (!ch.classOnly || pc && ch.classOnly === pc.classKey) && (!ch.loreReq || lore.includes(ch.loreReq)) && (!ch.artifactReq || artifacts.includes(ch.artifactReq))).map((ch, i) => /*#__PURE__*/React.createElement("button", {
+  }, scene.choices.filter(ch => (!ch.classOnly || pc && ch.classOnly === pc.classKey) && (!ch.loreReq || lore.includes(ch.loreReq)) && (!ch.artifactReq || artifacts.includes(ch.artifactReq)) && (!ch.echoReq || flags.includes(ch.echoReq))).map((ch, i) => /*#__PURE__*/React.createElement("button", {
     key: i,
     className: "choice",
     onClick: () => doChoice(ch)
-  }, ch.label, ch.check && /*#__PURE__*/React.createElement("span", {
+  }, tx(ch.label), ch.check && /*#__PURE__*/React.createElement("span", {
     className: "tag"
-  }, SKILL_NAMES[ch.check.skill], " \xB7 ", /*#__PURE__*/React.createElement("span", {
+  }, tx(SKILL_NAMES[ch.check.skill]), " \xB7 ", /*#__PURE__*/React.createElement("span", {
     className: "pct"
   }, pct(ch), "%")), ch.credit && /*#__PURE__*/React.createElement("span", {
     className: "tag"
   }, ch.credit), ch.loreReq && /*#__PURE__*/React.createElement("span", {
     className: "tag lore"
-  }, "\u2726 \uC9C0\uB09C \uBAA8\uD5D8\uC758 \uAE30\uC5B5"), ch.artifactReq && /*#__PURE__*/React.createElement("span", {
+  }, ui("loreTag")), ch.artifactReq && /*#__PURE__*/React.createElement("span", {
     className: "tag artifact"
-  }, "\u25C8 " + (ARTIFACTS[ch.artifactReq] ? ARTIFACTS[ch.artifactReq].name : "\uC720\uBB3C")))), sceneKey === "intro" && ch1Cleared && /*#__PURE__*/React.createElement("button", {
+  }, "\u25C8 " + tx(ARTIFACTS[ch.artifactReq] ? ARTIFACTS[ch.artifactReq].name : "\uC720\uBB3C")), ch.echo && /*#__PURE__*/React.createElement("span", {
+    className: "tag echo"
+  }, "\uD83E\uDD8B " + tx(ch.echo)))), sceneKey === "intro" && ch1Cleared && /*#__PURE__*/React.createElement("button", {
     className: "choice",
     onClick: () => goto("intro2")
-  }, "(1\uC7A5 \uD074\uB9AC\uC5B4 \uAE30\uB85D \uC788\uC74C) 2\uC7A5\uBD80\uD130 \uC2DC\uC791\uD55C\uB2E4 \u2192"), sceneKey === "intro" && badges.some(b => b.startsWith("2")) && /*#__PURE__*/React.createElement("button", {
+  }, lang === "en" ? "(Ch.1 cleared) Start from Ch.2 \u2192" : "(1\uC7A5 \uD074\uB9AC\uC5B4 \uAE30\uB85D \uC788\uC74C) 2\uC7A5\uBD80\uD130 \uC2DC\uC791\uD55C\uB2E4 \u2192"), sceneKey === "intro" && badges.some(b => b.startsWith("2")) && /*#__PURE__*/React.createElement("button", {
     className: "choice",
     onClick: () => goto("intro3")
-  }, "(2\uC7A5 \uD074\uB9AC\uC5B4 \uAE30\uB85D \uC788\uC74C) 3\uC7A5\uBD80\uD130 \uC2DC\uC791\uD55C\uB2E4 \u2192")), /*#__PURE__*/React.createElement(SuggestBox, {
+  }, lang === "en" ? "(Ch.2 cleared) Start from Ch.3 \u2192" : "(2\uC7A5 \uD074\uB9AC\uC5B4 \uAE30\uB85D \uC788\uC74C) 3\uC7A5\uBD80\uD130 \uC2DC\uC791\uD55C\uB2E4 \u2192")), /*#__PURE__*/React.createElement(SuggestBox, {
     sceneKey: sceneKey,
-    pc: pc
+    pc: pc,
+    lang: lang,
+    ui: ui
   })), pc && scene?.combat && enemy && !rolling && !pending && /*#__PURE__*/React.createElement("div", {
     className: "scene"
   }, /*#__PURE__*/React.createElement("div", {
     className: "combat"
-  }, /*#__PURE__*/React.createElement("h3", null, "\u2694 ", ENEMIES[scene.enemy].name), /*#__PURE__*/React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("h3", null, "\u2694 ", tx(ENEMIES[scene.enemy].name)), /*#__PURE__*/React.createElement("span", {
     className: "ehp"
-  }, "\uC801 HP ", enemy.hp, "/", ENEMIES[scene.enemy].maxHp, " \xB7 AC ", ENEMIES[scene.enemy].ac), /*#__PURE__*/React.createElement("div", {
+  }, (lang === "en" ? "Enemy HP " : "\uC801 HP "), enemy.hp, "/", ENEMIES[scene.enemy].maxHp, " \xB7 AC ", ENEMIES[scene.enemy].ac), /*#__PURE__*/React.createElement("div", {
     className: "clog",
     ref: clogRef
   }, clog.map((l, i) => /*#__PURE__*/React.createElement("div", {
     key: i,
     className: l.who
-  }, l.t))), !enemy.done && !enemy.playerDown && /*#__PURE__*/React.createElement("div", {
+  }, tx(l.t)))), scene.enemy === "looter" && enemyIntent && !enemy.done && !enemy.playerDown && /*#__PURE__*/React.createElement("div", {
+    className: "intent " + enemyIntent
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "intent-h"
+  }, lang === "en" ? "\u26A0 Ren's next move" : "\u26A0 \uB80C\uC758 \uB2E4\uC74C \uD589\uB3D9"), /*#__PURE__*/React.createElement("span", {
+    className: "intent-t"
+  }, LOOTER_INTENTS[enemyIntent].icon + " " + tx(LOOTER_INTENTS[enemyIntent].tele))), !enemy.done && !enemy.playerDown && scene.enemy === "looter" && /*#__PURE__*/React.createElement("div", {
+    className: "choices"
+  }, /*#__PURE__*/React.createElement("button", {
+    className: "choice",
+    onClick: () => looterAction("strike")
+  }, lang === "en" ? "\u2694 Strike " : "\u2694 " + tx(pc.weapon.name) + "(\uC73C)\uB85C \uCE5C\uB2E4 ", /*#__PURE__*/React.createElement("span", {
+    className: "tag"
+  }, guardBonus ? (lang === "en" ? "dmg +" + guardBonus + " \xB7 take the telegraphed hit" : "\uD53C\uD574 +" + guardBonus + " \xB7 \uC608\uACE0\uB97C \uADF8\uB300\uB85C \uB9DE\uC74C") : (lang === "en" ? "deal damage \xB7 take the telegraphed hit" : "\uD53C\uD574\uB97C \uC900\uB2E4 \xB7 \uC608\uACE0\uB97C \uADF8\uB300\uB85C \uB9DE\uC74C"))), /*#__PURE__*/React.createElement("button", {
+    className: "choice",
+    onClick: () => looterAction("guard")
+  }, lang === "en" ? "\uD83D\uDEE1 Brace to parry " : "\uD83D\uDEE1 \uBC1B\uC544\uB118\uAE38 \uC900\uBE44 ", /*#__PURE__*/React.createElement("span", {
+    className: "tag"
+  }, lang === "en" ? "next hit \u2193 (esp. vs Hook) \xB7 no attack this turn" : "\uB2E4\uC74C \uD53C\uD574\u2193(\uAC15\uD0C0\uC5D0 \uD2B9\uD788) \xB7 \uC774\uBC88 \uD0C0\uACA9 \uC5C6\uC74C")), /*#__PURE__*/React.createElement("button", {
+    className: "choice",
+    onClick: () => looterAction("disrupt")
+  }, lang === "en" ? "\uD83E\uDD3A Close in and cut it off " : "\uD83E\uDD3A \uD30C\uACE0\uB4E4\uC5B4 \uB055\uAE30 ", /*#__PURE__*/React.createElement("span", {
+    className: "tag"
+  }, (lang === "en" ? "Athletics " : "\uC6B4\uB3D9 "), Math.round(rules.successChance({
+    actor: pc,
+    ability: "STR",
+    skill: "athletics",
+    dc: 12
+  }) * 100), lang === "en" ? "% \xB7 hit: cancel his move / miss: extra dmg" : "% \xB7 \uC131\uACF5:\uD589\uB3D9\uCDE8\uC18C / \uC2E4\uD328:\uCD94\uAC00\uD53C\uD574")), flags.includes("sawTrap") && !trapUsed && /*#__PURE__*/React.createElement("button", {
+    className: "choice",
+    onClick: () => looterAction("trap")
+  }, lang === "en" ? "\uD83D\uDD25 Drive him into the oil & wire " : "\uD83D\uDD25 \uAE30\uB984\u00B7\uCCA0\uC0AC \uCABD\uC73C\uB85C \uBAB0\uAE30 ", /*#__PURE__*/React.createElement("span", {
+    className: "tag artifact"
+  }, lang === "en" ? "\u2726 trap you spotted at the entrance \xB7 once" : "\u2726 \uC785\uAD6C\uC5D0\uC11C \uBCF8 \uD568\uC815 \xB7 1\uD68C"))), !enemy.done && !enemy.playerDown && scene.enemy !== "looter" && /*#__PURE__*/React.createElement("div", {
     className: "choices"
   }, /*#__PURE__*/React.createElement("button", {
     className: "choice",
     onClick: () => combatAction("attack")
-  }, "\u2694 ", pc.weapon.name, "(\uC73C)\uB85C \uACF5\uACA9 ", /*#__PURE__*/React.createElement("span", {
+  }, lang === "en" ? "\u2694 Attack " : "\u2694 " + tx(pc.weapon.name) + "(\uC73C)\uB85C \uACF5\uACA9 ", /*#__PURE__*/React.createElement("span", {
     className: "tag"
   }, "1d", pc.weapon.die)), specialLeft > 0 && /*#__PURE__*/React.createElement("button", {
     className: "choice",
     onClick: () => combatAction("special")
-  }, "\u2726 ", SPECIALS[pc.classKey].name, " ", /*#__PURE__*/React.createElement("span", {
+  }, "\u2726 ", tx(SPECIALS[pc.classKey].name), " ", /*#__PURE__*/React.createElement("span", {
     className: "tag"
-  }, SPECIALS[pc.classKey].tag, " \xB7 \uB0A8\uC740 ", specialLeft, "\uD68C")), /*#__PURE__*/React.createElement("button", {
+  }, tx(SPECIALS[pc.classKey].tag), (lang === "en" ? " \xB7 " + specialLeft + " left" : " \xB7 \uB0A8\uC740 " + specialLeft + "\uD68C"))), /*#__PURE__*/React.createElement("button", {
     className: "choice",
     onClick: () => combatAction("defend")
-  }, "\uD83D\uDEE1 \uBC29\uC5B4 ", /*#__PURE__*/React.createElement("span", {
+  }, lang === "en" ? "\uD83D\uDEE1 Defend " : "\uD83D\uDEE1 \uBC29\uC5B4 ", /*#__PURE__*/React.createElement("span", {
     className: "tag"
-  }, "\uC774\uBC88 \uC801 \uACF5\uACA9 \uD68C\uD53C\uC728\u2191")), breathLeft > 0 && /*#__PURE__*/React.createElement("button", {
+  }, lang === "en" ? "dodge vs this attack \u2191" : "\uC774\uBC88 \uC801 \uACF5\uACA9 \uD68C\uD53C\uC728\u2191")), breathLeft > 0 && /*#__PURE__*/React.createElement("button", {
     className: "choice",
     onClick: () => combatAction("breath")
-  }, "\uD83C\uDF2C \uC228 \uACE0\uB974\uAE30 ", /*#__PURE__*/React.createElement("span", {
+  }, lang === "en" ? "\uD83C\uDF2C Catch breath " : "\uD83C\uDF2C \uC228 \uACE0\uB974\uAE30 ", /*#__PURE__*/React.createElement("span", {
     className: "tag"
-  }, "HP 1d4 \uD68C\uBCF5 \xB7 \uC804\uD22C\uB2F9 1\uD68C"))), enemy.done && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+  }, lang === "en" ? "heal HP 1d4 \xB7 once per fight" : "HP 1d4 \uD68C\uBCF5 \xB7 \uC804\uD22C\uB2F9 1\uD68C"))), enemy.done && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     className: "result good"
-  }, fmt(scene.victory.text, pc)), /*#__PURE__*/React.createElement("div", {
+  }, fmt(tx(scene.victory.text), pc)), /*#__PURE__*/React.createElement("div", {
     className: "choices"
   }, /*#__PURE__*/React.createElement("button", {
     className: "choice",
     onClick: () => goto(scene.victory.goto)
-  }, "\uACC4\uC18D\uD55C\uB2E4 \u2192"))), enemy.playerDown && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+  }, lang === "en" ? "Continue \u2192" : "\uACC4\uC18D\uD55C\uB2E4 \u2192"))), enemy.playerDown && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     className: "result bad"
-  }, fmt(scene.defeat.text, pc)), /*#__PURE__*/React.createElement("div", {
+  }, fmt(tx(scene.defeat.text), pc)), /*#__PURE__*/React.createElement("div", {
     className: "choices"
   }, /*#__PURE__*/React.createElement("button", {
     className: "choice",
@@ -2862,53 +3687,55 @@ function CRPG() {
     className: "scene epi"
   }, /*#__PURE__*/React.createElement("p", {
     className: "narr"
-  }, fmt(scene.ending === 1 ? buildEnding1(flags) : scene.ending === 2 ? buildEnding2(flags) : buildEnding3(flags), pc)), newBadge && /*#__PURE__*/React.createElement("div", {
+  }, fmt(tx(scene.ending === 1 ? buildEnding1(flags) : scene.ending === 2 ? buildEnding2(flags) : buildEnding3(flags)), pc)), newBadge && /*#__PURE__*/React.createElement("div", {
     className: "badges"
   }, /*#__PURE__*/React.createElement("span", {
     className: "badge on new"
-  }, "\u2605 \uC0C8 \uC5D4\uB529 \uBC1C\uACAC \u2014 ", BADGES.find(b => b.id === newBadge)?.name, BADGES.find(b => b.id === newBadge)?.first ? " (초대 랭크 1 — " + BADGES.find(b => b.id === newBadge)?.first + ")" : "")), /*#__PURE__*/React.createElement("p", {
+  }, ui("newBadge"), tx(BADGES.find(b => b.id === newBadge)?.name), BADGES.find(b => b.id === newBadge)?.first ? " (" + ui("firstRank") + " — " + BADGES.find(b => b.id === newBadge)?.first + ")" : "")), /*#__PURE__*/React.createElement("p", {
     className: "bcount"
-  }, "\uC5D4\uB529 \uB3C4\uAC10 ", badges.length, "/", BADGES.length), allBadges && /*#__PURE__*/React.createElement("div", {
+  }, ui("badgeCount"), " ", badges.length, "/", BADGES.length), allBadges && /*#__PURE__*/React.createElement("div", {
     className: "teaser"
   }, /*#__PURE__*/React.createElement("span", {
     className: "badge on new"
-  }, "\u2605 \uD788\uB4E0 \uCE6D\uD638 \u2014 \uC7BF\uBE5B \uB4F1\uB300\uC9C0\uAE30"), /*#__PURE__*/React.createElement("p", null, TEASER)), /*#__PURE__*/React.createElement("p", {
+  }, ui("teaserTitle")), /*#__PURE__*/React.createElement("p", null, tx(TEASER))), /*#__PURE__*/React.createElement("p", {
     className: "stats"
-  }, "\uC6A9\uC0AC: ", pc.name, " (", CLASSES[pc.classKey].name, ") \xB7 \uD310\uC815 ", stats.rolls, "\uD68C \xB7 \uC131\uACF5 ", stats.success, "\uD68C", /*#__PURE__*/React.createElement("br", null), "\uC774\uBC88 \uBAA8\uD5D8\uC758 \uB2E8\uC11C: ", flags.filter(f => CLUES[f]).map(f => CLUES[f]).join(" · ") || "없음", /*#__PURE__*/React.createElement("br", null), "\uB8F0: ", rules.name), recordFlash && /*#__PURE__*/React.createElement("div", {
+  }, ui("heroLine"), ": ", pc.name, " (", tx(CLASSES[pc.classKey].name), ") \xB7 ", ui("checksWord"), " ", stats.rolls, " \xB7 ", ui("successWord"), " ", stats.success, /*#__PURE__*/React.createElement("br", null), ui("thisRunClues"), flags.filter(f => CLUES[f]).map(f => tx(CLUES[f])).join(" · ") || ui("none"), /*#__PURE__*/React.createElement("br", null), ui("ruleLabel"), tx(rules.name)), recordFlash && /*#__PURE__*/React.createElement("div", {
     className: "record new"
-  }, "\u2605 \uC2E0\uAE30\uB85D! \uC774 \uC5D4\uB529\uC758 \uCD5C\uACE0 \uAE30\uB85D\uC744 \uAC31\uC2E0\uD588\uB2E4"), /*#__PURE__*/React.createElement("div", {
+  }, ui("newRecord")), /*#__PURE__*/React.createElement("div", {
     className: "daily-res" + (dailyDone ? " done" : "")
-  }, "\uC624\uB298\uC758 \uB3C4\uC804 \u2014 ", daily.label, " \xB7 ", dailyDone ? "\u2714 \uB2EC\uC131" : "\uBBF8\uB2EC\uC131"), artifactFlash && artifactFlash.length && /*#__PURE__*/React.createElement("div", {
+  }, ui("dailyH"), " \u2014 ", tx(daily.label), " \xB7 ", dailyDone ? ui("dailyDone") : ui("dailyTodo")), artifactFlash && artifactFlash.length && /*#__PURE__*/React.createElement("div", {
     className: "artifact-get"
-  }, "\u25C8 \uC720\uBB3C \uD68D\uB4DD \u2014 " + artifactFlash.map(id => ARTIFACTS[id].name).join(", ")), scene.ending === 1 ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("button", {
+  }, ui("artGet") + artifactFlash.map(id => tx(ARTIFACTS[id].name)).join(", ")), scene.ending === 1 ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("button", {
     className: "restart primary",
     onClick: () => goto("intro2")
-  }, "2\uC7A5 \u300C\uAC80\uC740 \uCF54\uD2B8\u300D \uACC4\uC18D \u2192"), /*#__PURE__*/React.createElement("button", {
+  }, ui("ch2next")), /*#__PURE__*/React.createElement("button", {
     className: "restart",
     onClick: () => restart()
-  }, "\uB2E4\uB978 \uC120\uD0DD\uC73C\uB85C 1\uC7A5 \uB2E4\uC2DC")) : scene.ending === 2 ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("button", {
+  }, ui("ch1again"))) : scene.ending === 2 ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("button", {
     className: "restart primary",
     onClick: () => goto("intro3")
-  }, "3\uC7A5 \u300C\uC0AC\uB77C\uC9C4 \uC885\uC18C\uB9AC\u300D \uACC4\uC18D \u2192"), /*#__PURE__*/React.createElement("button", {
+  }, ui("ch3next")), /*#__PURE__*/React.createElement("button", {
     className: "restart",
     onClick: () => restart("intro2")
-  }, "\uB2E4\uB978 \uC120\uD0DD\uC73C\uB85C 2\uC7A5 \uB2E4\uC2DC")) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("button", {
+  }, ui("ch2again"))) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("button", {
     className: "restart primary",
     onClick: () => restart("intro3")
-  }, "\uB2E4\uB978 \uC120\uD0DD\uC73C\uB85C 3\uC7A5 \uB2E4\uC2DC"), /*#__PURE__*/React.createElement("button", {
+  }, ui("ch3again")), /*#__PURE__*/React.createElement("button", {
     className: "restart",
     onClick: () => restart()
-  }, "\uCC98\uC74C(1\uC7A5)\uBD80\uD130")), /*#__PURE__*/React.createElement(SuggestBox, {
+  }, ui("fromStart"))), /*#__PURE__*/React.createElement(SuggestBox, {
     sceneKey: sceneKey,
-    pc: pc
+    pc: pc,
+    lang: lang,
+    ui: ui
   })), pc && scene?.gameover && /*#__PURE__*/React.createElement("div", {
     className: "scene epi"
   }, /*#__PURE__*/React.createElement("p", {
     className: "narr"
-  }, "모험은 여기서 끊겼다.\n\n하지만 주사위는 다시 굴릴 수 있다."), /*#__PURE__*/React.createElement("button", {
+  }, ui("gameover")), /*#__PURE__*/React.createElement("button", {
     className: "restart primary",
     onClick: () => restart()
-  }, "\uCC98\uC74C\uBD80\uD130 \uB2E4\uC2DC")), /*#__PURE__*/React.createElement("footer", null, "\uC5B4\uB450\uBC34\uCC98 \u2014 \uC791\uBA85: \uBE0C\uB2C8\uC5D8\uC5EC\uC790\uACE0\uB4F1\uD559\uAD50 2\uD559\uB144 \uBB3C\uB9AC\uBC18 \xB7 \uD3EC\uC2A4\uD130: Gemini", /*#__PURE__*/React.createElement("br", null), "\uC0BD\uD654\xB7\uC544\uC774\uB514\uC5B4 \uBAA8\uC9D1 \uC911: \uCC44\uD0DD\uC791\uC740 \uC2E4\uBA85 \uD06C\uB808\uB527\uACFC \uD568\uAED8 \uAC8C\uC784\uC5D0 \uC601\uAD6C \uC218\uB85D", /*#__PURE__*/React.createElement("br", null), "\uB8F0: SRD 5.1 (CC-BY-4.0) \uBD80\uBD84\uC9D1\uD569 \xB7 \uC5D4\uC9C4 v0.7.3", /*#__PURE__*/React.createElement("br", null), "채택된 제안 — 태희: 창문 순간이동(1장 등대 입구)")));
+  }, ui("restart"))), /*#__PURE__*/React.createElement("footer", null, ui("footer1"), /*#__PURE__*/React.createElement("br", null), ui("footer2"), /*#__PURE__*/React.createElement("br", null), ui("footer3"), BUILD, /*#__PURE__*/React.createElement("br", null), ui("footer4"))));
 }
 ReactDOM.createRoot(document.getElementById('root')).render(/*#__PURE__*/React.createElement(CRPG, null));
 </script>
