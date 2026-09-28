@@ -642,9 +642,9 @@ const RULE_SYSTEMS = {
    ============================================================ */
 const CLASSES = {
   fighter: {
-    name: "파이터",
+    name: { ko: "파이터", en: "Fighter" },
     icon: "⚔",
-    blurb: "정면 돌파. 단단한 갑옷과 정직한 검.",
+    blurb: { ko: "정면 돌파. 단단한 갑옷과 정직한 검.", en: "Head-on. Solid armor, an honest blade." },
     abilities: {
       STR: 16,
       DEX: 13,
@@ -663,9 +663,9 @@ const CLASSES = {
     proficiencies: ["athletics", "intimidation", "perception"]
   },
   rogue: {
-    name: "로그",
+    name: { ko: "로그", en: "Rogue" },
     icon: "🗡",
-    blurb: "그림자와 혀. 싸움은 시작되기 전에 끝낸다.",
+    blurb: { ko: "그림자와 혀. 싸움은 시작되기 전에 끝낸다.", en: "Shadow and silver tongue. End the fight before it begins." },
     abilities: {
       STR: 10,
       DEX: 16,
@@ -684,9 +684,9 @@ const CLASSES = {
     proficiencies: ["stealth", "deception", "perception", "persuasion"]
   },
   wizard: {
-    name: "위저드",
+    name: { ko: "위저드", en: "Wizard" },
     icon: "✦",
-    blurb: "세계는 방정식이다. 풀 수 있다면 다시 쓸 수도 있다.",
+    blurb: { ko: "세계는 방정식이다. 풀 수 있다면 다시 쓸 수도 있다.", en: "The world is an equation. Solve it, and you can rewrite it." },
     abilities: {
       STR: 8,
       DEX: 13,
@@ -706,27 +706,27 @@ const CLASSES = {
   }
 };
 const SKILL_NAMES = {
-  perception: "지각",
-  persuasion: "설득",
-  intimidation: "위협",
-  investigation: "조사",
-  athletics: "운동",
-  stealth: "은신",
-  deception: "기만",
-  arcana: "비전학",
-  history: "역사"
+  perception: { ko: "지각", en: "Perception" },
+  persuasion: { ko: "설득", en: "Persuasion" },
+  intimidation: { ko: "위협", en: "Intimidation" },
+  investigation: { ko: "조사", en: "Investigation" },
+  athletics: { ko: "운동", en: "Athletics" },
+  stealth: { ko: "은신", en: "Stealth" },
+  deception: { ko: "기만", en: "Deception" },
+  arcana: { ko: "비전학", en: "Arcana" },
+  history: { ko: "역사", en: "History" }
 };
 const ABILITY_NAMES = {
-  STR: "근력",
-  DEX: "민첩",
-  CON: "건강",
-  INT: "지능",
-  WIS: "지혜",
-  CHA: "매력"
+  STR: { ko: "근력", en: "STR" },
+  DEX: { ko: "민첩", en: "DEX" },
+  CON: { ko: "건강", en: "CON" },
+  INT: { ko: "지능", en: "INT" },
+  WIS: { ko: "지혜", en: "WIS" },
+  CHA: { ko: "매력", en: "CHA" }
 };
 const ENEMIES = {
   looter: {
-    name: "도굴꾼 '갈고리' 렌",
+    name: { ko: "도굴꾼 '갈고리' 렌", en: "'Hook' Ren, the Grave-robber" },
     abilities: {
       STR: 12,
       DEX: 14,
@@ -745,7 +745,7 @@ const ENEMIES = {
     proficiencies: []
   },
   smuggler: {
-    name: "검은 코트 '스컬리'",
+    name: { ko: "검은 코트 '스컬리'", en: "'Scully' the Black Coat" },
     abilities: {
       STR: 13,
       DEX: 15,
@@ -764,7 +764,7 @@ const ENEMIES = {
     proficiencies: []
   },
   falsemonk: {
-    name: "가짜 수도사 '회색 형제'",
+    name: { ko: "가짜 수도사 '회색 형제'", en: "the False Monk, 'Grey Brother'" },
     abilities: {
       STR: 14,
       DEX: 12,
@@ -1572,16 +1572,16 @@ function buildEnding3(flags) {
 }
 const SPECIALS = {
   fighter: {
-    name: "강타",
-    tag: "명중↓ 피해+1d6"
+    name: { ko: "강타", en: "Power Strike" },
+    tag: { ko: "명중↓ 피해+1d6", en: "–to hit, +1d6 dmg" }
   },
   rogue: {
-    name: "급소 찌르기",
-    tag: "명중 시 피해 2배"
+    name: { ko: "급소 찌르기", en: "Vital Strike" },
+    tag: { ko: "명중 시 피해 2배", en: "double dmg on hit" }
   },
   wizard: {
-    name: "마법 화살",
-    tag: "자동 명중 1d8+2"
+    name: { ko: "마법 화살", en: "Magic Missile" },
+    tag: { ko: "자동 명중 1d8+2", en: "auto-hit 1d8+2" }
   }
 };
 const TEASER = "잿돌 수도원에서 회수한 편지의 봉인이 풀렸다 — \"등대는 시험이었다. 통과한 자에게는, 이제 내가 직접 간다. — S\"";
@@ -2743,7 +2743,7 @@ function CRPG() {
       });
       setClog([{
         who: "sys",
-        t: "⚔ 전투 개시 — " + e.name
+        t: (lang === "en" ? "⚔ Battle — " : "⚔ 전투 개시 — ") + tx(e.name)
       }]);
       setBreathLeft(1);
       if (target.enemy === "looter") {
@@ -3070,7 +3070,7 @@ function CRPG() {
     });
     log.push({
       who: "foe",
-      t: "◀ " + foe.name + ": " + def.detail + (isDef ? " (방어 태세)" : "")
+      t: "◀ " + tx(foe.name) + ": " + def.detail + (isDef ? (lang === "en" ? " (guarding)" : " (방어 태세)") : "")
     });
     curHp = Math.max(0, curHp - def.damage);
     setPc({
@@ -3233,7 +3233,7 @@ function CRPG() {
     title: "\uC800\uC7A5\uB41C \uBAA8\uD5D8\uC744 \uC774\uC5B4\uC11C \uD55C\uB2E4"
   }, "\u21BB \uC774\uC5B4\uC11C \uD558\uAE30", /*#__PURE__*/React.createElement("span", {
     className: "cont-meta"
-  }, (SCENES[savedGame.sceneKey]?.ch === 3 ? "\uC81C3\uC7A5" : SCENES[savedGame.sceneKey]?.ch === 2 ? "\uC81C2\uC7A5" : "\uC81C1\uC7A5") + " \xB7 " + savedGame.pc.name + " (" + (CLASSES[savedGame.pc.classKey] ? CLASSES[savedGame.pc.classKey].name : "\uC6A9\uC0AC") + ")")), /*#__PURE__*/React.createElement("label", {
+  }, (SCENES[savedGame.sceneKey]?.ch === 3 ? "\uC81C3\uC7A5" : SCENES[savedGame.sceneKey]?.ch === 2 ? "\uC81C2\uC7A5" : "\uC81C1\uC7A5") + " \xB7 " + savedGame.pc.name + " (" + tx(CLASSES[savedGame.pc.classKey] ? CLASSES[savedGame.pc.classKey].name : "\uC6A9\uC0AC") + ")")), /*#__PURE__*/React.createElement("label", {
     className: "nameLb"
   }, "\uC6A9\uC0AC\uC758 \uC774\uB984\uC740?"), /*#__PURE__*/React.createElement("input", {
     className: "nameIn",
@@ -3254,9 +3254,9 @@ function CRPG() {
     onClick: () => pickClass(k)
   }, /*#__PURE__*/React.createElement("div", {
     className: "ci"
-  }, c.icon), /*#__PURE__*/React.createElement("h2", null, c.name), /*#__PURE__*/React.createElement("p", null, c.blurb), /*#__PURE__*/React.createElement("div", {
+  }, c.icon), /*#__PURE__*/React.createElement("h2", null, tx(c.name)), /*#__PURE__*/React.createElement("p", null, tx(c.blurb)), /*#__PURE__*/React.createElement("div", {
     className: "st"
-  }, "HP ", c.maxHp, " \xB7 AC ", c.ac, " \xB7 ", c.weapon.name, " \xB7 \uD2B9\uC218\uAE30 ", SPECIALS[k].name, /*#__PURE__*/React.createElement("br", null), "\uC219\uB828: ", c.proficiencies.map(s => SKILL_NAMES[s]).join(" · "))))), /*#__PURE__*/React.createElement("div", {
+  }, "HP ", c.maxHp, " \xB7 AC ", c.ac, " \xB7 ", c.weapon.name, " \xB7 \uD2B9\uC218\uAE30 ", tx(SPECIALS[k].name), /*#__PURE__*/React.createElement("br", null), "\uC219\uB828: ", c.proficiencies.map(s => tx(SKILL_NAMES[s])).join(" · "))))), /*#__PURE__*/React.createElement("div", {
     className: "daily" + (dailyDone ? " done" : "")
   }, /*#__PURE__*/React.createElement("span", {
     className: "daily-h"
@@ -3300,7 +3300,7 @@ function CRPG() {
     className: "nm"
   }, pc.icon, " ", pc.name, " ", /*#__PURE__*/React.createElement("em", {
     className: "cls"
-  }, CLASSES[pc.classKey].name)), /*#__PURE__*/React.createElement("div", {
+  }, tx(CLASSES[pc.classKey].name))), /*#__PURE__*/React.createElement("div", {
     className: "hpbar"
   }, /*#__PURE__*/React.createElement("i", {
     style: {
@@ -3308,9 +3308,9 @@ function CRPG() {
     }
   })), /*#__PURE__*/React.createElement("span", {
     className: "ab"
-  }, "HP ", pc.hp, "/", pc.maxHp, " \xB7 AC ", pc.ac, " \xB7 \uC6B4\uBA85\uD83C\uDFB2", fate, " \xB7 ", SPECIALS[pc.classKey].name, "\xD7", specialLeft), /*#__PURE__*/React.createElement("span", {
+  }, "HP ", pc.hp, "/", pc.maxHp, " \xB7 AC ", pc.ac, " \xB7 \uC6B4\uBA85\uD83C\uDFB2", fate, " \xB7 ", tx(SPECIALS[pc.classKey].name), "\xD7", specialLeft), /*#__PURE__*/React.createElement("span", {
     className: "ab"
-  }, Object.entries(pc.abilities).map(([a, v]) => `${ABILITY_NAMES[a]}${v}(${rules.abilityMod(v) >= 0 ? "+" : ""}${rules.abilityMod(v)})`).join(" ")), flags.some(f => CLUES[f]) && /*#__PURE__*/React.createElement("span", {
+  }, Object.entries(pc.abilities).map(([a, v]) => `${tx(ABILITY_NAMES[a])}${v}(${rules.abilityMod(v) >= 0 ? "+" : ""}${rules.abilityMod(v)})`).join(" ")), flags.some(f => CLUES[f]) && /*#__PURE__*/React.createElement("span", {
     className: "ab clueLine"
   }, "\u2726 \uB2E8\uC11C: ", flags.filter(f => CLUES[f]).map(f => CLUES[f]).join(" · "))), pc && rolling && /*#__PURE__*/React.createElement("div", {
     className: "diceWrap"
@@ -3397,7 +3397,7 @@ function CRPG() {
     onClick: () => doChoice(ch)
   }, tx(ch.label), ch.check && /*#__PURE__*/React.createElement("span", {
     className: "tag"
-  }, SKILL_NAMES[ch.check.skill], " \xB7 ", /*#__PURE__*/React.createElement("span", {
+  }, tx(SKILL_NAMES[ch.check.skill]), " \xB7 ", /*#__PURE__*/React.createElement("span", {
     className: "pct"
   }, pct(ch), "%")), ch.credit && /*#__PURE__*/React.createElement("span", {
     className: "tag"
@@ -3420,7 +3420,7 @@ function CRPG() {
     className: "scene"
   }, /*#__PURE__*/React.createElement("div", {
     className: "combat"
-  }, /*#__PURE__*/React.createElement("h3", null, "\u2694 ", ENEMIES[scene.enemy].name), /*#__PURE__*/React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("h3", null, "\u2694 ", tx(ENEMIES[scene.enemy].name)), /*#__PURE__*/React.createElement("span", {
     className: "ehp"
   }, "\uC801 HP ", enemy.hp, "/", ENEMIES[scene.enemy].maxHp, " \xB7 AC ", ENEMIES[scene.enemy].ac), /*#__PURE__*/React.createElement("div", {
     className: "clog",
@@ -3471,9 +3471,9 @@ function CRPG() {
   }, "1d", pc.weapon.die)), specialLeft > 0 && /*#__PURE__*/React.createElement("button", {
     className: "choice",
     onClick: () => combatAction("special")
-  }, "\u2726 ", SPECIALS[pc.classKey].name, " ", /*#__PURE__*/React.createElement("span", {
+  }, "\u2726 ", tx(SPECIALS[pc.classKey].name), " ", /*#__PURE__*/React.createElement("span", {
     className: "tag"
-  }, SPECIALS[pc.classKey].tag, " \xB7 \uB0A8\uC740 ", specialLeft, "\uD68C")), /*#__PURE__*/React.createElement("button", {
+  }, tx(SPECIALS[pc.classKey].tag), " \xB7 \uB0A8\uC740 ", specialLeft, "\uD68C")), /*#__PURE__*/React.createElement("button", {
     className: "choice",
     onClick: () => combatAction("defend")
   }, "\uD83D\uDEE1 \uBC29\uC5B4 ", /*#__PURE__*/React.createElement("span", {
@@ -3513,7 +3513,7 @@ function CRPG() {
     className: "badge on new"
   }, "\u2605 \uD788\uB4E0 \uCE6D\uD638 \u2014 \uC7BF\uBE5B \uB4F1\uB300\uC9C0\uAE30"), /*#__PURE__*/React.createElement("p", null, TEASER)), /*#__PURE__*/React.createElement("p", {
     className: "stats"
-  }, "\uC6A9\uC0AC: ", pc.name, " (", CLASSES[pc.classKey].name, ") \xB7 \uD310\uC815 ", stats.rolls, "\uD68C \xB7 \uC131\uACF5 ", stats.success, "\uD68C", /*#__PURE__*/React.createElement("br", null), "\uC774\uBC88 \uBAA8\uD5D8\uC758 \uB2E8\uC11C: ", flags.filter(f => CLUES[f]).map(f => CLUES[f]).join(" · ") || "없음", /*#__PURE__*/React.createElement("br", null), "\uB8F0: ", rules.name), recordFlash && /*#__PURE__*/React.createElement("div", {
+  }, "\uC6A9\uC0AC: ", pc.name, " (", tx(CLASSES[pc.classKey].name), ") \xB7 \uD310\uC815 ", stats.rolls, "\uD68C \xB7 \uC131\uACF5 ", stats.success, "\uD68C", /*#__PURE__*/React.createElement("br", null), "\uC774\uBC88 \uBAA8\uD5D8\uC758 \uB2E8\uC11C: ", flags.filter(f => CLUES[f]).map(f => CLUES[f]).join(" · ") || "없음", /*#__PURE__*/React.createElement("br", null), "\uB8F0: ", rules.name), recordFlash && /*#__PURE__*/React.createElement("div", {
     className: "record new"
   }, "\u2605 \uC2E0\uAE30\uB85D! \uC774 \uC5D4\uB529\uC758 \uCD5C\uACE0 \uAE30\uB85D\uC744 \uAC31\uC2E0\uD588\uB2E4"), /*#__PURE__*/React.createElement("div", {
     className: "daily-res" + (dailyDone ? " done" : "")
