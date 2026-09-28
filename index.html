@@ -1586,16 +1586,16 @@ const SPECIALS = {
 };
 const TEASER = "잿돌 수도원에서 회수한 편지의 봉인이 풀렸다 — \"등대는 시험이었다. 통과한 자에게는, 이제 내가 직접 간다. — S\"";
 const CLUES = {
-  peaceful: "도굴꾼의 증언",
-  fixed: "일부러 빼낸 톱니",
-  trail: "지하로 향한 발자국",
-  keeper: "종탑 관리인의 신뢰",
-  ledger: "밀수 장부",
-  grip: "선제 제압의 기억",
-  quiet3: "소리 없는 구출",
-  peaceful2: "스컬리의 편지",
-  saved3: "배달부의 마지막 편지",
-  chase3: "증거 편지 뭉치"
+  peaceful: { ko: "도굴꾼의 증언", en: "The grave-robber's testimony" },
+  fixed: { ko: "일부러 빼낸 톱니", en: "A gear pulled out on purpose" },
+  trail: { ko: "지하로 향한 발자국", en: "Footprints leading underground" },
+  keeper: { ko: "종탑 관리인의 신뢰", en: "The bell-keeper's trust" },
+  ledger: { ko: "밀수 장부", en: "The smuggling ledger" },
+  grip: { ko: "선제 제압의 기억", en: "Memory of a preemptive takedown" },
+  quiet3: { ko: "소리 없는 구출", en: "A silent rescue" },
+  peaceful2: { ko: "스컬리의 편지", en: "Scully's letters" },
+  saved3: { ko: "배달부의 마지막 편지", en: "The courier's last letter" },
+  chase3: { ko: "증거 편지 뭉치", en: "A bundle of evidence letters" }
 };
 
 /* ---------- 나비효과 — 과거의 선택이 특정 장면에서 파급으로 되돌아온다(가시적 인과) ----------
@@ -2786,7 +2786,7 @@ function CRPG() {
     }
     if (branch.flag) {
       setFlags(f => f.includes(branch.flag) ? f : [...f, branch.flag]);
-      if (CLUES[branch.flag]) extra += `\n\n✦ 단서 획득 — ${CLUES[branch.flag]}`;
+      if (CLUES[branch.flag]) extra += (lang === "en" ? `\n\n✦ Clue found — ${tx(CLUES[branch.flag])}` : `\n\n✦ 단서 획득 — ${tx(CLUES[branch.flag])}`);
     }
     setLastResult({
       dice: res,
@@ -3279,8 +3279,8 @@ function CRPG() {
   }, Object.keys(CLUES).map(k => /*#__PURE__*/React.createElement("span", {
     key: k,
     className: "loreitem" + (lore.includes(k) ? " on" : ""),
-    title: lore.includes(k) ? CLUES[k] : "\uC544\uC9C1 \uBC1C\uACAC\uD558\uC9C0 \uBABB\uD55C \uC9C0\uC2DD \u2014 \uBAA8\uD5D8\uC744 \uAC70\uB4ED\uD558\uBA70 \uCC3E\uC544\uB77C"
-  }, lore.includes(k) ? "\u2726 " + CLUES[k] : "???"))), lore.length > 0 && /*#__PURE__*/React.createElement("p", {
+    title: lore.includes(k) ? tx(CLUES[k]) : (lang === "en" ? "Not yet discovered — find it across your runs" : "\uC544\uC9C1 \uBC1C\uACAC\uD558\uC9C0 \uBABB\uD55C \uC9C0\uC2DD \u2014 \uBAA8\uD5D8\uC744 \uAC70\uB4ED\uD558\uBA70 \uCC3E\uC544\uB77C")
+  }, lore.includes(k) ? "\u2726 " + tx(CLUES[k]) : "???"))), lore.length > 0 && /*#__PURE__*/React.createElement("p", {
     className: "lore-hint"
   }, "\uC9C0\uC2DD\uC740 \uC8FD\uC5B4\uB3C4 \uC0AC\uB77C\uC9C0\uC9C0 \uC54A\uB294\uB2E4. \uB2E4\uC74C \uBAA8\uD5D8\uC5D0\uC11C \uC0C8 \uAE38\uC744 \uC5EC\uB294 \uC5F4\uC1E0\uAC00 \uB41C\uB2E4."), /*#__PURE__*/React.createElement("p", {
     className: "bcount"
@@ -3312,7 +3312,7 @@ function CRPG() {
     className: "ab"
   }, Object.entries(pc.abilities).map(([a, v]) => `${tx(ABILITY_NAMES[a])}${v}(${rules.abilityMod(v) >= 0 ? "+" : ""}${rules.abilityMod(v)})`).join(" ")), flags.some(f => CLUES[f]) && /*#__PURE__*/React.createElement("span", {
     className: "ab clueLine"
-  }, "\u2726 \uB2E8\uC11C: ", flags.filter(f => CLUES[f]).map(f => CLUES[f]).join(" · "))), pc && rolling && /*#__PURE__*/React.createElement("div", {
+  }, lang === "en" ? "\u2726 Clues: " : "\u2726 \uB2E8\uC11C: ", flags.filter(f => CLUES[f]).map(f => tx(CLUES[f])).join(" · "))), pc && rolling && /*#__PURE__*/React.createElement("div", {
     className: "diceWrap"
   }, /*#__PURE__*/React.createElement("div", {
     className: "die rolling"
