@@ -2817,7 +2817,7 @@ function CRPG() {
         }));
         if (res.success) {
           SFX.good();
-          applyBranch(choice.success, res, choice.check.label);
+          applyBranch(choice.success, res, choice.check.skill);
         } else if (fateAvail) {
           SFX.bad();
           setPending({
@@ -2826,7 +2826,7 @@ function CRPG() {
           });
         } else {
           SFX.bad();
-          applyBranch(choice.fail, res, choice.check.label);
+          applyBranch(choice.fail, res, choice.check.skill);
         }
       }
     }, 70);
@@ -3318,7 +3318,7 @@ function CRPG() {
     className: "die rolling"
   }, rollFace), /*#__PURE__*/React.createElement("div", {
     className: "diceMeta"
-  }, "\uC6B4\uBA85\uC774 \uAD6C\uB974\uACE0 \uC788\uB2E4\u2026")), pc && lastResult && !rolling && !pending && /*#__PURE__*/React.createElement("div", {
+  }, lang === "en" ? "Fate is rolling…" : "\uC6B4\uBA85\uC774 \uAD6C\uB974\uACE0 \uC788\uB2E4\u2026")), pc && lastResult && !rolling && !pending && /*#__PURE__*/React.createElement("div", {
     className: "resWrap"
   }, /*#__PURE__*/React.createElement("button", {
     className: "resChip",
@@ -3327,9 +3327,9 @@ function CRPG() {
     className: "chipDie " + lastResult.kind
   }, lastResult.dice.roll), /*#__PURE__*/React.createElement("b", {
     className: lastResult.kind
-  }, lastResult.label, " ", lastResult.dice.success ? "성공" : "실패"), /*#__PURE__*/React.createElement("span", {
+  }, SKILL_NAMES[lastResult.label] ? tx(SKILL_NAMES[lastResult.label]) : lastResult.label, " ", lastResult.dice.success ? (lang === "en" ? "Success" : "성공") : (lang === "en" ? "Fail" : "실패")), /*#__PURE__*/React.createElement("span", {
     className: "chipMore"
-  }, showCalc ? "접기 ▴" : "자세히 ▾")), showCalc && /*#__PURE__*/React.createElement("div", {
+  }, showCalc ? (lang === "en" ? "Hide ▴" : "접기 ▴") : (lang === "en" ? "Details ▾" : "자세히 ▾"))), showCalc && /*#__PURE__*/React.createElement("div", {
     className: "resDetail"
   }, /*#__PURE__*/React.createElement(JumpBar, {
     total: lastResult.dice.total,
@@ -3348,14 +3348,14 @@ function CRPG() {
     className: "diceMeta"
   }, /*#__PURE__*/React.createElement("b", {
     className: "bad"
-  }, pending.choice.check.label, " \uC2E4\uD328\u2026"), /*#__PURE__*/React.createElement(JumpBar, {
+  }, tx(SKILL_NAMES[pending.choice.check.skill] || pending.choice.check.label), lang === "en" ? " failed…" : " \uC2E4\uD328\u2026"), /*#__PURE__*/React.createElement(JumpBar, {
     total: pending.res.total,
     dc: pending.res.dc,
     success: false
   }), /*#__PURE__*/React.createElement("button", {
     className: "calcToggle",
     onClick: () => setShowCalc(s => !s)
-  }, showCalc ? "계산 닫기" : "계산 보기"), showCalc && /*#__PURE__*/React.createElement("div", null, pending.res.detail))), /*#__PURE__*/React.createElement("div", {
+  }, showCalc ? (lang === "en" ? "Hide math" : "계산 닫기") : (lang === "en" ? "Show math" : "계산 보기")), showCalc && /*#__PURE__*/React.createElement("div", null, pending.res.detail))), /*#__PURE__*/React.createElement("div", {
     className: "choices"
   }, /*#__PURE__*/React.createElement("button", {
     className: "choice fate",
@@ -3373,7 +3373,7 @@ function CRPG() {
     onClick: () => {
       const p = pending;
       setPending(null);
-      applyBranch(p.choice.fail, p.res, p.choice.check.label);
+      applyBranch(p.choice.fail, p.res, p.choice.check.skill);
     }
   }, "\uACB0\uACFC\uB97C \uBC1B\uC544\uB4E4\uC778\uB2E4 \u2192"))), pc && scene && !scene.combat && !scene.ending && !scene.gameover && !rolling && !pending && /*#__PURE__*/React.createElement("div", {
     className: "scene",
