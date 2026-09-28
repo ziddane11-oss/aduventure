@@ -839,17 +839,29 @@ const SCENES = {
   /* ---------- 제1장 잿빛 등대 ---------- */
   intro: {
     ch: 1,
-    text: `당신은 폭풍을 피해 항구 마을 소금여울에 들어온 떠돌이 모험가다.\n\n그런데 마을의 등대가 사흘째 꺼져 있다. 등대지기 노인은 응답이 없고, 폭풍은 그칠 기미가 없다.\n\n촌장이 낡은 열쇠를 쥐여 준다. "{이름}, 부탁할 사람이 자네뿐이야. 오늘 밤 안에 불을 올리지 못하면, 새벽에 들어오는 어선 셋이 암초로 직행하네."\n\n빗속 절벽 길의 끝 — 잿빛 등대가 죽은 이빨처럼 서 있다.`,
+    text: {
+      ko: `당신은 폭풍을 피해 항구 마을 소금여울에 들어온 떠돌이 모험가다.\n\n그런데 마을의 등대가 사흘째 꺼져 있다. 등대지기 노인은 응답이 없고, 폭풍은 그칠 기미가 없다.\n\n촌장이 낡은 열쇠를 쥐여 준다. "{이름}, 부탁할 사람이 자네뿐이야. 오늘 밤 안에 불을 올리지 못하면, 새벽에 들어오는 어선 셋이 암초로 직행하네."\n\n빗속 절벽 길의 끝 — 잿빛 등대가 죽은 이빨처럼 서 있다.`,
+      en: `You're a wandering adventurer who slipped into the harbor town of Saltmarsh to wait out the storm.\n\nBut the town's lighthouse has stood dark for three days. The old keeper doesn't answer, and the storm won't break.\n\nThe village chief presses a worn key into your hand. "{name}, you're the only one left to ask. If the light isn't burning by dawn, three fishing boats will sail straight onto the rocks."\n\nAt the end of the rain-lashed cliff path, the ashen lighthouse stands like a dead tooth.`
+    },
     choices: [{
-      label: "등대 문을 연다",
+      label: {
+        ko: "등대 문을 연다",
+        en: "Open the lighthouse door"
+      },
       goto: "door"
     }]
   },
   door: {
     ch: 1,
-    text: `문은 열려 있었다. 안은 칠흑. 소금 냄새에 섞인 — 기름 냄새.\n\n바닥이 번들거린다.`,
+    text: {
+      ko: `문은 열려 있었다. 안은 칠흑. 소금 냄새에 섞인 — 기름 냄새.\n\n바닥이 번들거린다.`,
+      en: `The door was already open. Inside, pitch black. Under the smell of salt — oil.\n\nThe floor glistens.`
+    },
     choices: [{
-      label: "어둠 속을 살핀다",
+      label: {
+        ko: "어둠 속을 살핀다",
+        en: "Search the darkness"
+      },
       check: {
         ability: "WIS",
         skill: "perception",
@@ -857,17 +869,26 @@ const SCENES = {
         label: "지각"
       },
       success: {
-        text: "계단 둘째 단, 팽팽한 철사. 끝에는 기름통을 쏟는 장치.\n\n누군가 손님을 기다렸다. 철사를 넘는다.",
+        text: {
+          ko: "계단 둘째 단, 팽팽한 철사. 끝에는 기름통을 쏟는 장치.\n\n누군가 손님을 기다렸다. 철사를 넘는다.",
+          en: "On the second step, a taut wire — rigged to tip a barrel of oil.\n\nSomeone was expecting a guest. You step over the wire."
+        },
         flag: "sawTrap",
         goto: "stairs"
       },
       fail: {
-        text: "어둠뿐이다. 계단을 딛는 순간 — 철컥.\n\n기름이 쏟아지고, 미끄러진다.",
+        text: {
+          ko: "어둠뿐이다. 계단을 딛는 순간 — 철컥.\n\n기름이 쏟아지고, 미끄러진다.",
+          en: "Only darkness. The instant your foot finds the stair — click.\n\nOil spills, and you go down."
+        },
         damage: [1, 4],
         goto: "stairs"
       }
     }, {
-      label: "[운동] 함정이 있든 말든, 어둠을 가로질러 내달린다",
+      label: {
+        ko: "[운동] 함정이 있든 말든, 어둠을 가로질러 내달린다",
+        en: "[Athletics] Trap or not, sprint straight through the dark"
+      },
       check: {
         ability: "STR",
         skill: "athletics",
@@ -875,18 +896,27 @@ const SCENES = {
         label: "운동"
       },
       success: {
-        text: `발끝이 철사를 스치기 직전 — 도약. 장치가 헛되이 철컥거리는 소리를 뒤로 하고 계단에 올라선다.`,
+        text: {
+          ko: `발끝이 철사를 스치기 직전 — 도약. 장치가 헛되이 철컥거리는 소리를 뒤로 하고 계단에 올라선다.`,
+          en: `A heartbeat before your toe grazes the wire — you leap. The trap clacks uselessly behind you as you land on the stairs.`
+        },
         goto: "stairs"
       },
       fail: {
-        text: `정강이에 철사가 걸린다. 기름통이 정통으로 쏟아지고, 계단 아래까지 굴렀다.`,
+        text: {
+          ko: `정강이에 철사가 걸린다. 기름통이 정통으로 쏟아지고, 계단 아래까지 굴렀다.`,
+          en: `The wire catches your shin. The barrel dumps oil square onto you, and you roll to the foot of the stairs.`
+        },
         damage: [2, 4],
         goto: "stairs"
       }
     }, {
       classOnly: "wizard",
       credit: "제안: 태희",
-      label: "창문으로 순간이동한다 — 저 문은 함정일 것이다",
+      label: {
+        ko: "창문으로 순간이동한다 — 저 문은 함정일 것이다",
+        en: "Blink through the window — that door must be a trap"
+      },
       check: {
         ability: "INT",
         skill: "arcana",
@@ -894,11 +924,17 @@ const SCENES = {
         label: "비전학"
       },
       success: {
-        text: `짧은 주문. 세계의 문법에서 '벽'이라는 단어가 잠시 지워진다.\n\n안개처럼 흩어졌다가 — 창틀 안쪽에서 다시 조립된다. 기름 웅덩이도, 철사도, 발자국 하나 없이 지나쳤다.`,
+        text: {
+          ko: `짧은 주문. 세계의 문법에서 '벽'이라는 단어가 잠시 지워진다.\n\n안개처럼 흩어졌다가 — 창틀 안쪽에서 다시 조립된다. 기름 웅덩이도, 철사도, 발자국 하나 없이 지나쳤다.`,
+          en: `A short incantation. For a moment the word "wall" is erased from the world's grammar.\n\nYou scatter like mist — and reassemble inside the window frame. Past the oil, past the wire, without leaving a single footprint.`
+        },
         goto: "stairs"
       },
       fail: {
-        text: `주문이 혀끝에서 미끄러진다. 몸의 절반만 창을 통과했다 —\n\n나머지 절반이 창틀에 부딪히고, 젖은 바닥에 어깨부터 떨어진다. 이 등대가 창문으로 손님을 받은 건 처음일 것이다.`,
+        text: {
+          ko: `주문이 혀끝에서 미끄러진다. 몸의 절반만 창을 통과했다 —\n\n나머지 절반이 창틀에 부딪히고, 젖은 바닥에 어깨부터 떨어진다. 이 등대가 창문으로 손님을 받은 건 처음일 것이다.`,
+          en: `The spell slips off your tongue. Only half of you makes it through the window —\n\nthe other half slams into the frame, and you drop shoulder-first onto the wet floor. Surely the first guest this lighthouse has ever taken through a window.`
+        },
         damage: [1, 4],
         goto: "stairs"
       }
@@ -2596,7 +2632,7 @@ function CRPG() {
     setLastResult({
       dice: res,
       label,
-      text: branch.text + extra,
+      text: fmt(tx(branch.text), pc) + extra,
       kind: res.success ? "good" : "bad"
     });
     goto(branch.goto, branch.flag);
@@ -3194,13 +3230,13 @@ function CRPG() {
     className: "echo-t"
   }, e.text))), /*#__PURE__*/React.createElement("p", {
     className: "narr"
-  }, fmt(scene.text, pc)), /*#__PURE__*/React.createElement("div", {
+  }, fmt(tx(scene.text), pc)), /*#__PURE__*/React.createElement("div", {
     className: "choices"
   }, scene.choices.filter(ch => (!ch.classOnly || pc && ch.classOnly === pc.classKey) && (!ch.loreReq || lore.includes(ch.loreReq)) && (!ch.artifactReq || artifacts.includes(ch.artifactReq)) && (!ch.echoReq || flags.includes(ch.echoReq))).map((ch, i) => /*#__PURE__*/React.createElement("button", {
     key: i,
     className: "choice",
     onClick: () => doChoice(ch)
-  }, ch.label, ch.check && /*#__PURE__*/React.createElement("span", {
+  }, tx(ch.label), ch.check && /*#__PURE__*/React.createElement("span", {
     className: "tag"
   }, SKILL_NAMES[ch.check.skill], " \xB7 ", /*#__PURE__*/React.createElement("span", {
     className: "pct"
@@ -3290,14 +3326,14 @@ function CRPG() {
     className: "tag"
   }, "HP 1d4 \uD68C\uBCF5 \xB7 \uC804\uD22C\uB2F9 1\uD68C"))), enemy.done && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     className: "result good"
-  }, fmt(scene.victory.text, pc)), /*#__PURE__*/React.createElement("div", {
+  }, fmt(tx(scene.victory.text), pc)), /*#__PURE__*/React.createElement("div", {
     className: "choices"
   }, /*#__PURE__*/React.createElement("button", {
     className: "choice",
     onClick: () => goto(scene.victory.goto)
   }, "\uACC4\uC18D\uD55C\uB2E4 \u2192"))), enemy.playerDown && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     className: "result bad"
-  }, fmt(scene.defeat.text, pc)), /*#__PURE__*/React.createElement("div", {
+  }, fmt(tx(scene.defeat.text), pc)), /*#__PURE__*/React.createElement("div", {
     className: "choices"
   }, /*#__PURE__*/React.createElement("button", {
     className: "choice",
