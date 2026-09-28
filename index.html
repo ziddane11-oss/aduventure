@@ -1097,23 +1097,41 @@ const SCENES = {
   /* ---------- 제2장 검은 코트 ---------- */
   intro2: {
     ch: 2,
-    text: `다음 날 아침. 등대지기 노인이 깨어났다.\n\n"뒤에서 맞았네. 검은 코트… 항구 쪽으로 달아났지."\n\n등대를 끈 자는 사람이다. 그리고 아직 마을에 있다.`,
+    text: {
+      ko: `다음 날 아침. 등대지기 노인이 깨어났다.\n\n"뒤에서 맞았네. 검은 코트… 항구 쪽으로 달아났지."\n\n등대를 끈 자는 사람이다. 그리고 아직 마을에 있다.`,
+      en: `The next morning. The old keeper has come to.\n\n"Struck from behind. A black coat… ran off toward the harbor."\n\nWhoever put out the light was a person. And they're still in town.`
+    },
     choices: [{
-      label: "부두로 간다",
+      label: {
+        ko: "부두로 간다",
+        en: "Head to the docks"
+      },
       goto: "wharf"
     }]
   },
   wharf: {
     ch: 2,
-    text: `부두 선술집 '닻과 못'. 뱃사람들의 눈이 일제히 낯선 얼굴에 꽂힌다.\n\n구석 자리에서 검은 코트 자락이 스치고 — 사라졌다. 주인장은 입이 무겁기로 유명하다.`,
+    text: {
+      ko: `부두 선술집 '닻과 못'. 뱃사람들의 눈이 일제히 낯선 얼굴에 꽂힌다.\n\n구석 자리에서 검은 코트 자락이 스치고 — 사라졌다. 주인장은 입이 무겁기로 유명하다.`,
+      en: `The dockside tavern "Anchor & Nail." Every sailor's eyes lock onto the unfamiliar face at once.\n\nIn a corner, the hem of a black coat brushes past — and is gone. The owner is famous for keeping his mouth shut.`
+    },
     choices: [{
       echoReq: "peaceful",
-      echo: "1장에서 렌을 살려 보냈다",
-      label: `[인연] 구석에서 당신을 알아본 렌에게 다가간다`,
+      echo: {
+        ko: "1장에서 렌을 살려 보냈다",
+        en: "You spared Ren in Ch.1"
+      },
+      label: {
+        ko: `[인연] 구석에서 당신을 알아본 렌에게 다가간다`,
+        en: `[Bond] Approach Ren, who recognizes you from the corner`
+      },
       flagDirect: "ren_tip",
       goto: "wharfRen"
     }, {
-      label: `[기만] "세관입니다. 어젯밤 입항 기록 좀."`,
+      label: {
+        ko: `[기만] "세관입니다. 어젯밤 입항 기록 좀."`,
+        en: `[Deceive] "Customs. Show me last night's arrival log."`
+      },
       check: {
         ability: "CHA",
         skill: "deception",
@@ -1121,15 +1139,24 @@ const SCENES = {
         label: "기만"
       },
       success: {
-        text: `주인장이 잔을 닦으며 턱짓한다.\n\n"물어본 적 없는 걸로 하지. — 3번 창고."`,
+        text: {
+          ko: `주인장이 잔을 닦으며 턱짓한다.\n\n"물어본 적 없는 걸로 하지. — 3번 창고."`,
+          en: `The owner wipes a glass and jerks his chin.\n\n"You never asked me. — Warehouse 3."`
+        },
         goto: "warehouseA"
       },
       fail: {
-        text: `"세관? 세관은 외상값부터 갚고 와."\n\n웃음거리가 됐다. 발로 뛰어 흔적을 쫓는다 — 발자국이 3번 창고 앞에서 끊긴다. 안쪽은 이미 조용하다. 눈치챘다.`,
+        text: {
+          ko: `"세관? 세관은 외상값부터 갚고 와."\n\n웃음거리가 됐다. 발로 뛰어 흔적을 쫓는다 — 발자국이 3번 창고 앞에서 끊긴다. 안쪽은 이미 조용하다. 눈치챘다.`,
+          en: `"Customs? Customs can pay its tab first."\n\nYou're the joke of the room. You chase the trail on foot — the footprints stop at Warehouse 3. Inside is already quiet. They know you're coming.`
+        },
         goto: "warehouseB"
       }
     }, {
-      label: "[지각] 조용히 자리 잡고 살핀다",
+      label: {
+        ko: "[지각] 조용히 자리 잡고 살핀다",
+        en: "[Perceive] Take a quiet seat and watch"
+      },
       check: {
         ability: "WIS",
         skill: "perception",
@@ -1137,28 +1164,46 @@ const SCENES = {
         label: "지각"
       },
       success: {
-        text: `검은 코트가 뒷문으로 빠지며 주인장에게 동전을 던진다. 허리춤에 열쇠 — 3번 창고.\n\n조용히 따라붙는다.`,
+        text: {
+          ko: `검은 코트가 뒷문으로 빠지며 주인장에게 동전을 던진다. 허리춤에 열쇠 — 3번 창고.\n\n조용히 따라붙는다.`,
+          en: `The black coat slips out the back, flipping the owner a coin. A key at the belt — Warehouse 3.\n\nYou follow, quietly.`
+        },
         goto: "warehouseA"
       },
       fail: {
-        text: `놓쳤다. 부두를 한 바퀴 돌아 발자국을 찾는다 — 3번 창고 앞에서 끊긴다.\n\n안쪽은 이미 조용하다. 눈치챘다.`,
+        text: {
+          ko: `놓쳤다. 부두를 한 바퀴 돌아 발자국을 찾는다 — 3번 창고 앞에서 끊긴다.\n\n안쪽은 이미 조용하다. 눈치챘다.`,
+          en: `You lose them. Circling the docks, you pick up footprints — they stop at Warehouse 3.\n\nInside is already quiet. They know you're coming.`
+        },
         goto: "warehouseB"
       }
     }]
   },
   wharfRen: {
     ch: 2,
-    text: `렌이 잔을 비우며 씩 웃는다. "빚은 갚는 주의라서."\n\n목소리를 낮춘다. "검은 코트 — 스컬리. 3번 창고에 처박혀 있어. 목에 빚이 걸린 놈이라, 관헌 얘기만 꺼내도 오줌을 지릴 거다."\n\n렌은 동전 한 닢을 탁자에 튕겨 놓고 빗속으로 사라진다. 빚은, 이렇게 갚였다.`,
+    text: {
+      ko: `렌이 잔을 비우며 씩 웃는다. "빚은 갚는 주의라서."\n\n목소리를 낮춘다. "검은 코트 — 스컬리. 3번 창고에 처박혀 있어. 목에 빚이 걸린 놈이라, 관헌 얘기만 꺼내도 오줌을 지릴 거다."\n\n렌은 동전 한 닢을 탁자에 튕겨 놓고 빗속으로 사라진다. 빚은, 이렇게 갚였다.`,
+      en: `Ren drains his cup and grins. "I pay my debts."\n\nHe drops his voice. "The black coat — Scully. Holed up in Warehouse 3. He's in debt up to his neck; just mention the authorities and he'll wet himself."\n\nRen flicks a coin onto the table and vanishes into the rain. A debt, repaid.`
+    },
     choices: [{
-      label: "렌이 일러준 3번 창고로 향한다",
+      label: {
+        ko: "렌이 일러준 3번 창고로 향한다",
+        en: "Head to Warehouse 3, as Ren told you"
+      },
       goto: "warehouseA"
     }]
   },
   warehouseA: {
     ch: 2,
-    text: `3번 창고. 문틈으로 등불.\n\n안에서 낮은 목소리 — "등대는 처리했고, 오늘 밤 배가 들어온다."`,
+    text: {
+      ko: `3번 창고. 문틈으로 등불.\n\n안에서 낮은 목소리 — "등대는 처리했고, 오늘 밤 배가 들어온다."`,
+      en: `Warehouse 3. Lamplight through the gap in the door.\n\nA low voice inside — "The lighthouse is dealt with, and the ship comes in tonight."`
+    },
     choices: [{
-      label: "[은신] 들키지 않고 증거를 챙긴다",
+      label: {
+        ko: "[은신] 들키지 않고 증거를 챙긴다",
+        en: "[Stealth] Take the evidence unseen"
+      },
       check: {
         ability: "DEX",
         skill: "stealth",
@@ -1166,24 +1211,39 @@ const SCENES = {
         label: "은신"
       },
       success: {
-        text: `그림자 사이로 스며든다. 탁자 위 — 밀수 장부.\n\n발주자 서명란에 글자 하나. 'S'.\n\n장부를 품에 넣는 순간, 등불이 이쪽을 향한다.`,
+        text: {
+          ko: `그림자 사이로 스며든다. 탁자 위 — 밀수 장부.\n\n발주자 서명란에 글자 하나. 'S'.\n\n장부를 품에 넣는 순간, 등불이 이쪽을 향한다.`,
+          en: `You slip between the shadows. On the table — a smuggling ledger.\n\nIn the client's signature line, a single letter. "S."\n\nThe instant you tuck it away, a lamp swings toward you.`
+        },
         flag: "ledger",
         goto: "confront"
       },
       fail: {
-        text: `발끝에 빈 술병이 걸린다 — 쨍그랑.\n\n"누구냐!"`,
+        text: {
+          ko: `발끝에 빈 술병이 걸린다 — 쨍그랑.\n\n"누구냐!"`,
+          en: `Your toe catches an empty bottle — crash.\n\n"Who's there!"`
+        },
         goto: "combat2"
       }
     }, {
-      label: "[전투] 문을 박차고 들어간다",
+      label: {
+        ko: "[전투] 문을 박차고 들어간다",
+        en: "[Fight] Kick the door in"
+      },
       goto: "combat2"
     }]
   },
   warehouseB: {
     ch: 2,
-    text: `3번 창고. 문이 반쯤 열려 있다 — 함정 냄새.\n\n안에서 숨소리가 멎어 있다.`,
+    text: {
+      ko: `3번 창고. 문이 반쯤 열려 있다 — 함정 냄새.\n\n안에서 숨소리가 멎어 있다.`,
+      en: `Warehouse 3. The door hangs half open — it reeks of a trap.\n\nInside, the breathing has gone still.`
+    },
     choices: [{
-      label: "[운동] 선수를 쳐서 들이친다",
+      label: {
+        ko: "[운동] 선수를 쳐서 들이친다",
+        en: "[Athletics] Strike first and charge in"
+      },
       check: {
         ability: "STR",
         skill: "athletics",
@@ -1191,17 +1251,26 @@ const SCENES = {
         label: "운동"
       },
       success: {
-        text: `문을 어깨로 부수며 굴러 들어간다.\n\n검은 코트가 칼을 뽑기 전에 멱살을 잡아 벽에 박았다.`,
+        text: {
+          ko: `문을 어깨로 부수며 굴러 들어간다.\n\n검은 코트가 칼을 뽑기 전에 멱살을 잡아 벽에 박았다.`,
+          en: `You shoulder the door open and roll inside.\n\nBefore the black coat can draw, you catch his collar and pin him to the wall.`
+        },
         flag: "grip",
         goto: "confront"
       },
       fail: {
-        text: `어둠 속에서 각목이 날아든다.\n\n별이 보인다.`,
+        text: {
+          ko: `어둠 속에서 각목이 날아든다.\n\n별이 보인다.`,
+          en: `A club flies out of the dark.\n\nYou see stars.`
+        },
         damage: [1, 4],
         goto: "combat2"
       }
     }, {
-      label: "[지각] 어둠 속 매복의 숨소리를 먼저 읽는다",
+      label: {
+        ko: "[지각] 어둠 속 매복의 숨소리를 먼저 읽는다",
+        en: "[Perceive] Read the ambusher's breathing in the dark first"
+      },
       check: {
         ability: "WIS",
         skill: "perception",
@@ -1209,12 +1278,18 @@ const SCENES = {
         label: "지각"
       },
       success: {
-        text: `문 안쪽 왼편, 억눌린 숨소리. 각목의 궤적이 그려지기도 전에 — 손목을 꺾어 제압했다.`,
+        text: {
+          ko: `문 안쪽 왼편, 억눌린 숨소리. 각목의 궤적이 그려지기도 전에 — 손목을 꺾어 제압했다.`,
+          en: `Just inside, to the left: a stifled breath. Before the club can even begin its swing — you twist the wrist and pin him.`
+        },
         flag: "grip",
         goto: "confront"
       },
       fail: {
-        text: `숨소리를 놓쳤다. 각목이 어깨를 강타한다.`,
+        text: {
+          ko: `숨소리를 놓쳤다. 각목이 어깨를 강타한다.`,
+          en: `You miss the breath. The club cracks across your shoulder.`
+        },
         damage: [1, 4],
         goto: "combat2"
       }
@@ -1222,11 +1297,20 @@ const SCENES = {
   },
   confront: {
     ch: 2,
-    text: `검은 코트의 사내 — 스컬리. 궁지에 몰린 눈.\n\n"기다려. 난 심부름꾼이야. 등대를 끄라는 의뢰, 선금 절반, 서명은 S. 그게 전부야."`,
+    text: {
+      ko: `검은 코트의 사내 — 스컬리. 궁지에 몰린 눈.\n\n"기다려. 난 심부름꾼이야. 등대를 끄라는 의뢰, 선금 절반, 서명은 S. 그게 전부야."`,
+      en: `The man in the black coat — Scully. Cornered eyes.\n\n"Wait — I'm just the errand boy. A contract to kill the light, half paid up front, signed 'S.' That's everything I know."`
+    },
     choices: [{
       echoReq: "ren_tip",
-      echo: "렌이 일러준 스컬리의 빚",
-      label: `[정보] "네 빚, 스컬리. 렌한테 다 들었다 — 불면 이름은 빼주지."`,
+      echo: {
+        ko: "렌이 일러준 스컬리의 빚",
+        en: "Scully's debt, from Ren's tip"
+      },
+      label: {
+        ko: `[정보] "네 빚, 스컬리. 렌한테 다 들었다 — 불면 이름은 빼주지."`,
+        en: `[Info] "Your debt, Scully. Ren told me all of it — talk, and I keep your name out of it."`
+      },
       check: {
         ability: "CHA",
         skill: "persuasion",
@@ -1234,16 +1318,25 @@ const SCENES = {
         label: "설득"
       },
       success: {
-        text: `스컬리의 얼굴이 무너진다. "…렌, 그 자식." 품에서 편지 뭉치를 던진다.\n\n"발신지는 잿돌 수도원. 서명은 S. 그거면 됐지?" 어깨를 늘어뜨린 채 사라졌다.`,
+        text: {
+          ko: `스컬리의 얼굴이 무너진다. "…렌, 그 자식." 품에서 편지 뭉치를 던진다.\n\n"발신지는 잿돌 수도원. 서명은 S. 그거면 됐지?" 어깨를 늘어뜨린 채 사라졌다.`,
+          en: `Scully's face crumbles. "…Ren, that bastard." He throws down a bundle of letters.\n\n"Sent from Ashstone Monastery. Signed 'S.' Enough for you?" He slinks off, shoulders sagging.`
+        },
         flag: "peaceful2",
         goto: "ending2"
       },
       fail: {
-        text: `"렌? …그 배신자 이름 함부로 놀리지 마." 칼이 번뜩인다.`,
+        text: {
+          ko: `"렌? …그 배신자 이름 함부로 놀리지 마." 칼이 번뜩인다.`,
+          en: `"Ren? …don't you dare throw that traitor's name at me." A blade flashes.`
+        },
         goto: "combat2"
       }
     }, {
-      label: `[설득] "전부 말하면 관헌엔 이름을 빼주지."`,
+      label: {
+        ko: `[설득] "전부 말하면 관헌엔 이름을 빼주지."`,
+        en: `[Persuade] "Tell me everything, and I'll keep your name from the law."`
+      },
       check: {
         ability: "CHA",
         skill: "persuasion",
@@ -1251,16 +1344,25 @@ const SCENES = {
         label: "설득"
       },
       success: {
-        text: `스컬리가 품에서 편지 뭉치를 꺼내 던진다.\n\n"발신지는 내륙이야. — 잿돌 수도원."\n\n사내는 어둠 속으로 사라졌다.`,
+        text: {
+          ko: `스컬리가 품에서 편지 뭉치를 꺼내 던진다.\n\n"발신지는 내륙이야. — 잿돌 수도원."\n\n사내는 어둠 속으로 사라졌다.`,
+          en: `Scully draws a bundle of letters from his coat and tosses it over.\n\n"It came from inland. — Ashstone Monastery."\n\nThe man melts into the dark.`
+        },
         flag: "peaceful2",
         goto: "ending2"
       },
       fail: {
-        text: `"…미안하지만, 입이 가벼우면 오래 못 살아."\n\n칼이 번뜩인다.`,
+        text: {
+          ko: `"…미안하지만, 입이 가벼우면 오래 못 살아."\n\n칼이 번뜩인다.`,
+          en: `"…sorry, but loose lips don't live long."\n\nA blade flashes.`
+        },
         goto: "combat2"
       }
     }, {
-      label: "[전투] 묶어서 관헌에 넘긴다",
+      label: {
+        ko: "[전투] 묶어서 관헌에 넘긴다",
+        en: "[Fight] Subdue him and hand him to the law"
+      },
       goto: "combat2"
     }]
   },
@@ -1269,11 +1371,17 @@ const SCENES = {
     combat: true,
     enemy: "smuggler",
     victory: {
-      text: `스컬리가 벽에 기대 미끄러진다.\n\n"…돈을 받았을 뿐이야. 등대를 꺼라, 배가 들어온다 — 그게 다야.\n\n발주한 놈은 편지로만 왔어. 서명은 S. 발신지는 잿돌 수도원."`,
+      text: {
+        ko: `스컬리가 벽에 기대 미끄러진다.\n\n"…돈을 받았을 뿐이야. 등대를 꺼라, 배가 들어온다 — 그게 다야.\n\n발주한 놈은 편지로만 왔어. 서명은 S. 발신지는 잿돌 수도원."`,
+        en: `Scully slides down the wall.\n\n"…I just took the money. Kill the light, a ship comes in — that's all.\n\nThe client only ever came by letter. Signed 'S.' Sent from Ashstone Monastery."`
+      },
       goto: "ending2"
     },
     defeat: {
-      text: `차가운 창고 바닥…\n\n눈을 뜨니 스컬리도, 장부도 사라졌다. 단서가 끊겼다.`,
+      text: {
+        ko: `차가운 창고 바닥…\n\n눈을 뜨니 스컬리도, 장부도 사라졌다. 단서가 끊겼다.`,
+        en: `The cold warehouse floor…\n\nYou wake to find Scully gone, the ledger gone. The trail is dead.`
+      },
       goto: "gameover"
     }
   },
@@ -3299,7 +3407,7 @@ function CRPG() {
     className: "tag artifact"
   }, "\u25C8 " + (ARTIFACTS[ch.artifactReq] ? ARTIFACTS[ch.artifactReq].name : "\uC720\uBB3C")), ch.echo && /*#__PURE__*/React.createElement("span", {
     className: "tag echo"
-  }, "\uD83E\uDD8B " + ch.echo))), sceneKey === "intro" && ch1Cleared && /*#__PURE__*/React.createElement("button", {
+  }, "\uD83E\uDD8B " + tx(ch.echo)))), sceneKey === "intro" && ch1Cleared && /*#__PURE__*/React.createElement("button", {
     className: "choice",
     onClick: () => goto("intro2")
   }, "(1\uC7A5 \uD074\uB9AC\uC5B4 \uAE30\uB85D \uC788\uC74C) 2\uC7A5\uBD80\uD130 \uC2DC\uC791\uD55C\uB2E4 \u2192"), sceneKey === "intro" && badges.some(b => b.startsWith("2")) && /*#__PURE__*/React.createElement("button", {
