@@ -5,7 +5,7 @@
 
 ## 0. 한 줄 운영
 
-**한국어 3명, 영어권 3명을 같은 방식으로 관찰한다 → 언어별로 반복된 문제 2~3개를 고친다 → 각 언어에서 새로운 3명에게 다시 본다.**
+**한국어 3명을 관찰한다 → 반복된 문제 2~3개를 고친다 → 새로운 한국어 3명에게 다시 본다. 영어권 3명도 같은 1회 방식으로 준비하되, 영어 2회는 아직 열지 않는다.**
 
 질문은 하나다. **처음 만난 사람이 계속하고 싶은 게임인가.**
 
@@ -24,24 +24,25 @@
 | 구성 | RPG·선택형 경험 2 + 스토리 일반 1 | 같음 |
 | 시간 | 준비 5 + 플레이 20 + 인터뷰 10 + 설문 5 = **약 40분** | 같음 |
 | 방식 | 화면공유 관찰. 동의 후 게임 화면·음성만 기록(얼굴 없음) | 같음 |
-| 보상 | **참여자 수령 1만 원**, 세션 종료 후 **48시간 이내** | **참여자 수령 ₩10,000**, 48시간 이내 |
-| 지급 | 국내 계좌이체. 이체 수수료는 운영자가 따로 부담 | 페이팔(PayPal, 페이팔, 해외 송금에 쓰는 결제 계정). 수수료·환전은 운영자가 따로 부담 |
-| 빌드 | 헤더 `v0.7.3-pt4`. 설문에 자동 포함 | 같음. 우상단에서 EN |
+| 보상 | **참여자 수령 1만 원**, 세션 종료 후 **48시간 이내** | **원화 1만 원 상당 USD 수령액**을 선발 확정 때 고정. 실제 달러 숫자가 정해지기 전에는 모집 게시 안 함 |
+| 지급 | 국내 계좌이체. 이체 수수료는 운영자가 따로 부담 | 페이팔(PayPal, 페이팔, 해외 송금에 쓰는 결제 계정). 수수료·환전은 별도(운영자 부담) |
+| 빌드 | 헤더 `v0.7.3-pt4`. 설문에 자동 포함. 회차 시작 후 커밋 고정 | 같음. 우상단에서 EN |
 | 모집 채널 (미게시) | Threads, 모집이 허용된 국내 게임 커뮤니티 | [r/playtesters](https://www.reddit.com/r/playtesters/) |
-| 다음 | 수정 후 **새로운 한국어 3명** (나머지 3만 원) | 같은 방식의 새 3명은 제안값(아래 예산) |
+| 다음 | 수정 후 **새로운 한국어 3명** | 영어 2회는 아직 확정하지 않음 |
 
 PlaytestCloud 등 대행은 이번 회에 쓰지 않는다. 서비스 이용료가 직접 모집 예산과 겹친다.
 
 ## 2. 예산
 
-| 회차 | 대상 | 금액 |
-|---|---|---|
-| 1회 | 한국어 3명 | 3만 원 (확정) |
-| 1회 | 영어권 3명 | 3만 원 (확정, 이번 추가) |
-| 2회 | 수정 후 새 한국어 3명 | 3만 원 (확정) |
-| 2회 | 수정 후 새 영어권 3명 | 3만 원 (**제안값** — 1회 영어 결과를 본 뒤 결정) |
+참여자 수령 기준. **해외 페이팔 수수료·환전은 별도**(운영자 부담). 추가 회차를 여기서 확정하지 않는다.
 
-1회 지급 예산은 **6만 원**. 한국어 2회 잔여 3만 원은 그대로 둔다.
+| 구성 | 금액 |
+|---|---|
+| 한국어 두 회 (3+3) | **6만 원** |
+| 한국어 두 회 + 영어 한 회 (3+3+3) | **9만 원** |
+| 한국어·영어 각각 두 회 (3+3+3+3) | **12만 원** |
+
+지금 준비하는 범위: 한국어 두 회(6만) + 영어 한 회(3만) = **9만 원**. 영어 2회(추가로 3만, 합 12만)는 아직 열지 않는다.
 
 ## 3. 이번 테스트 접속 링크 (선택한 사이트)
 
@@ -49,26 +50,11 @@ PlaytestCloud 등 대행은 이번 회에 쓰지 않는다. 서비스 이용료�
 
 이 저장소에 이미 있는 GitHub Pages다. 새 호스팅은 만들지 않는다. 브라우저에서 게임이 실제로 뜨는 공개 HTTPS는 여기뿐이다.
 
-확인한 배포 기록:
+배포 방식: Settings → Pages → Source는 **Deploy from a branch** 유지. Branch는 `cursor/playtest-startable-6593`, 폴더는 `/`. `main` 병합은 하지 않는다. 이 주소의 게임이 pt4로 바뀌는 것을 전제로 한다.
 
-| 구분 | 값 |
-|---|---|
-| 소스 | `main` `/` (legacy) |
-| 마지막 성공 배포 | `b412626` · 2026-09-16 · `built` |
-| 지금 라이브 타이틀 | `어두밴처 v0.7.3` |
-| 이번 테스트 빌드인가 | **아니오.** 언어 토글·2단계 설문·`v0.7.3-pt4` 없음 |
+`.github/workflows/pages.yml`은 **수동 실행(`workflow_dispatch`)만** 있다. push로 Pages를 배포하지 않는다.
 
-쓰지 않기로 한 주소 (브라우저에서 검증함):
-
-- jsDelivr: `Content-Type: text/plain` + `nosniff` → 스크립트가 실행되지 않음
-- raw.githack / rawcdn.githack: 실제 브라우저에서 “External Content Notice”만 보임
-- htmlpreview.github.io: 제목은 읽히나 React가 깨짐
-
-**테스터에게 이 링크를 주기 전에 할 설정 1개**
-
-GitHub → Settings → Pages → Branch를 `cursor/playtest-startable-6593`(폴더 `/`)로 바꾼다. 1~2분 뒤 헤더에 `v0.7.3-pt4`가 보이면 그 링크를 쓴다. 안 보이면 접속을 중단한다.
-
-(다른 한 가지: 이 브랜치를 `main`에 머지하면 같은 주소가 자동으로 갱신된다. 머지는 아직 하지 않는다.)
+헤더에 `v0.7.3-pt4`가 보이면 맞는 빌드다. 안 보이면 접속을 중단한다.
 
 ## 4. 설문 (인게임 `🗒` / 피드백·그만두기)
 
@@ -116,8 +102,12 @@ This session records **the game screen and your voice only**. **No webcam / no f
 
 지급 기한: 세션 종료 후 **48시간 이내**.
 
-- 국내: 계좌이체. 참여자 통장에 **1만 원**이 입금되게 한다. 수수료는 운영자 부담.
-- 영어권: 페이팔. 참여자가 **₩10,000**을 받도록 보낸다. 수수료·환전은 운영자 부담. 한국 페이팔 계정은 한국 외 지역으로 보내는 용도이므로 국내 이체와 섞지 않는다.
+- 국내: 계좌이체. 참여자 통장에 **1만 원**이 입금되게 한다. 이체 수수료는 운영자 부담.
+- 영어권 (**제안**): 원화 1만 원 상당의 **USD 수령액**을 **선발 확정 때 고정**한다.
+  - 환산 기준 (**제안값**): 확정 시각의 한국수출입은행 매매기준율, 또는 페이팔 송금 화면에 보이는 원화→USD. 둘 중 하나를 운영자가 고르고 확정 메시지에 적는다.
+  - 수수료: 페이팔 송금 수수료·환전 스프레드는 **별도, 운영자 부담**. 참여자가 받는 달러가 그 고정액이 되게 보낸다.
+  - 한국 페이팔 계정은 한국 외 지역으로 보내는 용도이므로 국내 이체와 섞지 않는다.
+  - **실제 달러 숫자가 모집문에 들어가기 전에는 영어 모집문을 게시하지 않는다.**
 
 선발 확정 연락을 받은 사람만 유료 테스트를 시작한다. 신청만으로는 지급 대상이 아니다.
 
@@ -165,12 +155,14 @@ This session records **the game screen and your voice only**. **No webcam / no f
 
 **Channel (decided):** [r/playtesters](https://www.reddit.com/r/playtesters/). Do not post until the operator re-reads the live subreddit rules that day. **[미검증]** current flair/title format — Reddit blocked a live rules fetch in this environment.
 
-Title: [Paid] 40-min observed browser playtest (20-min play + talk) · ₩10,000 received via PayPal
+Do not post this English draft until a concrete USD received amount is written in the title and body.
+
+Title: [Paid] 40-min observed browser playtest (20-min play + talk) · $‹USD locked at selection, ₩10,000 equivalent› via PayPal
 
 I'm running a small observed playtest of a **dice-driven mystery text adventure** I'm building solo (KO/EN toggle). Looking for **3 adults who have never played Aduventure**.
 
 - What you do: Screen-share while you play ~20 minutes, then a short talk, then a 5-minute in-game form. About 40 minutes total.
-- Reward: **₩10,000 received** via PayPal within 48 hours of the session. I cover PayPal fees so you receive that amount.
+- Reward: **$‹amount› received** via PayPal within 48 hours (₩10,000 equivalent, locked when I confirm you). I cover PayPal fees and FX so you receive that dollar amount.
 - Needed: Modern browser (PC or phone), screen share + voice, 40 quiet minutes, English
 - Recording: Game screen and voice **with consent**. No webcam / no face. No public use of your face or real name.
 - Link: I send the `v0.7.3-pt4` URL only after you are selected.
@@ -220,11 +212,11 @@ Do not put bank/PayPal details in the public post or the first application.
 | P1 | ko | 10,000 | ‹미정› | | 세션+48h | | | 대기 |
 | P2 | ko | 10,000 | ‹미정› | | 세션+48h | | | 대기 |
 | P3 | ko | 10,000 | ‹미정› | | 세션+48h | | | 대기 |
-| E1 | en | 10,000 | ‹미정› | | 세션+48h | | | 대기 |
-| E2 | en | 10,000 | ‹미정› | | 세션+48h | | | 대기 |
-| E3 | en | 10,000 | ‹미정› | | 세션+48h | | | 대기 |
+| E1 | en | ₩10,000 상당 USD (숫자 미정) | ‹미정› | | 세션+48h | | | 대기 |
+| E2 | en | ₩10,000 상당 USD (숫자 미정) | ‹미정› | | 세션+48h | | | 대기 |
+| E3 | en | ₩10,000 상당 USD (숫자 미정) | ‹미정› | | 세션+48h | | | 대기 |
 | P4–P6 | ko | 10,000 | ‹1회 수정 후› | | 세션+48h | | | 대기 |
-| E4–E6 | en | 10,000 | ‹제안값› | | 세션+48h | | | 대기 |
+| E4–E6 | en | ‹USD, 미확정› | ‹영어 2회는 아직 열지 않음› | | 세션+48h | | | 대기 |
 
 상태: `대기` / `기한 내 송금` / `보류` / `완료`.
 
@@ -249,12 +241,38 @@ Do not put bank/PayPal details in the public post or the first application.
 
 ## 13. 체크리스트 (실행은 아직 하지 않음)
 
-- [ ] 이번 테스트 링크에서 헤더 `v0.7.3-pt4` 확인
-- [ ] 운영자가 GAS 시트/메일에서 설문·오류 행을 직접 한 번 열어봄
+- [ ] 공개 링크 헤더 `v0.7.3-pt4` 확인
+- [ ] 운영자가 GAS 시트에서 검증용 행(`VERIFY_PT4_…`)을 실제 참여자와 분리해 확인
 - [ ] 동의문 제안값 수용 또는 수정
-- [ ] 한국어 일정·연락 / 영어권 일정·연락·페이팔 송금 가능 여부
+- [ ] 한국어 일정·연락 / 영어권 USD 금액·일정·연락
+- [ ] 영어 모집문: 달러 숫자 확정 전에는 게시하지 않음
 - [ ] 신청 접수 → 언어별 경험자 2 + 일반 1 → **확정 연락**
+- [ ] 회차 시작 시 아래 빌드 고정 표에 커밋을 적는다
 - [ ] 게시 직전 채널 규칙 재확인 (특히 r/playtesters)
-- [ ] 1회 3+3 관찰 → 사실/가설 표 → 반복 문제만 수정
-- [ ] 한국어 2회 새 3명. 영어 2회는 제안값
+- [ ] 한국어 1회 관찰 → 사실/가설 표 → 반복 문제만 수정 → 한국어 2회
 - [ ] 48시간 내 지급, 관리표에 거래번호
+
+## 14. 빌드 고정
+
+선발 확정 연락을 보내는 시점이 회차 시작이다. 그때 빌드 태그와 커밋 SHA를 적고, 그 SHA의 `index.html`만 쓴다.
+
+진행 불가 오류를 회차 중간에 고치면:
+
+1. `BUILD` 태그를 올린다 (예: `v0.7.3-pt4` → `v0.7.3-pt5`)
+2. 같은 Pages 브랜치에 푸시하고, 공개 주소 헤더가 새 태그인지 확인한다
+3. 관리표에서 **수정 전 / 수정 후** 참여자를 나눈다. 같은 회차라도 빌드가 다르면 피드백을 섞어 해석하지 않는다
+
+| 회차 | 빌드 | 커밋 | 비고 |
+|---|---|---|---|
+| 모집 전 배포 | v0.7.3-pt4 | ‹푸시 후 SHA› | 공개 주소용. 회차 시작 전 |
+| 한국어 1회 | | | 선발 확정 때 채움 |
+| 영어 1회 | | | 선발 확정 때 채움. USD 숫자 확정 후 |
+
+## 15. 운영자 검증 기록 (실제 참여자 아님)
+
+인게임 설문에 아래 식별자를 넣어 보낸 행은 **배포 검증**이다. 참여자 피드백과 같은 칸에 두지 않는다.
+
+- 접두어: `VERIFY_PT4_AGENT_`
+- `answers.bug` / `answers.more`에 `NOT_A_PARTICIPANT` 문구
+- 시트에서 이 접두어로 필터해 분리하거나, 확인 후 검증 탭/삭제로 옮긴다
+
