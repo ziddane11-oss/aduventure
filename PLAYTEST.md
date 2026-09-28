@@ -43,29 +43,32 @@ PlaytestCloud 등 대행은 이번 회에 쓰지 않는다. 서비스 이용료�
 
 1회 지급 예산은 **6만 원**. 한국어 2회 잔여 3만 원은 그대로 둔다.
 
-## 3. 이번 테스트 접속 링크
+## 3. 이번 테스트 접속 링크 (선택한 사이트)
 
-저장소에 README는 원래 없었다. Pages 설정과 배포 기록으로 확인한 기존 주소:
+**테스터에게 줄 주소:** https://ziddane11-oss.github.io/aduventure/
+
+이 저장소에 이미 있는 GitHub Pages다. 새 호스팅은 만들지 않는다. 브라우저에서 게임이 실제로 뜨는 공개 HTTPS는 여기뿐이다.
+
+확인한 배포 기록:
 
 | 구분 | 값 |
 |---|---|
-| 기존 Pages | https://ziddane11-oss.github.io/aduventure/ |
-| 소스 | `main` `/` |
-| 마지막 배포 | `b412626` · 2026-09-16 · 상태 `built` |
-| 라이브 타이틀 | `어두밴처 v0.7.3` |
-| 이번 빌드인가 | **아니오.** 2단계 설문·`v0.7.3-pt4` 없음 |
+| 소스 | `main` `/` (legacy) |
+| 마지막 성공 배포 | `b412626` · 2026-09-16 · `built` |
+| 지금 라이브 타이틀 | `어두밴처 v0.7.3` |
+| 이번 테스트 빌드인가 | **아니오.** 언어 토글·2단계 설문·`v0.7.3-pt4` 없음 |
 
-**이번 테스트에 쓸 주소 (선택한 방법):** 브랜치의 `index.html`을 그대로 여는 주소.
+쓰지 않기로 한 주소 (브라우저에서 검증함):
 
-```
-https://cdn.jsdelivr.net/gh/ziddane11-oss/aduventure@‹이 브랜치의 커밋 SHA›/index.html
-```
+- jsDelivr: `Content-Type: text/plain` + `nosniff` → 스크립트가 실행되지 않음
+- raw.githack / rawcdn.githack: 실제 브라우저에서 “External Content Notice”만 보임
+- htmlpreview.github.io: 제목은 읽히나 React가 깨짐
 
-이유: Pages는 `main`만 나간다. 테스터에게 잘못된 빌드를 주면 안 된다. 새 호스팅 계정은 만들지 않는다. SHA를 박으면 캐시가 옛 파일을 줄 위험이 줄어든다.
+**테스터에게 이 링크를 주기 전에 할 설정 1개**
 
-헤더에 `v0.7.3-pt4`가 보이면 맞는 빌드다. 안 보이면 접속을 중단한다.
+GitHub → Settings → Pages → Branch를 `cursor/playtest-startable-6593`(폴더 `/`)로 바꾼다. 1~2분 뒤 헤더에 `v0.7.3-pt4`가 보이면 그 링크를 쓴다. 안 보이면 접속을 중단한다.
 
-Pages를 이 빌드에 맞추고 싶으면 설정 하나: Settings → Pages → branch를 이 브랜치(또는 머지 후 `main`)로.
+(다른 한 가지: 이 브랜치를 `main`에 머지하면 같은 주소가 자동으로 갱신된다. 머지는 아직 하지 않는다.)
 
 ## 4. 설문 (인게임 `🗒` / 피드백·그만두기)
 
