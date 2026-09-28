@@ -1,5 +1,15 @@
 # 어두밴처 소규모 유료 플레이테스트 — 운영안
 
+> **2026-09-28 실행 상태 — 이 블록과 16절을 아래의 이전 초안보다 우선한다.**
+> 사용자가 모집 게시까지 진행하도록 승인했다. 신청 접수는 인스타그램 **@muscledoodoo DM**.
+> 공개 빌드 **v0.7.3-pt6**, 게임 코드 커밋 **ee66c2d5e6eada1601f4290e1035905f01e3db83**.
+> 실제 시트 ‘응답’ **129행 EN / 130행 KO**에서 요약 본문, 구조화된 답변, 언어, 빌드, 검증 ID의 저장을 확인했다. 검증 ID: `VERIFY_PT6_20260928_CHATGPT_EN` / `_KO`, 모두 NOT_A_PARTICIPANT.
+> pt4는 답변 내용이 저장되지 않았고, pt5는 요약의 선행 = 문자가 수식으로 해석됐다. pt6에서 두 문제를 수정했다. 이전 pt4의 POST ok 기록을 답변 저장 성공으로 해석하지 않는다.
+> 첫 모집 한·영 각 3명. 국내 수령 10,000원, 영어권 수령 **US$7.35** 고정, 세션 후 48시간 이내. 해외 수수료는 별도 운영자 부담. 환산 참고: Xe 2026-09-28 08:47 UTC, 10,000 KRW = 7.35249 USD (https://www.xe.com/currencyconverter/convert/?Amount=10000&From=KRW&To=USD). 실제 송금 환율은 다를 수 있으며 약속한 USD 수령액을 유지한다.
+> 일정은 DM으로 가능 시간과 시간대를 받아 조율한다. 운영자의 빈 시간을 임의로 약속하지 않는다. 녹화는 별도 사전 동의, 거절해도 같은 보상.
+> 지금 실제 모집 게시 **미완료**. Reddit 로그인 필요. Threads 접근은 자동 승인 심사가 허가 부족으로 차단했다. Cursor는 x.ai SSO 단계 접근이 자동 심사에 차단되어, 동일 GitHub 테스트 브랜치에서 설문 저장만 직접 수정했다. 모집·선발·송금 완료로 보고하지 않는다.
+> 한국어 수정 후 새 3명 계획은 유지하며, 영어 2회차는 열지 않는다.
+
 > 실제 게시·모집·녹화·송금은 아직 하지 않는다.
 > `‹…›`는 저장소에서 알 수 없어 운영자가 채울 칸이다.
 
@@ -282,3 +292,56 @@ Do not put bank/PayPal details in the public post or the first application.
 `https://script.google.com/macros/s/AKfycbxFx_m5rhCZmqGoy3JcUUNqEgiObMWNHe9hx-LnZrhzIkfwa9-yJGBWP0lVulptnNQeCQ/exec`
 
 
+
+## 16. 현재 게시용 본문 (미게시)
+
+### 한국어
+
+[유료 게임 테스트] 40분 · 1만 원 · 3명 모집
+
+제가 만드는 주사위 판정 텍스트 어드벤처 ‘어두밴처’를 처음 해 볼 성인 3명을 찾습니다. 선택과 턴제 전투가 있는 미스터리 게임입니다.
+
+• PC/노트북 브라우저에서 플레이 20분 + 준비·대화·설문, 총 약 40분
+• 화면공유와 음성 대화 가능하신 분 / 웹캠 불필요
+• 참여 보상: 계좌에 1만 원, 종료 후 48시간 이내 지급. 수수료는 제가 부담합니다.
+• 재미없다는 평가도 환영합니다. 오류나 지루함으로 멈춰도 그 경험을 이야기하고 짧은 설문을 마치면 전액 지급합니다.
+• 녹화는 사전에 별도로 동의받으며, 거절해도 참여와 보상에 영향이 없습니다.
+• 일정은 가능한 시간을 받아 개별 조율합니다.
+
+인스타그램 @muscledoodoo로 ‘어두밴처 테스트’라고 DM 주세요.
+최근 즐긴 RPG·스토리 게임 1~2개와 재미있었던 이유, 기기·브라우저, 가능한 시간, 화면공유·음성 가능 여부를 짧게 보내 주시면 됩니다.
+게임 경험이 많지 않은 분도 신청할 수 있습니다.
+
+선발 확정 연락을 받은 분만 유료 세션을 시작합니다. 신청만으로 지급 대상이 되지는 않습니다. 확정 후 테스트 링크를 보내 드립니다.
+좋은 평가·좋아요·팔로우는 요구하지 않습니다.
+
+### English — r/playtesters / Paid Playtest
+
+[Paid] $7.35 net via PayPal | 40-minute observed browser RPG playtest | 3 adults
+
+I'm building Aduventure, a dice-driven mystery text adventure with branching choices and turn-based combat. I'm looking for 3 adults (18+) who have never played it, to help me understand which decisions are interesting and where the game loses their attention.
+
+What you'll do:
+- Play for about 20 minutes while sharing your game screen.
+- Talk about your experience and complete a short in-game feedback form.
+- Allow about 40 minutes total, including setup.
+
+Payment:
+- $7.35 USD received via PayPal within 48 hours after the session. I cover transfer fees so you receive the stated amount in USD.
+- Honest criticism is paid in full.
+- If a bug blocks you, or you stop because you're bored, we'll discuss what happened and finish the short form; you still receive the full amount.
+- No purchase, positive review, like, follow, or public post is required.
+
+Requirements:
+- A PC or laptop with a modern browser, screen sharing, voice chat, and enough English for the game and discussion.
+- An account able to receive international PayPal payments. Payment details are collected privately after selection, not in your application.
+- No webcam. Recording is optional and requires separate advance consent; declining recording does not affect payment.
+- We will agree on a session time individually. Please include your timezone.
+
+To apply, DM @muscledoodoo on Instagram (https://www.instagram.com/muscledoodoo/) with "ADU EN" and:
+1. One or two RPGs/story games you've enjoyed and why (newcomers are welcome too).
+2. Your device and browser.
+3. Your availability and timezone.
+4. Whether screen sharing and voice chat are possible.
+
+Only selected applicants who receive my confirmation should start a paid session. Applying by itself does not qualify for payment. I'll send the free browser-game link after confirming your slot, so we can observe your first impressions. Feedback will be collected in the session and the in-game form.
