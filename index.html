@@ -469,7 +469,34 @@ const SFX = {
   }
 };
 const d = sides => Math.floor(Math.random() * sides) + 1;
-const fmt = (text, pc) => text.split("{이름}").join(pc && pc.name || "용사");
+const fmt = (text, pc) => String(text == null ? "" : text).split("{이름}").join(pc && pc.name || "용사").split("{name}").join(pc && pc.name || "Hero");
+/* ---------- 다국어 UI 문자열(ko/en). 서사(SCENES)는 각 항목에 {ko,en}로 확장한다. ---------- */
+const UI = {
+  ch1: { ko: "제1장 잿빛 등대", en: "Ch.1 · The Ashen Lighthouse" },
+  ch2: { ko: "제2장 검은 코트", en: "Ch.2 · The Black Coat" },
+  ch3: { ko: "제3장 사라진 종소리", en: "Ch.3 · The Silenced Bell" },
+  langBtn: { ko: "EN", en: "한국어" },
+  fbBtn: { ko: "피드백·그만두기", en: "Feedback / Quit" },
+  fbTitle: { ko: "플레이테스트 피드백", en: "Playtest Feedback" },
+  fbIntro: { ko: "솔직한 경험을 그대로 적어 주세요. 정답은 없고, 좋게 써 주실 필요도 없습니다. 중간에 그만두셨어도 어디서 왜 멈췄는지 적어 주시면 큰 도움이 됩니다.", en: "Please describe your honest experience. There are no right answers, and no need to be kind. If you stopped partway, telling us where and why is just as valuable." },
+  fbQuit: { ko: "지루했거나 그만두고 싶었던 장면과 이유", en: "A scene where you got bored or wanted to quit — and why" },
+  fbChoice: { ko: "가장 고민했던 선택과, 그때 예상했던 결과", en: "The choice you agonized over most, and what you expected would happen" },
+  fbCombat: { ko: "전투에서 고른 행동과 그 이유 (전투를 했다면)", en: "Which actions you chose in combat, and why (if you fought)" },
+  fbConfuse: { ko: "이해하기 어려웠던 설명이나 표현", en: "Any explanation or wording that was hard to understand" },
+  fbMore: { ko: "더 플레이하고 싶은 이유, 또는 그만두고 싶은 이유", en: "Why you'd want to keep playing — or why you'd stop" },
+  fbBug: { ko: "버그가 있었다면: 발생 위치와 재현 방법", en: "If you hit a bug: where it happened and how to reproduce it" },
+  fbSubmit: { ko: "제출(서버로 전송)", en: "Submit (send to server)" },
+  fbExport: { ko: "파일로 저장(.txt)", en: "Save as file (.txt)" },
+  fbCopy: { ko: "클립보드 복사", en: "Copy to clipboard" },
+  fbClose: { ko: "닫기", en: "Close" },
+  fbSending: { ko: "전송 중…", en: "Sending…" },
+  fbSent: { ko: "전송됐습니다. 고맙습니다! 혹시 몰라 '파일로 저장'도 눌러 두시면 안전합니다.", en: "Sent — thank you! As a backup, tapping 'Save as file' too is safest." },
+  fbFail: { ko: "전송에 실패했습니다. 아래 '파일로 저장'이나 '클립보드 복사'로 내용을 보내 주세요.", en: "Sending failed. Please use 'Save as file' or 'Copy to clipboard' and send it to me." },
+  fbCopied: { ko: "복사됐습니다.", en: "Copied." },
+  fbMeta: { ko: "함께 전송되는 정보: 빌드 버전·언어·도달한 장면·중단 위치·플레이 시간(게임 개선용). 계좌 등 지급 정보는 여기에 적지 마세요 — 따로 안내드립니다.", en: "Also sent: build version, language, scenes reached, stop point, play time (to improve the game). Do not enter payment/bank details here — those are handled separately." },
+  fbResume: { ko: "계속 플레이", en: "Keep playing" },
+  fbEmpty: { ko: "한 항목이라도 적어 주세요.", en: "Please fill in at least one field." }
+};
 const SRD20 = {
   name: "SRD d20",
   desc: "d20 + 보정치 + 숙련(+2) vs DC",
@@ -1926,6 +1953,109 @@ function JumpBar({
 }
 
 /* ---------- 제안하기 (서버 없이: 클립보드 → 카톡 붙여넣기) ---------- */
+function PlaytestFeedback(props) {
+  const ui = props.ui,
+    build = props.build,
+    session = props.session;
+  const [q, setQ] = useState({
+    quit: "",
+    choice: "",
+    combat: "",
+    confuse: "",
+    more: "",
+    bug: ""
+  });
+  const [status, setStatus] = useState("idle");
+  const set = (k, v) => setQ(o => Object.assign({}, o, {
+    [k]: v
+  }));
+  const compose = () => {
+    const L = [];
+    L.push("=== Aduventure 어두밴처 playtest feedback ===");
+    L.push("build: " + build + " | lang: " + session.lang);
+    L.push("reached: " + session.reached.join(" > "));
+    L.push("stop: " + session.stop + " | minutes: " + session.minutes);
+    L.push("");
+    L.push("[quit/bored] " + q.quit);
+    L.push("[hardest choice + expected] " + q.choice);
+    L.push("[combat actions + why] " + q.combat);
+    L.push("[confusing] " + q.confuse);
+    L.push("[keep/stop reason] " + q.more);
+    L.push("[bug] " + q.bug);
+    return L.join("\n");
+  };
+  const hasContent = () => Object.keys(q).some(k => q[k].trim());
+  const submit = () => {
+    if (!hasContent()) {
+      setStatus("empty");
+      return;
+    }
+    setStatus("sending");
+    gasPost({
+      type: "playtest_feedback",
+      build: build,
+      lang: session.lang,
+      reached: session.reached,
+      stop: session.stop,
+      minutes: session.minutes,
+      answers: q,
+      at: new Date().toISOString()
+    }).then(ok => setStatus(ok ? "sent" : "fail")).catch(() => setStatus("fail"));
+  };
+  const exportTxt = () => {
+    try {
+      const blob = new Blob([compose()], {
+        type: "text/plain;charset=utf-8"
+      });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "aduventure_feedback_" + build + "_" + Date.now() + ".txt";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    } catch (e) {}
+  };
+  const copy = () => {
+    try {
+      navigator.clipboard.writeText(compose());
+      setStatus("copied");
+    } catch (e) {}
+  };
+  const field = (key, k) => /*#__PURE__*/React.createElement("label", {
+    className: "fbField",
+    key: key
+  }, /*#__PURE__*/React.createElement("span", null, ui(k)), /*#__PURE__*/React.createElement("textarea", {
+    rows: 2,
+    value: q[key],
+    onChange: e => set(key, e.target.value)
+  }));
+  return /*#__PURE__*/React.createElement("div", {
+    className: "fbModal",
+    role: "dialog"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "fbCard"
+  }, /*#__PURE__*/React.createElement("h3", null, ui("fbTitle"), " ", /*#__PURE__*/React.createElement("span", {
+    className: "fbBuild"
+  }, build)), /*#__PURE__*/React.createElement("p", {
+    className: "fbIntro"
+  }, ui("fbIntro")), field("quit", "fbQuit"), field("choice", "fbChoice"), field("combat", "fbCombat"), field("confuse", "fbConfuse"), field("more", "fbMore"), field("bug", "fbBug"), /*#__PURE__*/React.createElement("p", {
+    className: "fbMetaNote"
+  }, ui("fbMeta")), (status === "sent" || status === "fail" || status === "copied" || status === "empty") && /*#__PURE__*/React.createElement("p", {
+    className: "fbStatus " + status
+  }, status === "sent" ? ui("fbSent") : status === "fail" ? ui("fbFail") : status === "copied" ? ui("fbCopied") : ui("fbEmpty")), /*#__PURE__*/React.createElement("div", {
+    className: "fbBtns"
+  }, /*#__PURE__*/React.createElement("button", {
+    className: "fbPrimary",
+    disabled: status === "sending",
+    onClick: submit
+  }, status === "sending" ? ui("fbSending") : ui("fbSubmit")), /*#__PURE__*/React.createElement("button", {
+    onClick: exportTxt
+  }, ui("fbExport")), /*#__PURE__*/React.createElement("button", {
+    onClick: copy
+  }, ui("fbCopy")), /*#__PURE__*/React.createElement("button", {
+    onClick: props.onClose
+  }, ui("fbClose")))));
+}
 function SuggestBox({
   sceneKey,
   pc
@@ -2212,6 +2342,23 @@ const css = `
 .crpg .echo-h { font-size:11px; letter-spacing:.15em; color:#b9aef0; font-weight:600; }
 .crpg .echo-t { font-size:14px; color:var(--text); font-style:italic; }
 .crpg .choice .tag.echo { border:1px solid #9b8fd6; color:#b9aef0; background:rgba(123,111,176,.16); }
+.crpg .fbModal { position:fixed; inset:0; z-index:100; background:rgba(8,12,20,.82); display:flex; align-items:flex-start; justify-content:center; overflow-y:auto; padding:24px 12px; }
+.crpg .fbCard { width:100%; max-width:560px; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:18px; margin:auto; }
+.crpg .fbCard h3 { color:var(--gold); font-size:17px; margin-bottom:4px; }
+.crpg .fbBuild { font-size:11px; color:var(--dim); font-weight:400; font-family:'IBM Plex Mono',monospace; }
+.crpg .fbIntro { font-size:13px; color:var(--text); line-height:1.7; margin-bottom:12px; }
+.crpg .fbField { display:flex; flex-direction:column; gap:4px; margin-bottom:10px; }
+.crpg .fbField span { font-size:13px; color:var(--dim); }
+.crpg .fbField textarea { width:100%; resize:vertical; background:var(--panel2); border:1px solid var(--line); border-radius:6px; color:var(--text); font-family:inherit; font-size:14px; padding:8px 10px; line-height:1.6; }
+.crpg .fbMetaNote { font-size:11.5px; color:var(--dim); line-height:1.6; margin:6px 0 10px; }
+.crpg .fbStatus { font-size:13px; padding:8px 10px; border-radius:6px; margin-bottom:10px; line-height:1.6; }
+.crpg .fbStatus.sent { color:var(--good); border:1px solid var(--good); }
+.crpg .fbStatus.fail { color:var(--bad); border:1px solid var(--bad); }
+.crpg .fbStatus.copied, .crpg .fbStatus.empty { color:var(--gold); border:1px solid var(--gold); }
+.crpg .fbBtns { display:flex; flex-wrap:wrap; gap:8px; }
+.crpg .fbBtns button { flex:1; min-width:120px; background:var(--panel2); border:1px solid var(--line); border-radius:8px; color:var(--text); font-family:inherit; font-size:14px; padding:10px; cursor:pointer; }
+.crpg .fbBtns .fbPrimary { border-color:var(--gold); color:var(--gold); font-weight:600; }
+.crpg .fbBtns button:hover { border-color:var(--accent); }
 @media (prefers-reduced-motion: reduce) { .crpg * { animation:none !important; transition:none !important; } }
 `;
 function CRPG() {
@@ -2236,6 +2383,10 @@ function CRPG() {
   const [tutOpen, setTutOpen] = useState(false);
   const [tutSeen, setTutSeen] = useState(false);
   const [sfxOn, setSfxOn] = useState(false);
+  const [lang, setLang] = useState(() => store.get("aduventure_lang") || "ko");
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [reached, setReached] = useState([]);
+  const startedRef = useRef(Date.now());
   const [enemy, setEnemy] = useState(null);
   const [clog, setClog] = useState([]);
   const [enemyIntent, setEnemyIntent] = useState(null);
@@ -2257,6 +2408,9 @@ function CRPG() {
   useEffect(() => {
     clogRef.current?.scrollTo(0, 99999);
   }, [clog]);
+  useEffect(() => {
+    if (sceneKey) setReached(r => r.includes(sceneKey) ? r : [...r, sceneKey]);
+  }, [sceneKey]);
   const scene = SCENES[sceneKey];
   const chapter = scene?.ch || 1;
   const hasCheckChoices = scene?.choices?.some(c => c.check);
@@ -2800,14 +2954,37 @@ function CRPG() {
   const art = STUDENT_ART[sceneKey];
   const ch1Cleared = badges.some(b => b.startsWith("1"));
   const allBadges = badges.length >= BADGES.length;
-  const chapterTitle = chapter === 3 ? "제3장 사라진 종소리" : chapter === 2 ? "제2장 검은 코트" : "제1장 잿빛 등대";
+  const tx = v => v && typeof v === "object" && !Array.isArray(v) && ("ko" in v || "en" in v) ? (v[lang] || v.ko || v.en || "") : v;
+  const ui = k => UI[k] && (UI[k][lang] || UI[k].ko) || k;
+  const chapterTitle = chapter === 3 ? ui("ch3") : chapter === 2 ? ui("ch2") : ui("ch1");
   return /*#__PURE__*/React.createElement("div", {
     className: "crpg"
-  }, /*#__PURE__*/React.createElement("style", null, css), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("style", null, css), feedbackOpen && /*#__PURE__*/React.createElement(PlaytestFeedback, {
+    ui: ui,
+    build: BUILD,
+    session: {
+      lang: lang,
+      reached: reached,
+      stop: sceneKey,
+      minutes: Math.round((Date.now() - startedRef.current) / 60000)
+    },
+    onClose: () => setFeedbackOpen(false)
+  }), /*#__PURE__*/React.createElement("div", {
     className: "frame"
   }, /*#__PURE__*/React.createElement("header", null, /*#__PURE__*/React.createElement("h1", null, "\uC5B4\uB450\uBC34\uCC98", /*#__PURE__*/React.createElement("span", null, chapterTitle, " \xB7 ", BUILD)), /*#__PURE__*/React.createElement("div", {
     className: "hctrl"
   }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
+      const nl = lang === "ko" ? "en" : "ko";
+      setLang(nl);
+      store.set("aduventure_lang", nl);
+    },
+    title: "language / 언어",
+    "aria-label": "language"
+  }, ui("langBtn")), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setFeedbackOpen(true),
+    title: ui("fbBtn")
+  }, "🗒"), /*#__PURE__*/React.createElement("button", {
     onClick: () => setSfxOn(SFX.toggle()),
     title: "\uC18C\uB9AC \uCF1C\uAE30/\uB044\uAE30"
   }, sfxOn ? "🔊" : "🔇"), /*#__PURE__*/React.createElement("button", {
