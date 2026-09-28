@@ -264,7 +264,7 @@ Do not put bank/PayPal details in the public post or the first application.
 
 | 회차 | 빌드 | 커밋 | 비고 |
 |---|---|---|---|
-| 모집 전 배포 | v0.7.3-pt4 | ‹푸시 후 SHA› | 공개 주소용. 회차 시작 전 |
+| 모집 전 배포 | v0.7.3-pt4 | b7bbc53ace745a1f96df335b531c310f6a7a5897 (`index.html` 내용 커밋 `99cc5c3`) | 공개 주소용. 회차 시작 전 |
 | 한국어 1회 | | | 선발 확정 때 채움 |
 | 영어 1회 | | | 선발 확정 때 채움. USD 숫자 확정 후 |
 
@@ -273,6 +273,12 @@ Do not put bank/PayPal details in the public post or the first application.
 인게임 설문에 아래 식별자를 넣어 보낸 행은 **배포 검증**이다. 참여자 피드백과 같은 칸에 두지 않는다.
 
 - 접두어: `VERIFY_PT4_AGENT_`
+- 이번 배포 검증 ID: `VERIFY_PT4_AGENT_20260928_b7bbc53_KO` / `_EN`
 - `answers.bug` / `answers.more`에 `NOT_A_PARTICIPANT` 문구
 - 시트에서 이 접두어로 필터해 분리하거나, 확인 후 검증 탭/삭제로 옮긴다
+
+저장소와 GAS 응답에는 스프레드시트 URL이 없다. 시트는 해당 Apps Script 프로젝트에 연결된 스프레드시트다. 배포 URL:
+
+`https://script.google.com/macros/s/AKfycbxFx_m5rhCZmqGoy3JcUUNqEgiObMWNHe9hx-LnZrhzIkfwa9-yJGBWP0lVulptnNQeCQ/exec`
+
 
