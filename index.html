@@ -318,7 +318,7 @@ function(a,b,c){if(!Vd(b))throw Error(n(200));return Wd(null,a,b,!1,c)};Q.unmoun
    GAS 피드백 파이프 — v0.7 재구현 (제안/신호/텔레메트리)
    ============================================================ */
 /* 플레이테스트 빌드 태그 — 테스트 중 버전 구분용. 수정할 때마다 뒤 번호를 올린다. */
-const BUILD = "v0.7.3-pt2";
+const BUILD = "v0.7.3-pt3";
 const GAS_URL = "https://script.google.com/macros/s/AKfycbxFx_m5rhCZmqGoy3JcUUNqEgiObMWNHe9hx-LnZrhzIkfwa9-yJGBWP0lVulptnNQeCQ/exec";
 function gasPost(payload) {
   return fetch(GAS_URL, {
@@ -884,26 +884,26 @@ function rollLooterIntent(hp, maxHp) {
   return r <= 52 ? "slash" : r <= 82 ? "hook" : "feint";
 }
 const SCENE_TITLES = {
-  intro: "폭풍의 의뢰",
-  door: "등대 입구",
-  stairs: "기계실",
-  combat: "도굴꾼과 전투",
-  top: "등실",
-  ending: "1장 엔딩",
-  intro2: "다음 날 아침",
-  wharf: "부두 선술집",
-  warehouseA: "3번 창고(은밀)",
-  warehouseB: "3번 창고(정면)",
-  confront: "검은 코트와 대면",
-  combat2: "스컬리와 전투",
-  ending2: "2장 엔딩",
-  intro3: "침묵하는 수도원",
-  cloister: "회랑",
-  belltower: "종탑",
-  undercroft: "지하 저장고",
-  combat3: "가짜 수도사와 전투",
-  rescue: "수문과 딜레마",
-  ending3: "3장 엔딩"
+  intro: { ko: "폭풍의 의뢰", en: "The Storm's Charge" },
+  door: { ko: "등대 입구", en: "Lighthouse Door" },
+  stairs: { ko: "기계실", en: "The Mechanism Room" },
+  combat: { ko: "도굴꾼과 전투", en: "Fight with the Grave-robber" },
+  top: { ko: "등실", en: "The Lantern Room" },
+  ending: { ko: "1장 엔딩", en: "End of Ch.1" },
+  intro2: { ko: "다음 날 아침", en: "The Next Morning" },
+  wharf: { ko: "부두 선술집", en: "The Wharf Tavern" },
+  warehouseA: { ko: "3번 창고(은밀)", en: "Warehouse 3 (quiet)" },
+  warehouseB: { ko: "3번 창고(정면)", en: "Warehouse 3 (front)" },
+  confront: { ko: "검은 코트와 대면", en: "Facing the Black Coat" },
+  combat2: { ko: "스컬리와 전투", en: "Fight with Scully" },
+  ending2: { ko: "2장 엔딩", en: "End of Ch.2" },
+  intro3: { ko: "침묵하는 수도원", en: "The Silent Monastery" },
+  cloister: { ko: "회랑", en: "The Cloister" },
+  belltower: { ko: "종탑", en: "The Bell Tower" },
+  undercroft: { ko: "지하 저장고", en: "The Undercroft" },
+  combat3: { ko: "가짜 수도사와 전투", en: "Fight with the False Monk" },
+  rescue: { ko: "수문과 딜레마", en: "The Sluice and the Choice" },
+  ending3: { ko: "3장 엔딩", en: "End of Ch.3" }
 };
 const SCENES = {
   /* ---------- 제1장 잿빛 등대 ---------- */
@@ -1462,17 +1462,29 @@ const SCENES = {
   /* ---------- 제3장 사라진 종소리 ---------- */
   intro3: {
     ch: 3,
-    text: `이틀을 걸어 잿돌 수도원에 닿았다. 정오 — 종이 울려야 할 시간인데, 침묵뿐이다.\n\n산 아래 주막의 노파가 말했었다. "종이 멈춘 뒤로, 그 길을 지난 여행자들이 돌아오지 않아."`,
+    text: {
+      ko: `이틀을 걸어 잿돌 수도원에 닿았다. 정오 — 종이 울려야 할 시간인데, 침묵뿐이다.\n\n산 아래 주막의 노파가 말했었다. "종이 멈춘 뒤로, 그 길을 지난 여행자들이 돌아오지 않아."`,
+      en: `Two days' walk brought you to the Ashstone Monastery. Noon — the hour the bell should ring. Silence.\n\nThe old woman at the inn below the mountain had said, "Since the bell stopped, travelers who take that road don't come back."`
+    },
     choices: [{
-      label: "수도원 문을 지나 회랑으로",
+      label: {
+        ko: "수도원 문을 지나 회랑으로",
+        en: "Pass through the monastery gate into the cloister"
+      },
       goto: "cloister"
     }]
   },
   cloister: {
     ch: 3,
-    text: `회랑은 비어 있다. 기도 시간도 아닌데 수도사가 한 명도 없다.\n\n바닥의 촛농 자국, 흐트러진 발자국들.`,
+    text: {
+      ko: `회랑은 비어 있다. 기도 시간도 아닌데 수도사가 한 명도 없다.\n\n바닥의 촛농 자국, 흐트러진 발자국들.`,
+      en: `The cloister is empty. Not even prayer hour — and not a single monk.\n\nWax drips on the floor. Footprints, scattered.`
+    },
     choices: [{
-      label: "[조사] 흔적이 향하는 곳을 추적한다",
+      label: {
+        ko: "[조사] 흔적이 향하는 곳을 추적한다",
+        en: "[Investigate] Follow where the traces lead"
+      },
       check: {
         ability: "INT",
         skill: "investigation",
@@ -1480,16 +1492,25 @@ const SCENES = {
         label: "조사"
       },
       success: {
-        text: `발자국은 종탑이 아니라 — 부엌 뒤 지하 저장고 방향으로 모인다.\n\n촛농은 밤마다 같은 길을 오간 흔적이다. 종탑부터 확인하고 내려가자.`,
+        text: {
+          ko: `발자국은 종탑이 아니라 — 부엌 뒤 지하 저장고 방향으로 모인다.\n\n촛농은 밤마다 같은 길을 오간 흔적이다. 종탑부터 확인하고 내려가자.`,
+          en: `The footprints don't go to the bell tower — they gather toward the undercroft behind the kitchen.\n\nThe wax is a trail walked every night. Check the tower first, then go down.`
+        },
         flag: "trail",
         goto: "belltower"
       },
       fail: {
-        text: `발자국이 서로 엉켜 방향을 잃었다.\n\n일단 소리의 근원 — 침묵하는 종탑으로 오른다.`,
+        text: {
+          ko: `발자국이 서로 엉켜 방향을 잃었다.\n\n일단 소리의 근원 — 침묵하는 종탑으로 오른다.`,
+          en: `The footprints tangle and you lose the trail.\n\nFor now, you climb toward the source of the silence — the dead bell tower.`
+        },
         goto: "belltower"
       }
     }, {
-      label: "[지각] 멈춰 서서 회랑의 소리에 귀 기울인다",
+      label: {
+        ko: "[지각] 멈춰 서서 회랑의 소리에 귀 기울인다",
+        en: "[Perception] Stand still and listen to the cloister"
+      },
       check: {
         ability: "WIS",
         skill: "perception",
@@ -1497,26 +1518,41 @@ const SCENES = {
         label: "지각"
       },
       success: {
-        text: `바람 소리 밑, 돌 너머에서 — 희미한 신음. 발밑 어딘가에 사람이 있다.\n\n위치를 가늠하러 종탑부터 오른다.`,
+        text: {
+          ko: `바람 소리 밑, 돌 너머에서 — 희미한 신음. 발밑 어딘가에 사람이 있다.\n\n위치를 가늠하러 종탑부터 오른다.`,
+          en: `Under the wind, beyond the stone — a faint moan. Someone is below your feet.\n\nYou climb the tower first, to fix where.`
+        },
         flag: "trail",
         goto: "belltower"
       },
       fail: {
-        text: `들리는 건 바람뿐이다.\n\n침묵하는 종탑으로 오른다.`,
+        text: {
+          ko: `들리는 건 바람뿐이다.\n\n침묵하는 종탑으로 오른다.`,
+          en: `Only the wind.\n\nYou climb the silent tower.`
+        },
         goto: "belltower"
       }
     }]
   },
   belltower: {
     ch: 3,
-    text: `종탑 꼭대기. 종은 멀쩡하다 — 줄이 끊겨 있을 뿐.\n\n구석에 늙은 종탑 관리인이 웅크려 있다. 입술이 떨린다. "나, 나는 아무것도 못 봤소."`,
+    text: {
+      ko: `종탑 꼭대기. 종은 멀쩡하다 — 줄이 끊겨 있을 뿐.\n\n구석에 늙은 종탑 관리인이 웅크려 있다. 입술이 떨린다. "나, 나는 아무것도 못 봤소."`,
+      en: `The top of the bell tower. The bell is whole — only the rope is cut.\n\nAn old keeper huddles in the corner. His lips shake. "I— I saw nothing."`
+    },
     choices: [{
       artifactReq: "brass_lens",
-      label: `[유물] 되찾은 황동 렌즈로 정오의 빛을 모아 종탑 창밖 — 산 아래로 신호를 보낸다`,
+      label: {
+        ko: `[유물] 되찾은 황동 렌즈로 정오의 빛을 모아 종탑 창밖 — 산 아래로 신호를 보낸다`,
+        en: `[Artifact] Gather noon light through the recovered brass lens and signal down the mountain from the tower window`
+      },
       flagDirect: "keeper",
       goto: "undercroft"
     }, {
-      label: "[지각] 관리인의 떨리는 시선을 따라간다",
+      label: {
+        ko: "[지각] 관리인의 떨리는 시선을 따라간다",
+        en: "[Perception] Follow the keeper's shaking gaze"
+      },
       check: {
         ability: "WIS",
         skill: "perception",
@@ -1524,16 +1560,25 @@ const SCENES = {
         label: "지각"
       },
       success: {
-        text: `관리인의 눈이 자꾸 한 곳을 향한다 — 종 줄 아래, 먼지가 닦인 바닥문.\n\n"…부탁이오. 그들이 내 종을 끊었소. 종이 울리면 마을에서 알아챌 테니까."\n\n관리인은 적이 아니라 인질이었다.`,
+        text: {
+          ko: `관리인의 눈이 자꾸 한 곳을 향한다 — 종 줄 아래, 먼지가 닦인 바닥문.\n\n"…부탁이오. 그들이 내 종을 끊었소. 종이 울리면 마을에서 알아챌 테니까."\n\n관리인은 적이 아니라 인질이었다.`,
+          en: `His eyes keep going to one spot — a trapdoor under the bell-rope, the dust wiped clean.\n\n"…please. They cut my bell. If it rang, the village would know."\n\nThe keeper wasn't an enemy. He was a hostage.`
+        },
         flag: "keeper",
         goto: "undercroft"
       },
       fail: {
-        text: `관리인은 입을 다물었다.\n\n돌아서는 순간, 발밑에서 둔탁한 소리 — 바닥 어딘가가 비어 있다. 종 줄 아래 바닥문을 찾아냈다.`,
+        text: {
+          ko: `관리인은 입을 다물었다.\n\n돌아서는 순간, 발밑에서 둔탁한 소리 — 바닥 어딘가가 비어 있다. 종 줄 아래 바닥문을 찾아냈다.`,
+          en: `The keeper shuts his mouth.\n\nAs you turn, a dull sound underfoot — somewhere the floor is hollow. You find the trapdoor under the bell-rope.`
+        },
         goto: "undercroft"
       }
     }, {
-      label: "[위협] 멱살을 잡고 다그친다",
+      label: {
+        ko: "[위협] 멱살을 잡고 다그친다",
+        en: "[Intimidate] Grab him by the collar and press"
+      },
       check: {
         ability: "CHA",
         skill: "intimidation",
@@ -1541,20 +1586,32 @@ const SCENES = {
         label: "위협"
       },
       success: {
-        text: `관리인이 울음을 터뜨리며 종 줄 아래 바닥문을 가리킨다.\n\n"제발… 나는 모르는 일로 해주시오."\n\n위치는 얻었지만, 노인의 눈에서 신뢰가 사라졌다.`,
+        text: {
+          ko: `관리인이 울음을 터뜨리며 종 줄 아래 바닥문을 가리킨다.\n\n"제발… 나는 모르는 일로 해주시오."\n\n위치는 얻었지만, 노인의 눈에서 신뢰가 사라졌다.`,
+          en: `The keeper bursts into tears and points to the trapdoor under the rope.\n\n"Please… pretend I know nothing."\n\nYou have the place. Trust is gone from the old man's eyes.`
+        },
         goto: "undercroft"
       },
       fail: {
-        text: `관리인은 입을 꾹 다문다. 노인을 겁박한 손이 부끄럽다.\n\n돌아서는 길, 발밑의 빈 소리 — 바닥문을 스스로 찾아냈다.`,
+        text: {
+          ko: `관리인은 입을 꾹 다문다. 노인을 겁박한 손이 부끄럽다.\n\n돌아서는 길, 발밑의 빈 소리 — 바닥문을 스스로 찾아냈다.`,
+          en: `He clamps his mouth shut. Your hand feels ashamed for scaring an old man.\n\nOn the way back, a hollow sound underfoot — you find the trapdoor yourself.`
+        },
         goto: "undercroft"
       }
     }]
   },
   undercroft: {
     ch: 3,
-    text: `바닥문 아래, 지하 저장고. 횃불 하나가 복도를 지키고 — 회색 수도복의 사내가 철창 앞을 서성인다.\n\n철창 안에 사람들이 있다. 사라진 여행자들, 그리고 우편 가방을 끌어안은 배달부.`,
+    text: {
+      ko: `바닥문 아래, 지하 저장고. 횃불 하나가 복도를 지키고 — 회색 수도복의 사내가 철창 앞을 서성인다.\n\n철창 안에 사람들이 있다. 사라진 여행자들, 그리고 우편 가방을 끌어안은 배달부.`,
+      en: `Below the trapdoor, the undercroft. One torch holds the corridor — a man in grey monk's robes paces before iron bars.\n\nPeople are in the cell. The missing travelers, and a courier clutching a mailbag.`
+    },
     choices: [{
-      label: "[은신] 그림자로 돌아 열쇠를 빼낸다",
+      label: {
+        ko: "[은신] 그림자로 돌아 열쇠를 빼낸다",
+        en: "[Stealth] Circle through shadow and lift the keys"
+      },
       check: {
         ability: "DEX",
         skill: "stealth",
@@ -1562,16 +1619,25 @@ const SCENES = {
         label: "은신"
       },
       success: {
-        text: `사내의 허리춤에서 열쇠 고리가 소리 없이 빠져나온다.\n\n철창이 열리고, 갇힌 이들이 숨을 죽인 채 빠져나온다.`,
+        text: {
+          ko: `사내의 허리춤에서 열쇠 고리가 소리 없이 빠져나온다.\n\n철창이 열리고, 갇힌 이들이 숨을 죽인 채 빠져나온다.`,
+          en: `The key ring slides silent off his belt.\n\nThe cell opens, and those inside slip out holding their breath.`
+        },
         flag: "quiet3",
         goto: "rescue"
       },
       fail: {
-        text: `열쇠 고리가 짤랑 — 사내가 홱 돌아본다.\n\n"쥐새끼가 들어왔군."`,
+        text: {
+          ko: `열쇠 고리가 짤랑 — 사내가 홱 돌아본다.\n\n"쥐새끼가 들어왔군."`,
+          en: `The keys jingle — he whirls.\n\n"A rat got in."`
+        },
         goto: "combat3"
       }
     }, {
-      label: "[전투] 횃불을 걷어차고 덮친다",
+      label: {
+        ko: "[전투] 횃불을 걷어차고 덮친다",
+        en: "[Fight] Kick the torch and rush him"
+      },
       goto: "combat3"
     }]
   },
@@ -1580,23 +1646,38 @@ const SCENES = {
     combat: true,
     enemy: "falsemonk",
     victory: {
-      text: `사내가 촛대를 떨어뜨리고 쓰러진다. 수도복 안에는 — 부두에서 본 것과 같은 검은 코트.\n\n열쇠를 빼앗아 철창을 연다. 여행자들이, 그리고 배달부가 비틀거리며 나온다.`,
+      text: {
+        ko: `사내가 촛대를 떨어뜨리고 쓰러진다. 수도복 안에는 — 부두에서 본 것과 같은 검은 코트.\n\n열쇠를 빼앗아 철창을 연다. 여행자들이, 그리고 배달부가 비틀거리며 나온다.`,
+        en: `He drops the candlestick and falls. Under the robes — the same black coat you saw at the docks.\n\nYou take the keys and open the cell. The travelers, and the courier, stagger out.`
+      },
       goto: "rescue"
     },
     defeat: {
-      text: `촛대가 시야를 가른다…\n\n눈을 뜨니 철창 안. 이번엔 갇힌 쪽이 너다.`,
+      text: {
+        ko: `촛대가 시야를 가른다…\n\n눈을 뜨니 철창 안. 이번엔 갇힌 쪽이 너다.`,
+        en: `The candlestick splits your sight…\n\nYou wake behind the bars. This time you're the one locked in.`
+      },
       goto: "gameover"
     }
   },
   rescue: {
     ch: 3,
-    text: `그때 — 지하 깊은 곳에서 굉음. 수문이 열렸다.\n\n물이 차오르며 탁자 위 편지 뭉치가 쓸려 나간다. 저게 놈들의 증거다.\n\n배달부는 다리를 절고, 물은 빠르게 차오른다. 시간은 하나를 고를 만큼만 남았다.`,
+    text: {
+      ko: `그때 — 지하 깊은 곳에서 굉음. 수문이 열렸다.\n\n물이 차오르며 탁자 위 편지 뭉치가 쓸려 나간다. 저게 놈들의 증거다.\n\n배달부는 다리를 절고, 물은 빠르게 차오른다. 시간은 하나를 고를 만큼만 남았다.`,
+      en: `Then — a roar from deep below. A sluice gate has opened.\n\nWater rises and sweeps a bundle of letters off the table. That's their evidence.\n\nThe courier is limping, and the water climbs fast. Time enough to choose only one.`
+    },
     choices: [{
-      label: "사람을 택한다 — 배달부를 부축해 먼저 나간다",
+      label: {
+        ko: "사람을 택한다 — 배달부를 부축해 먼저 나간다",
+        en: "Choose the person — help the courier out first"
+      },
       goto: "ending3",
       flagDirect: "saved3"
     }, {
-      label: "증거를 택한다 — 떠내려가는 편지를 쫓는다",
+      label: {
+        ko: "증거를 택한다 — 떠내려가는 편지를 쫓는다",
+        en: "Choose the evidence — chase the letters being swept away"
+      },
       goto: "ending3",
       flagDirect: "chase3"
     }]
@@ -2389,12 +2470,13 @@ function SuggestBox({
     const body = text.trim();
     if (!body || status === "sending") return;
     setStatus("sending");
-    const msg = `[어두밴처 제안] 장면: ${SCENE_TITLES[sceneKey] || sceneKey} / 제안: ${body} / 제안자: ${who}`;
+    const sceneTitle = SCENE_TITLES[sceneKey] && typeof SCENE_TITLES[sceneKey] === "object" ? (SCENE_TITLES[sceneKey][lang] || SCENE_TITLES[sceneKey].ko) : (SCENE_TITLES[sceneKey] || sceneKey);
+    const msg = (lang === "en" ? `[Aduventure suggestion] scene: ${sceneTitle} / idea: ${body} / from: ${who}` : `[어두밴처 제안] 장면: ${sceneTitle} / 제안: ${body} / 제안자: ${who}`);
     let p;
     try {
       p = gasPost({
         type: "suggest",
-        scene: SCENE_TITLES[sceneKey] || sceneKey,
+        scene: sceneTitle,
         who: who,
         text: body,
         extra: ""
@@ -3296,7 +3378,7 @@ function CRPG() {
   }, "Simple 2d6")))), art ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("img", {
     className: "artimg",
     src: art,
-    alt: ui("artAlt") + (SCENE_TITLES[sceneKey] || sceneKey)
+    alt: ui("artAlt") + (tx(SCENE_TITLES[sceneKey]) || sceneKey)
   }), ART_CREDIT[sceneKey] && /*#__PURE__*/React.createElement("div", {
     className: "artcredit"
   }, ART_CREDIT[sceneKey])) : !pc ? /*#__PURE__*/React.createElement("img", {
