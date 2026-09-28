@@ -3227,26 +3227,26 @@ function CRPG() {
     className: "scene"
   }, /*#__PURE__*/React.createElement("div", {
     className: "about"
-  }, /*#__PURE__*/React.createElement("p", null, "\uC8FC\uC0AC\uC704\uB85C \uC6B4\uBA85\uC744 \uC815\uD558\uB294 \uBBF8\uC2A4\uD130\uB9AC \uD14D\uC2A4\uD2B8 \uC5B4\uB4DC\uBCA4\uCC98."), /*#__PURE__*/React.createElement("p", null, "\uD3ED\uD48D\uC758 \uBC24, \uD56D\uAD6C \uB9C8\uC744\uC758 \uB4F1\uB300\uAC00 \uAEBC\uC84C\uB2E4. \uC0C8\uBCBD\uAE4C\uC9C0 \uBD88\uC744 \uC62C\uB9AC\uC9C0 \uBABB\uD558\uBA74 \uC5B4\uC120 \uC138 \uCC99\uC774 \uC554\uCD08\uB85C \uD5A5\uD55C\uB2E4."), /*#__PURE__*/React.createElement("p", null, "\uC774\uB984\uC744 \uC0C8\uAE30\uACE0 \uC9C1\uC5C5\uC744 \uACE0\uB974\uBA74 \u2014 \uBAA8\uD5D8\uC774 \uC2DC\uC791\uB41C\uB2E4. \uC120\uD0DD\uC9C0\uC758 \uD30C\uB780 %\uB294 \uC131\uACF5 \uD655\uB960\uC774\uB2E4.")), savedGame && savedGame.pc && /*#__PURE__*/React.createElement("button", {
+  }, /*#__PURE__*/React.createElement("p", null, lang === "en" ? "A mystery text adventure where dice decide your fate." : "\uC8FC\uC0AC\uC704\uB85C \uC6B4\uBA85\uC744 \uC815\uD558\uB294 \uBBF8\uC2A4\uD130\uB9AC \uD14D\uC2A4\uD2B8 \uC5B4\uB4DC\uBCA4\uCC98."), /*#__PURE__*/React.createElement("p", null, lang === "en" ? "On a stormy night, a harbor town's lighthouse has gone dark. If it isn't lit by dawn, three fishing boats will run onto the rocks." : "\uD3ED\uD48D\uC758 \uBC24, \uD56D\uAD6C \uB9C8\uC744\uC758 \uB4F1\uB300\uAC00 \uAEBC\uC84C\uB2E4. \uC0C8\uBCBD\uAE4C\uC9C0 \uBD88\uC744 \uC62C\uB9AC\uC9C0 \uBABB\uD558\uBA74 \uC5B4\uC120 \uC138 \uCC99\uC774 \uC554\uCD08\uB85C \uD5A5\uD55C\uB2E4."), /*#__PURE__*/React.createElement("p", null, lang === "en" ? "Enter a name and pick a class — and the adventure begins. The blue % on a choice is its success chance." : "\uC774\uB984\uC744 \uC0C8\uAE30\uACE0 \uC9C1\uC5C5\uC744 \uACE0\uB974\uBA74 \u2014 \uBAA8\uD5D8\uC774 \uC2DC\uC791\uB41C\uB2E4. \uC120\uD0DD\uC9C0\uC758 \uD30C\uB780 %\uB294 \uC131\uACF5 \uD655\uB960\uC774\uB2E4.")), savedGame && savedGame.pc && /*#__PURE__*/React.createElement("button", {
     className: "continueBtn",
     onClick: continueGame,
-    title: "\uC800\uC7A5\uB41C \uBAA8\uD5D8\uC744 \uC774\uC5B4\uC11C \uD55C\uB2E4"
-  }, "\u21BB \uC774\uC5B4\uC11C \uD558\uAE30", /*#__PURE__*/React.createElement("span", {
+    title: lang === "en" ? "Resume your saved run" : "\uC800\uC7A5\uB41C \uBAA8\uD5D8\uC744 \uC774\uC5B4\uC11C \uD55C\uB2E4"
+  }, lang === "en" ? "\u21BB Continue" : "\u21BB \uC774\uC5B4\uC11C \uD558\uAE30", /*#__PURE__*/React.createElement("span", {
     className: "cont-meta"
-  }, (SCENES[savedGame.sceneKey]?.ch === 3 ? "\uC81C3\uC7A5" : SCENES[savedGame.sceneKey]?.ch === 2 ? "\uC81C2\uC7A5" : "\uC81C1\uC7A5") + " \xB7 " + savedGame.pc.name + " (" + tx(CLASSES[savedGame.pc.classKey] ? CLASSES[savedGame.pc.classKey].name : "\uC6A9\uC0AC") + ")")), /*#__PURE__*/React.createElement("label", {
+  }, (SCENES[savedGame.sceneKey]?.ch === 3 ? (lang === "en" ? "Ch.3" : "\uC81C3\uC7A5") : SCENES[savedGame.sceneKey]?.ch === 2 ? (lang === "en" ? "Ch.2" : "\uC81C2\uC7A5") : (lang === "en" ? "Ch.1" : "\uC81C1\uC7A5")) + " \xB7 " + savedGame.pc.name + " (" + tx(CLASSES[savedGame.pc.classKey] ? CLASSES[savedGame.pc.classKey].name : "\uC6A9\uC0AC") + ")")), /*#__PURE__*/React.createElement("label", {
     className: "nameLb"
-  }, "\uC6A9\uC0AC\uC758 \uC774\uB984\uC740?"), /*#__PURE__*/React.createElement("input", {
+  }, lang === "en" ? "Your hero's name?" : "\uC6A9\uC0AC\uC758 \uC774\uB984\uC740?"), /*#__PURE__*/React.createElement("input", {
     className: "nameIn",
     value: nameInput,
     maxLength: 12,
     onChange: e => setNameInput(e.target.value),
-    placeholder: "\uC774\uB984\uC744 \uC0C8\uAE30\uBA74 \uC774\uC57C\uAE30\uC5D0 \uB0A8\uB294\uB2E4"
+    placeholder: lang === "en" ? "A name you write stays in the story" : "\uC774\uB984\uC744 \uC0C8\uAE30\uBA74 \uC774\uC57C\uAE30\uC5D0 \uB0A8\uB294\uB2E4"
   }), /*#__PURE__*/React.createElement("p", {
     className: "narr",
     style: {
       marginTop: 14
     }
-  }, "\uADF8\uB9AC\uACE0 \uB2F9\uC2E0\uC740 \u2014"), /*#__PURE__*/React.createElement("div", {
+  }, lang === "en" ? "And you are —" : "\uADF8\uB9AC\uACE0 \uB2F9\uC2E0\uC740 \u2014"), /*#__PURE__*/React.createElement("div", {
     className: "pick"
   }, Object.entries(CLASSES).map(([k, c]) => /*#__PURE__*/React.createElement("button", {
     key: k,
