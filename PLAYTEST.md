@@ -1,17 +1,19 @@
 # 어두밴처 소규모 유료 플레이테스트 — 운영안
 
-> **2026-09-28 실행 상태 — 이 블록과 16절을 아래의 이전 초안보다 우선한다.**
+> **2026-09-28 실행 상태 — 이 블록과 16~17절을 아래의 이전 초안보다 우선한다.**
 > 사용자가 모집 게시까지 진행하도록 승인했다. 신청 접수는 인스타그램 **@muscledoodoo DM**.
 > 공개 빌드 **v0.7.3-pt6**, 게임 코드 커밋 **ee66c2d5e6eada1601f4290e1035905f01e3db83**.
 > 실제 시트 ‘응답’ **129행 EN / 130행 KO**에서 요약 본문, 구조화된 답변, 언어, 빌드, 검증 ID의 저장을 확인했다. 검증 ID: `VERIFY_PT6_20260928_CHATGPT_EN` / `_KO`, 모두 NOT_A_PARTICIPANT.
 > pt4는 답변 내용이 저장되지 않았고, pt5는 요약의 선행 = 문자가 수식으로 해석됐다. pt6에서 두 문제를 수정했다. 이전 pt4의 POST ok 기록을 답변 저장 성공으로 해석하지 않는다.
 > 첫 모집 한·영 각 3명. 국내 수령 10,000원, 영어권 수령 **US$7.35** 고정, 세션 후 48시간 이내. 해외 수수료는 별도 운영자 부담. 환산 참고: Xe 2026-09-28 08:47 UTC, 10,000 KRW = 7.35249 USD (https://www.xe.com/currencyconverter/convert/?Amount=10000&From=KRW&To=USD). 실제 송금 환율은 다를 수 있으며 약속한 USD 수령액을 유지한다.
 > 일정은 DM으로 가능 시간과 시간대를 받아 조율한다. 운영자의 빈 시간을 임의로 약속하지 않는다. 녹화는 별도 사전 동의, 거절해도 같은 보상.
-> 지금 실제 모집 게시 **미완료**. Reddit 로그인 필요. Threads 접근은 자동 승인 심사가 허가 부족으로 차단했다. Cursor는 x.ai SSO 단계 접근이 자동 심사에 차단되어, 동일 GitHub 테스트 브랜치에서 설문 저장만 직접 수정했다. 모집·선발·송금 완료로 보고하지 않는다.
+> **영어 모집 게시 완료**: https://www.reddit.com/r/playtesters/comments/1ws9ye2/paid_735_net_via_paypal_40minute_observed_browser/ — u/Feeling-Search2339, Paid Playtest, 영어권 3명. 본문·신청 DM 계정·게시 화면을 확인했다.
+> **한국어 모집 미게시**: Threads 계정 접근은 자동 승인 심사가 별도 허가 부족으로 차단했다. 사용자에게 Threads @muscledoodoo 접근과 한국어 모집 게시 허가를 요청한다. 우회 접근하거나 다른 계정으로 게시하지 않는다.
+> Cursor는 x.ai SSO 단계 접근이 자동 심사에 차단되어, 동일 GitHub 테스트 브랜치에서 설문 저장만 직접 수정했다. 선발·세션·녹화·송금은 아직 수행하지 않았다.
 > 한국어 수정 후 새 3명 계획은 유지하며, 영어 2회차는 열지 않는다.
 
-> 실제 게시·모집·녹화·송금은 아직 하지 않는다.
-> `‹…›`는 저장소에서 알 수 없어 운영자가 채울 칸이다.
+> 아래의 예전 초안·검증 이력에 있는 ‘미게시’, pt4, USD 미정 표기는 당시 기록이다. 현재 실행 기준은 위 상태 블록과 16~17절이며, 영어 모집을 중복 게시하지 않는다.
+> `‹…›`는 초기 초안의 미정 칸이다.
 
 ## 0. 한 줄 운영
 
@@ -34,10 +36,10 @@
 | 구성 | RPG·선택형 경험 2 + 스토리 일반 1 | 같음 |
 | 시간 | 준비 5 + 플레이 20 + 인터뷰 10 + 설문 5 = **약 40분** | 같음 |
 | 방식 | 화면공유 관찰. 동의 후 게임 화면·음성만 기록(얼굴 없음) | 같음 |
-| 보상 | **참여자 수령 1만 원**, 세션 종료 후 **48시간 이내** | **원화 1만 원 상당 USD 수령액**을 선발 확정 때 고정. 실제 달러 숫자가 정해지기 전에는 모집 게시 안 함 |
+| 보상 | **참여자 수령 1만 원**, 세션 종료 후 **48시간 이내** | **US$7.35 수령**으로 게시 완료. 세션 종료 후 48시간 이내, 수수료 운영자 부담 |
 | 지급 | 국내 계좌이체. 이체 수수료는 운영자가 따로 부담 | 페이팔(PayPal, 페이팔, 해외 송금에 쓰는 결제 계정). 수수료·환전은 별도(운영자 부담) |
-| 빌드 | 헤더 `v0.7.3-pt4`. 설문에 자동 포함. 회차 시작 후 커밋 고정 | 같음. 우상단에서 EN |
-| 모집 채널 (미게시) | Threads, 모집이 허용된 국내 게임 커뮤니티 | [r/playtesters](https://www.reddit.com/r/playtesters/) |
+| 빌드 | 헤더 `v0.7.3-pt6`, 코드 `ee66c2d5e6eada1601f4290e1035905f01e3db83`. 설문에 자동 포함. 회차 시작 후 커밋 고정 | 같음. 우상단에서 EN |
+| 모집 채널 | Threads 예정, 계정 접근 허가 대기·미게시 | [r/playtesters 게시 완료](https://www.reddit.com/r/playtesters/comments/1ws9ye2/paid_735_net_via_paypal_40minute_observed_browser/) |
 | 다음 | 수정 후 **새로운 한국어 3명** | 영어 2회는 아직 확정하지 않음 |
 
 PlaytestCloud 등 대행은 이번 회에 쓰지 않는다. 서비스 이용료가 직접 모집 예산과 겹친다.
@@ -60,11 +62,11 @@ PlaytestCloud 등 대행은 이번 회에 쓰지 않는다. 서비스 이용료�
 
 이 저장소에 이미 있는 GitHub Pages다. 새 호스팅은 만들지 않는다. 브라우저에서 게임이 실제로 뜨는 공개 HTTPS는 여기뿐이다.
 
-배포 방식: Settings → Pages → Source는 **Deploy from a branch** 유지. Branch는 `cursor/playtest-startable-6593`, 폴더는 `/`. `main` 병합은 하지 않는다. 이 주소의 게임이 pt4로 바뀌는 것을 전제로 한다.
+배포 방식: Settings → Pages → Source는 **Deploy from a branch** 유지. Branch는 `cursor/playtest-startable-6593`, 폴더는 `/`. `main` 병합은 하지 않는다. 2026-09-28 공개 주소에서 pt6를 확인했다.
 
-`.github/workflows/pages.yml`은 **수동 실행(`workflow_dispatch`)만** 있다. push로 Pages를 배포하지 않는다.
+`.github/workflows/pages.yml` 자체는 **수동 실행(`workflow_dispatch`)만** 있다. 현재 선택한 Pages 브랜치 배포는 별도이며, 테스트 브랜치 변경으로 pt6가 공개 주소에 배포된 것을 확인했다.
 
-헤더에 `v0.7.3-pt4`가 보이면 맞는 빌드다. 안 보이면 접속을 중단한다.
+헤더에 `v0.7.3-pt6`가 보이면 현재 모집용 빌드다. 다르면 세션을 시작하기 전에 확인한다.
 
 ## 4. 설문 (인게임 `🗒` / 피드백·그만두기)
 
@@ -134,7 +136,7 @@ This session records **the game screen and your voice only**. **No webcam / no f
 
 **선발:** 장르 경험과 설명의 구체성. 경험자 2 + 일반 1.
 
-## 8. 모집문 — 한국어 (초안, 미게시)
+## 8. 모집문 — 한국어 (이전 초안, 현재 게시용은 16~17절)
 
 제목: [유료 플레이테스트] 텍스트 어드벤처 40분(플레이 20분+대화) · 수령 1만 원
 
@@ -161,7 +163,7 @@ This session records **the game screen and your voice only**. **No webcam / no f
 
 채널: Threads 또는 모집이 허용된 국내 게임 커뮤니티. 게시 전에 해당 채널 규칙을 다시 읽는다.
 
-## 9. 모집문 — English (draft, unpublished)
+## 9. 모집문 — English (archived draft; published copy in sections 16–17)
 
 **Channel (decided):** [r/playtesters](https://www.reddit.com/r/playtesters/). Do not post until the operator re-reads the live subreddit rules that day. **[미검증]** current flair/title format — Reddit blocked a live rules fetch in this environment.
 
@@ -293,7 +295,7 @@ Do not put bank/PayPal details in the public post or the first application.
 
 
 
-## 16. 현재 게시용 본문 (미게시)
+## 16. 현재 모집 본문 (영어 게시 완료 / 한국어 미게시)
 
 ### 한국어
 
@@ -315,33 +317,62 @@ Do not put bank/PayPal details in the public post or the first application.
 선발 확정 연락을 받은 분만 유료 세션을 시작합니다. 신청만으로 지급 대상이 되지는 않습니다. 확정 후 테스트 링크를 보내 드립니다.
 좋은 평가·좋아요·팔로우는 요구하지 않습니다.
 
-### English — r/playtesters / Paid Playtest
+### English — r/playtesters / Paid Playtest (2026-09-28 게시 완료)
+
+게시 URL: https://www.reddit.com/r/playtesters/comments/1ws9ye2/paid_735_net_via_paypal_40minute_observed_browser/
 
 [Paid] $7.35 net via PayPal | 40-minute observed browser RPG playtest | 3 adults
 
 I'm building Aduventure, a dice-driven mystery text adventure with branching choices and turn-based combat. I'm looking for 3 adults (18+) who have never played it, to help me understand which decisions are interesting and where the game loses their attention.
 
 What you'll do:
+
 - Play for about 20 minutes while sharing your game screen.
 - Talk about your experience and complete a short in-game feedback form.
 - Allow about 40 minutes total, including setup.
 
 Payment:
+
 - $7.35 USD received via PayPal within 48 hours after the session. I cover transfer fees so you receive the stated amount in USD.
 - Honest criticism is paid in full.
 - If a bug blocks you, or you stop because you're bored, we'll discuss what happened and finish the short form; you still receive the full amount.
 - No purchase, positive review, like, follow, or public post is required.
 
 Requirements:
+
 - A PC or laptop with a modern browser, screen sharing, voice chat, and enough English for the game and discussion.
 - An account able to receive international PayPal payments. Payment details are collected privately after selection, not in your application.
 - No webcam. Recording is optional and requires separate advance consent; declining recording does not affect payment.
 - We will agree on a session time individually. Please include your timezone.
 
 To apply, DM @muscledoodoo on Instagram (https://www.instagram.com/muscledoodoo/) with "ADU EN" and:
+
 1. One or two RPGs/story games you've enjoyed and why (newcomers are welcome too).
 2. Your device and browser.
 3. Your availability and timezone.
 4. Whether screen sharing and voice chat are possible.
 
 Only selected applicants who receive my confirmation should start a paid session. Applying by itself does not qualify for payment. I'll send the free browser-game link after confirming your slot, so we can observe your first impressions. Feedback will be collected in the session and the in-game form.
+
+
+## 17. 2026-09-28 실제 모집 게시 기록
+
+- 영어: r/playtesters, 계정 u/Feeling-Search2339, 플래어 Paid Playtest. 게시 URL: https://www.reddit.com/r/playtesters/comments/1ws9ye2/paid_735_net_via_paypal_40minute_observed_browser/
+- 게시 직후 커뮤니티 피드와 새 탭의 글 상세에서 제목·전문·Instagram @muscledoodoo 신청·지급 조건을 확인했다. 당시 삭제/검토 대기 안내는 보이지 않았다. 향후 노출이나 참가자 확보를 보장하는 것은 아니다.
+- 현재 영어권 모집은 3명, 40분, US$7.35 수령, 세션 후 48시간 이내, 해외 수수료 별도 운영자 부담. 영어 2회차는 열지 않는다.
+- 공개 pt6에서 KO/EN 인게임 설문을 실제 제출하고 응답 시트 129·130행의 내용 및 extra JSON 저장을 확인했다. 검증용이며 참여자로 세지 않는다.
+- 지원자 확인·선발·일정 확정·세션·녹화·송금은 아직 수행하지 않았다. 기존 운영표의 빈 칸을 임의로 채우지 않는다.
+- 한국어 모집: 3명, 40분, 수령 1만 원. Threads 계정 접근의 자동 승인 심사 거절로 아직 미게시. 다음 짧은 원고는 사용자 허가 뒤 해당 계정 확인 후 게시한다.
+
+### Threads 한국어 단일 글 원고 (미게시, 398자)
+
+[유료 게임 테스트] 40분·1만 원·성인 3명
+
+제가 만드는 주사위 판정 텍스트 RPG ‘어두밴처’를 처음 해 볼 분을 찾습니다.
+PC/노트북으로 20분 플레이+대화·설문, 총 40분. 화면공유·음성 대화 가능하신 분, 웹캠은 필요 없습니다.
+
+종료 후 48시간 안에 계좌로 1만 원을 보내드립니다. 혹평·오류·지루함으로 중단해도 대화·설문을 마치면 전액 지급합니다. 녹화는 별도 동의이며 거절해도 보상은 같습니다.
+
+인스타 @muscledoodoo로 ‘어두밴처 테스트’라고 DM 주세요. 즐긴 RPG·스토리 게임, 기기·브라우저, 가능한 시간을 보내주시면 됩니다. 일정은 개별 조율합니다.
+
+선발 확정자만 유료 세션을 시작합니다. 신청만으로 지급되지는 않습니다. 좋은 평가·좋아요·팔로우는 요구하지 않습니다.
