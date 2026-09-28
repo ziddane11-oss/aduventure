@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>어두밴처 v0.7.3</title>
+<title>어두밴처 v0.7.3-pt4</title>
 <style>body{margin:0;background:#0e1420}</style>
 </head>
 <body>
@@ -318,7 +318,7 @@ function(a,b,c){if(!Vd(b))throw Error(n(200));return Wd(null,a,b,!1,c)};Q.unmoun
    GAS 피드백 파이프 — v0.7 재구현 (제안/신호/텔레메트리)
    ============================================================ */
 /* 플레이테스트 빌드 태그 — 테스트 중 버전 구분용. 수정할 때마다 뒤 번호를 올린다. */
-const BUILD = "v0.7.3-pt3";
+const BUILD = "v0.7.3-pt4";
 const GAS_URL = "https://script.google.com/macros/s/AKfycbxFx_m5rhCZmqGoy3JcUUNqEgiObMWNHe9hx-LnZrhzIkfwa9-yJGBWP0lVulptnNQeCQ/exec";
 function gasPost(payload) {
   return fetch(GAS_URL, {
@@ -339,6 +339,25 @@ function tele(event, scene, who, extra) {
       extra: extra || ""
     }).catch(() => {});
   } catch (e) {}
+}
+function reportClientError(msg, extra) {
+  try {
+    gasPost({
+      type: "error",
+      build: BUILD,
+      text: String(msg || "unknown"),
+      extra: extra || "",
+      at: new Date().toISOString()
+    }).catch(() => {});
+  } catch (e) {}
+}
+if (typeof window !== "undefined") {
+  window.addEventListener("error", function (e) {
+    reportClientError(e.message, (e.filename || "") + ":" + (e.lineno || ""));
+  });
+  window.addEventListener("unhandledrejection", function (e) {
+    reportClientError(String(e.reason), "unhandledrejection");
+  });
 }
 
 /* ============================================================
@@ -485,6 +504,16 @@ const UI = {
   fbBtn: { ko: "피드백·그만두기", en: "Feedback / Quit" },
   fbTitle: { ko: "플레이테스트 피드백", en: "Playtest Feedback" },
   fbIntro: { ko: "솔직한 경험을 그대로 적어 주세요. 정답은 없고, 좋게 써 주실 필요도 없습니다. 중간에 그만두셨어도 어디서 왜 멈췄는지 적어 주시면 큰 도움이 됩니다.", en: "Please describe your honest experience. There are no right answers, and no need to be kind. If you stopped partway, telling us where and why is just as valuable." },
+  fbChoiceHad: { ko: "고민한 선택이 있었나요?", en: "Was there a choice you hesitated over?" },
+  fbQuitHad: { ko: "계속할 마음이 사라진 장면이 있었나요?", en: "Was there a moment you lost the will to keep playing?" },
+  fbHadYes: { ko: "있었다", en: "Yes" },
+  fbHadNone: { ko: "없음", en: "None" },
+  fbHadForgot: { ko: "기억나지 않음", en: "I don't remember" },
+  fbChoiceWhere: { ko: "어느 장면·선택이었나요?", en: "Which scene or choice was it?" },
+  fbChoiceWhy: { ko: "그때 어떤 결과가 나올 거라고 생각했나요?", en: "What did you expect would happen?" },
+  fbQuitWhere: { ko: "어느 장면이었나요?", en: "Which scene was it?" },
+  fbQuitWhy: { ko: "왜 계속할 마음이 사라졌나요?", en: "Why did you lose the will to continue?" },
+  fbNeedDetail: { ko: "'있었다'를 고르셨다면 위치와 이유를 적어 주세요. 없거나 기억나지 않으면 해당 보기를 고르면 됩니다.", en: "If you chose Yes, please add where and why. If there wasn't one or you don't remember, pick that option." },
   fbQuit: { ko: "지루했거나 그만두고 싶었던 장면과 이유", en: "A scene where you got bored or wanted to quit — and why" },
   fbChoice: { ko: "가장 고민했던 선택과, 그때 예상했던 결과", en: "The choice you agonized over most, and what you expected would happen" },
   fbCombat: { ko: "전투에서 고른 행동과 그 이유 (전투를 했다면)", en: "Which actions you chose in combat, and why (if you fought)" },
@@ -2328,8 +2357,12 @@ function PlaytestFeedback(props) {
     build = props.build,
     session = props.session;
   const [q, setQ] = useState({
-    quit: "",
-    choice: "",
+    choiceHad: "",
+    choiceWhere: "",
+    choiceWhy: "",
+    quitHad: "",
+    quitWhere: "",
+    quitWhy: "",
     combat: "",
     confuse: "",
     more: "",
@@ -2339,6 +2372,21 @@ function PlaytestFeedback(props) {
   const set = (k, v) => setQ(o => Object.assign({}, o, {
     [k]: v
   }));
+  const hadLabel = had => had === "yes" ? ui("fbHadYes") : had === "none" ? ui("fbHadNone") : had === "forgot" ? ui("fbHadForgot") : "";
+  const packChoice = () => {
+    if (q.choiceHad === "none" || q.choiceHad === "forgot") return hadLabel(q.choiceHad);
+    if (q.choiceHad === "yes") return hadLabel("yes") + " | where: " + q.choiceWhere + " | expected: " + q.choiceWhy;
+    return "";
+  };
+  const packQuit = () => {
+    if (q.quitHad === "none" || q.quitHad === "forgot") return hadLabel(q.quitHad);
+    if (q.quitHad === "yes") return hadLabel("yes") + " | where: " + q.quitWhere + " | why: " + q.quitWhy;
+    return "";
+  };
+  const answers = () => Object.assign({}, q, {
+    choice: packChoice(),
+    quit: packQuit()
+  });
   const compose = () => {
     const L = [];
     L.push("=== Aduventure 어두밴처 playtest feedback ===");
@@ -2346,18 +2394,27 @@ function PlaytestFeedback(props) {
     L.push("reached: " + session.reached.join(" > "));
     L.push("stop: " + session.stop + " | minutes: " + session.minutes);
     L.push("");
-    L.push("[quit/bored] " + q.quit);
-    L.push("[hardest choice + expected] " + q.choice);
+    L.push("[hesitant choice] " + packChoice());
+    L.push("[lost will to continue] " + packQuit());
     L.push("[combat actions + why] " + q.combat);
     L.push("[confusing] " + q.confuse);
     L.push("[keep/stop reason] " + q.more);
     L.push("[bug] " + q.bug);
     return L.join("\n");
   };
-  const hasContent = () => Object.keys(q).some(k => q[k].trim());
+  const gated = v => v === "yes" || v === "none" || v === "forgot";
+  const hasContent = () => gated(q.choiceHad) || gated(q.quitHad) || [q.combat, q.confuse, q.more, q.bug].some(v => v.trim());
+  const missingYesDetail = () => {
+    const need = (had, a, b) => had === "yes" && !String(a).trim() && !String(b).trim();
+    return need(q.choiceHad, q.choiceWhere, q.choiceWhy) || need(q.quitHad, q.quitWhere, q.quitWhy);
+  };
   const submit = () => {
     if (!hasContent()) {
       setStatus("empty");
+      return;
+    }
+    if (missingYesDetail()) {
+      setStatus("needDetail");
       return;
     }
     setStatus("sending");
@@ -2368,7 +2425,7 @@ function PlaytestFeedback(props) {
       reached: session.reached,
       stop: session.stop,
       minutes: session.minutes,
-      answers: q,
+      answers: answers(),
       at: new Date().toISOString()
     }).then(ok => setStatus(ok ? "sent" : "fail")).catch(() => setStatus("fail"));
   };
@@ -2399,6 +2456,24 @@ function PlaytestFeedback(props) {
     value: q[key],
     onChange: e => set(key, e.target.value)
   }));
+  const gate = (key, labelKey) => /*#__PURE__*/React.createElement("div", {
+    className: "fbField",
+    key: key
+  }, /*#__PURE__*/React.createElement("span", null, ui(labelKey)), /*#__PURE__*/React.createElement("div", {
+    className: "fbOpts",
+    role: "radiogroup",
+    "aria-label": ui(labelKey)
+  }, ["yes", "none", "forgot"].map(v => /*#__PURE__*/React.createElement("label", {
+    className: "fbOpt" + (q[key] === v ? " on" : ""),
+    key: v
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "radio",
+    name: key,
+    value: v,
+    checked: q[key] === v,
+    onChange: () => set(key, v)
+  }), /*#__PURE__*/React.createElement("span", null, v === "yes" ? ui("fbHadYes") : v === "none" ? ui("fbHadNone") : ui("fbHadForgot"))))));
+  const statusText = status === "sent" ? ui("fbSent") : status === "fail" ? ui("fbFail") : status === "copied" ? ui("fbCopied") : status === "needDetail" ? ui("fbNeedDetail") : ui("fbEmpty");
   return /*#__PURE__*/React.createElement("div", {
     className: "fbModal",
     role: "dialog"
@@ -2408,11 +2483,11 @@ function PlaytestFeedback(props) {
     className: "fbBuild"
   }, build)), /*#__PURE__*/React.createElement("p", {
     className: "fbIntro"
-  }, ui("fbIntro")), field("quit", "fbQuit"), field("choice", "fbChoice"), field("combat", "fbCombat"), field("confuse", "fbConfuse"), field("more", "fbMore"), field("bug", "fbBug"), /*#__PURE__*/React.createElement("p", {
+  }, ui("fbIntro")), gate("choiceHad", "fbChoiceHad"), q.choiceHad === "yes" && field("choiceWhere", "fbChoiceWhere"), q.choiceHad === "yes" && field("choiceWhy", "fbChoiceWhy"), gate("quitHad", "fbQuitHad"), q.quitHad === "yes" && field("quitWhere", "fbQuitWhere"), q.quitHad === "yes" && field("quitWhy", "fbQuitWhy"), field("combat", "fbCombat"), field("confuse", "fbConfuse"), field("more", "fbMore"), field("bug", "fbBug"), /*#__PURE__*/React.createElement("p", {
     className: "fbMetaNote"
-  }, ui("fbMeta")), (status === "sent" || status === "fail" || status === "copied" || status === "empty") && /*#__PURE__*/React.createElement("p", {
-    className: "fbStatus " + status
-  }, status === "sent" ? ui("fbSent") : status === "fail" ? ui("fbFail") : status === "copied" ? ui("fbCopied") : ui("fbEmpty")), /*#__PURE__*/React.createElement("div", {
+  }, ui("fbMeta")), (status === "sent" || status === "fail" || status === "copied" || status === "empty" || status === "needDetail") && /*#__PURE__*/React.createElement("p", {
+    className: "fbStatus " + (status === "needDetail" ? "empty" : status)
+  }, statusText), /*#__PURE__*/React.createElement("div", {
     className: "fbBtns"
   }, /*#__PURE__*/React.createElement("button", {
     className: "fbPrimary",
@@ -2723,6 +2798,10 @@ const css = `
 .crpg .fbField { display:flex; flex-direction:column; gap:4px; margin-bottom:10px; }
 .crpg .fbField span { font-size:13px; color:var(--dim); }
 .crpg .fbField textarea { width:100%; resize:vertical; background:var(--panel2); border:1px solid var(--line); border-radius:6px; color:var(--text); font-family:inherit; font-size:14px; padding:8px 10px; line-height:1.6; }
+.crpg .fbOpts { display:flex; flex-wrap:wrap; gap:8px; margin-top:4px; }
+.crpg .fbOpt { display:flex; align-items:center; gap:6px; padding:6px 10px; border:1px solid var(--line); border-radius:8px; background:var(--panel2); cursor:pointer; font-size:13px; color:var(--text); }
+.crpg .fbOpt.on { border-color:var(--gold); color:var(--gold); }
+.crpg .fbOpt input { accent-color:var(--gold); }
 .crpg .fbMetaNote { font-size:11.5px; color:var(--dim); line-height:1.6; margin:6px 0 10px; }
 .crpg .fbStatus { font-size:13px; padding:8px 10px; border-radius:6px; margin-bottom:10px; line-height:1.6; }
 .crpg .fbStatus.sent { color:var(--good); border:1px solid var(--good); }
