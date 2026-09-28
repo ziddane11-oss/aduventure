@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>어두밴처 v0.7.3-pt4</title>
+<title>어두밴처 v0.7.3-pt5</title>
 <style>body{margin:0;background:#0e1420}</style>
 </head>
 <body>
@@ -318,7 +318,7 @@ function(a,b,c){if(!Vd(b))throw Error(n(200));return Wd(null,a,b,!1,c)};Q.unmoun
    GAS 피드백 파이프 — v0.7 재구현 (제안/신호/텔레메트리)
    ============================================================ */
 /* 플레이테스트 빌드 태그 — 테스트 중 버전 구분용. 수정할 때마다 뒤 번호를 올린다. */
-const BUILD = "v0.7.3-pt4";
+const BUILD = "v0.7.3-pt5";
 const GAS_URL = "https://script.google.com/macros/s/AKfycbxFx_m5rhCZmqGoy3JcUUNqEgiObMWNHe9hx-LnZrhzIkfwa9-yJGBWP0lVulptnNQeCQ/exec";
 function gasPost(payload) {
   return fetch(GAS_URL, {
@@ -2418,7 +2418,7 @@ function PlaytestFeedback(props) {
       return;
     }
     setStatus("sending");
-    gasPost({
+    const feedback = {
       type: "playtest_feedback",
       build: build,
       lang: session.lang,
@@ -2427,7 +2427,13 @@ function PlaytestFeedback(props) {
       minutes: session.minutes,
       answers: answers(),
       at: new Date().toISOString()
-    }).then(ok => setStatus(ok ? "sent" : "fail")).catch(() => setStatus("fail"));
+    };
+    // The existing Apps Script stores text/extra, so include both formats.
+    gasPost(Object.assign({}, feedback, {
+      scene: session.stop || "",
+      text: compose(),
+      extra: JSON.stringify(feedback)
+    })).then(ok => setStatus(ok ? "sent" : "fail")).catch(() => setStatus("fail"));
   };
   const exportTxt = () => {
     try {
