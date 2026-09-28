@@ -942,10 +942,16 @@ const SCENES = {
   },
   stairs: {
     ch: 1,
-    text: `나선 계단 중간층, 등불이 새어 나온다.\n\n비쩍 마른 사내가 등대의 황동 렌즈를 자루에 쑤셔 넣고 있다. 허리춤의 갈고리칼.\n\n"…재수도 없지. 못 본 걸로 하고 내려가. 응?"`,
+    text: {
+      ko: `나선 계단 중간층, 등불이 새어 나온다.\n\n비쩍 마른 사내가 등대의 황동 렌즈를 자루에 쑤셔 넣고 있다. 허리춤의 갈고리칼.\n\n"…재수도 없지. 못 본 걸로 하고 내려가. 응?"`,
+      en: `Halfway up the spiral stairs, lamplight leaks out.\n\nA gaunt man is stuffing the lighthouse's brass lens into a sack. A hook-knife hangs at his belt.\n\n"…just my luck. Pretend you never saw this and walk back down. Yeah?"`
+    },
     choices: [{
       loreReq: "ledger",
-      label: `[기억] "네 이름, 부두 밀수 장부에서 봤다. 렌즈 두고 사라져."`,
+      label: {
+        ko: `[기억] "네 이름, 부두 밀수 장부에서 봤다. 렌즈 두고 사라져."`,
+        en: `[Memory] "I saw your name in the smuggling ledger at the docks. Drop the lens and vanish."`
+      },
       check: {
         ability: "CHA",
         skill: "persuasion",
@@ -953,16 +959,25 @@ const SCENES = {
         label: "설득"
       },
       success: {
-        text: `사내의 얼굴이 하얗게 질린다. "…그걸 어떻게." 자루를 팽개치고 빗속으로 달아난다.`,
+        text: {
+          ko: `사내의 얼굴이 하얗게 질린다. "…그걸 어떻게." 자루를 팽개치고 빗속으로 달아난다.`,
+          en: `The man goes white. "…how do you know that." He flings the sack down and bolts into the rain.`
+        },
         flag: "peaceful",
         goto: "top"
       },
       fail: {
-        text: `"허풍이군." 갈고리칼이 호를 그린다.`,
+        text: {
+          ko: `"허풍이군." 갈고리칼이 호를 그린다.`,
+          en: `"Bluffing." The hook-knife carves an arc.`
+        },
         goto: "combat"
       }
     }, {
-      label: `[설득] "렌즈를 두고 가면, 나도 못 본 걸로 하지."`,
+      label: {
+        ko: `[설득] "렌즈를 두고 가면, 나도 못 본 걸로 하지."`,
+        en: `[Persuade] "Leave the lens, and I never saw a thing."`
+      },
       check: {
         ability: "CHA",
         skill: "persuasion",
@@ -970,16 +985,25 @@ const SCENES = {
         label: "설득"
       },
       success: {
-        text: `사내의 눈이 자루와 출구 사이를 오간다. 침을 뱉고, 자루를 내려놓는다.\n\n"노인은 내가 안 그랬어. 왔을 땐 이미 쓰러져 있었고, 등불 기관은 박살 나 있었다고."\n\n사내는 빗속으로 사라진다.`,
+        text: {
+          ko: `사내의 눈이 자루와 출구 사이를 오간다. 침을 뱉고, 자루를 내려놓는다.\n\n"노인은 내가 안 그랬어. 왔을 땐 이미 쓰러져 있었고, 등불 기관은 박살 나 있었다고."\n\n사내는 빗속으로 사라진다.`,
+          en: `His eyes dart between the sack and the exit. He spits, and sets the sack down.\n\n"I didn't touch the old man. He was already down when I got here, and the light's mechanism was already smashed."\n\nThe man vanishes into the rain.`
+        },
         flag: "peaceful",
         goto: "top"
       },
       fail: {
-        text: `"말로? 늦었어."\n\n갈고리칼이 호를 그린다.`,
+        text: {
+          ko: `"말로? 늦었어."\n\n갈고리칼이 호를 그린다.`,
+          en: `"Talk? Too late for that."\n\nThe hook-knife carves an arc.`
+        },
         goto: "combat"
       }
     }, {
-      label: "[전투] 무기를 뽑는다",
+      label: {
+        ko: "[전투] 무기를 뽑는다",
+        en: "[Fight] Draw your weapon"
+      },
       goto: "combat"
     }]
   },
@@ -988,19 +1012,31 @@ const SCENES = {
     combat: true,
     enemy: "looter",
     victory: {
-      text: `사내가 무릎을 꿇는다.\n\n"졌다… 노인은 내 짓이 아냐. 기관은 이미 박살 나 있었어."\n\n절뚝이며 빗속으로 사라진다.`,
+      text: {
+        ko: `사내가 무릎을 꿇는다.\n\n"졌다… 노인은 내 짓이 아냐. 기관은 이미 박살 나 있었어."\n\n절뚝이며 빗속으로 사라진다.`,
+        en: `The man drops to his knees.\n\n"I yield… the old man wasn't my doing. The mechanism was already wrecked."\n\nHe limps off into the rain.`
+      },
       goto: "top"
     },
     defeat: {
-      text: `시야가 어두워진다…\n\n눈을 뜨니 새벽. 등대는 끝내 켜지지 못했다.`,
+      text: {
+        ko: `시야가 어두워진다…\n\n눈을 뜨니 새벽. 등대는 끝내 켜지지 못했다.`,
+        en: `Your vision darkens…\n\nYou wake at dawn. The lighthouse was never lit.`
+      },
       goto: "gameover"
     }
   },
   top: {
     ch: 1,
-    text: `꼭대기 등실. 등대지기 노인이 쓰러져 있다 — 숨은 붙어 있다. 손에는 스패너. 습격이 아니라 수리 중 사고다.\n\n기관의 톱니 하나가 축에서 빠져 회전부에 박혀 있다. 어선들에게 남은 시간이 없다.`,
+    text: {
+      ko: `꼭대기 등실. 등대지기 노인이 쓰러져 있다 — 숨은 붙어 있다. 손에는 스패너. 습격이 아니라 수리 중 사고다.\n\n기관의 톱니 하나가 축에서 빠져 회전부에 박혀 있다. 어선들에게 남은 시간이 없다.`,
+      en: `The lantern room at the top. The old keeper lies collapsed — still breathing, a wrench in his hand. Not an attack; an accident mid-repair.\n\nOne gear has slipped off its axle and jammed the rotor. The fishing boats are almost out of time.`
+    },
     choices: [{
-      label: "기관을 분석해 톱니를 복원한다",
+      label: {
+        ko: "기관을 분석해 톱니를 복원한다",
+        en: "Analyze the mechanism and refit the gear"
+      },
       check: {
         ability: "INT",
         skill: "investigation",
@@ -1008,17 +1044,26 @@ const SCENES = {
         label: "조사"
       },
       success: {
-        text: `톱니의 마모 방향을 읽는다. 빠진 게 아니라 — 빼낸 것이다.\n\n역순으로 끼우자 기관이 숨을 쉬듯 돈다. 불이 켜진다. 완벽하게.`,
+        text: {
+          ko: `톱니의 마모 방향을 읽는다. 빠진 게 아니라 — 빼낸 것이다.\n\n역순으로 끼우자 기관이 숨을 쉬듯 돈다. 불이 켜진다. 완벽하게.`,
+          en: `You read the wear on the gear. It didn't slip — it was pulled out.\n\nRefit in reverse, and the mechanism turns like a breath. The light comes on. Perfectly.`
+        },
         flag: "fixed",
         goto: "ending"
       },
       fail: {
-        text: `복잡하다. 억지로 끼우자 기관이 비명을 지르며 돈다.\n\n불이 켜진다. 덜덜 떨면서.`,
+        text: {
+          ko: `복잡하다. 억지로 끼우자 기관이 비명을 지르며 돈다.\n\n불이 켜진다. 덜덜 떨면서.`,
+          en: `Too intricate. Forced back in, the mechanism turns with a screech.\n\nThe light comes on — shuddering.`
+        },
         flag: "jury",
         goto: "ending"
       }
     }, {
-      label: "[운동] 회전부를 맨손으로 붙잡아 멈추고 톱니를 뽑는다",
+      label: {
+        ko: "[운동] 회전부를 맨손으로 붙잡아 멈추고 톱니를 뽑는다",
+        en: "[Athletics] Grip the rotor bare-handed to stop it and pull the gear"
+      },
       check: {
         ability: "STR",
         skill: "athletics",
@@ -1026,13 +1071,19 @@ const SCENES = {
         label: "운동"
       },
       success: {
-        text: `톱니가 손바닥을 긁으며 빠져나온다. 피가 맺히지만 — 기관은 매끄럽게 돈다.\n\n불이 켜진다. 완벽하게.`,
+        text: {
+          ko: `톱니가 손바닥을 긁으며 빠져나온다. 피가 맺히지만 — 기관은 매끄럽게 돈다.\n\n불이 켜진다. 완벽하게.`,
+          en: `The gear scrapes free across your palm. Blood wells up — but the mechanism runs smooth.\n\nThe light comes on. Perfectly.`
+        },
         damage: [1, 2],
         flag: "fixed",
         goto: "ending"
       },
       fail: {
-        text: `기관이 손을 튕겨낸다. 하는 수 없이 톱니를 억지로 박아 넣었다.\n\n불이 켜진다. 덜덜 떨면서.`,
+        text: {
+          ko: `기관이 손을 튕겨낸다. 하는 수 없이 톱니를 억지로 박아 넣었다.\n\n불이 켜진다. 덜덜 떨면서.`,
+          en: `The mechanism throws your hand off. With no choice, you jam the gear back in.\n\nThe light comes on — shuddering.`
+        },
         damage: [1, 4],
         flag: "jury",
         goto: "ending"
