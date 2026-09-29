@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>어두밴처 v0.7.3-pt6</title>
+<title>어두밴처 v0.7.3-pt7</title>
 <style>body{margin:0;background:#0e1420}</style>
 </head>
 <body>
@@ -318,7 +318,7 @@ function(a,b,c){if(!Vd(b))throw Error(n(200));return Wd(null,a,b,!1,c)};Q.unmoun
    GAS 피드백 파이프 — v0.7 재구현 (제안/신호/텔레메트리)
    ============================================================ */
 /* 플레이테스트 빌드 태그 — 테스트 중 버전 구분용. 수정할 때마다 뒤 번호를 올린다. */
-const BUILD = "v0.7.3-pt6";
+const BUILD = "v0.7.3-pt7";
 const GAS_URL = "https://script.google.com/macros/s/AKfycbxFx_m5rhCZmqGoy3JcUUNqEgiObMWNHe9hx-LnZrhzIkfwa9-yJGBWP0lVulptnNQeCQ/exec";
 function gasPost(payload) {
   return fetch(GAS_URL, {
@@ -540,14 +540,26 @@ const UI = {
   rulesGot: { ko: "이해했다, 주사위를 다오", en: "Got it — give me the dice" },
   special: { ko: "특수기", en: "special" },
   proficient: { ko: "숙련:", en: "proficient:" },
+  health: { ko: "HP · 체력", en: "HP · Health" },
+  statsHelp: { ko: "HP·AC·능력치가 뭔가요?", en: "What do HP, AC and abilities mean?" },
+  hpHelp: { ko: "HP는 남은 체력입니다. 빨간 막대와 숫자는 같은 체력을 나타냅니다. 전투 중 0이 되면 패배합니다.", en: "HP is your remaining health. The red bar and numbers show the same health. At 0 HP, you lose the fight." },
+  acHelp: { ko: "AC는 일반 전투에서 높을수록 맞기 어렵습니다. 도굴꾼전에서는 예고된 행동에 맞춰 대응하세요.", en: "Higher AC makes you harder to hit in regular combat. Against the grave-robber, respond to his telegraphed move." },
+  abilityHelp: { ko: "능력치 뒤 괄호는 주사위에 더하는 보정치입니다. 선택지마다 사용하는 능력치가 다릅니다.", en: "The number in parentheses after an ability is its dice modifier. Different choices use different abilities." },
+  abilityNames: { ko: "STR 근력 · DEX 민첩 · CON 건강 · INT 지능 · WIS 지혜 · CHA 매력", en: "STR Strength · DEX Dexterity · CON Constitution · INT Intelligence · WIS Wisdom · CHA Charisma" },
+  specialHelp: { ko: "일반 전투의 특수기는 장마다 2회, 실패한 판정을 다시 굴리는 운명 주사위는 장마다 1회입니다.", en: "You get 2 special moves for regular combat per chapter, and 1 Fate reroll for a failed check per chapter." },
+  recordScope: { ko: "이 브라우저의 개인 기록", en: "Personal records in this browser" },
+  recordHelp: { ko: "엔딩·지식·유물과 최고 기록은 이 브라우저에 저장됩니다. 브라우저 데이터를 지우면 사라질 수 있습니다. 저장이 차단되면 이 페이지를 닫을 때 사라집니다.", en: "Endings, lore, artifacts and best marks are saved in this browser. Clearing browser data may erase them. If storage is blocked, they last only until you leave this page." },
+  defendTag: { ko: "이번 공격 AC +4 · 내 공격 없음", en: "AC +4 for this attack · no attack of your own" },
+  defendHelp: { ko: "맞을 확률만 낮춥니다. 맞았을 때 피해량은 그대로입니다.", en: "Lowers the chance of being hit. A hit still deals full damage." },
+  parryTag: { ko: "이번 피해 감소 · 내 공격 없음", en: "Reduce this hit's damage · no attack of your own" },
+  parryHelp: { ko: "갈고리 강타 피해 ×0.2, 베기 피해 ×0.5(반올림). 다음 타격이 명중하면 피해 +4. 다른 공격 행동을 고르면 반격 보너스가 사라집니다.", en: "Hook Smash damage ×0.2; Slash damage ×0.5 (rounded). Your next Strike deals +4 damage if it hits. Another attack action discards the bonus." },
   dailyH: { ko: "오늘의 도전", en: "Today's challenge" },
   dailyDone: { ko: "✔ 달성", en: "✔ Done" },
   dailyTodo: { ko: "미달성", en: "Not yet" },
   badgeCount: { ko: "엔딩 도감", en: "Ending codex" },
   bestRate: { ko: "최고 성공률", en: "best success rate" },
   checksWord: { ko: "판정", en: "checks" },
-  firstRank: { ko: "초대 랭크 1", en: "first to rank 1" },
-  firstShort: { ko: "초대", en: "first" },
+  creditLabel: { ko: "기념 크레딧", en: "Commemorative credit" },
   loreCount: { ko: "발견한 지식", en: "Lore found" },
   loreHint: { ko: "지식은 죽어도 사라지지 않는다. 다음 모험에서 새 길을 여는 열쇠가 된다.", en: "Lore survives death. On the next run it becomes a key that opens a new path." },
   artCount: { ko: "전설의 유물", en: "Legendary artifacts" },
@@ -560,7 +572,7 @@ const UI = {
   thisRunClues: { ko: "이번 모험의 단서: ", en: "Clues this run: " },
   none: { ko: "없음", en: "none" },
   ruleLabel: { ko: "룰: ", en: "Rules: " },
-  newRecord: { ko: "★ 신기록! 이 엔딩의 최고 기록을 갱신했다", en: "★ New record! Best mark for this ending." },
+  newRecord: { ko: "★ 개인 최고 기록! 이 브라우저에서 달성한 이 엔딩의 최고 기록입니다.", en: "★ Personal best! Your best mark for this ending in this browser." },
   artGet: { ko: "◈ 유물 획득 — ", en: "◈ Artifact gained — " },
   ch2next: { ko: "2장 「검은 코트」 계속 →", en: "Continue to Ch.2 “The Black Coat” →" },
   ch1again: { ko: "다른 선택으로 1장 다시", en: "Replay Ch.1 with other choices" },
@@ -586,8 +598,9 @@ const UI = {
   footer2: { ko: "삽화·아이디어 모집 중: 채택작은 실명 크레딧과 함께 게임에 영구 수록", en: "Art and ideas welcome: adopted pieces stay in the game with a named credit" },
   footer3: { ko: "룰: SRD 5.1 (CC-BY-4.0) 부분집합 · 엔진 ", en: "Rules: SRD 5.1 (CC-BY-4.0) subset · engine " },
   footer4: { ko: "채택된 제안 — 태희: 창문 순간이동(1장 등대 입구)", en: "Adopted idea — Taehee: window teleport (Ch.1 lighthouse door)" },
-  jumpRoll: { ko: "기록", en: "Roll" },
-  jumpDc: { ko: "장애물", en: "DC" },
+  jumpTitle: { ko: "주사위 판정", en: "Dice check" },
+  jumpRoll: { ko: "판정 합계", en: "Check total" },
+  jumpDc: { ko: "목표값", en: "Target" },
   brand: { ko: "어두밴처", en: "Aduventure" }
 };
 const SRD20 = {
@@ -1818,7 +1831,7 @@ const BADGES = [{
   ch: 1,
   name: { ko: "침묵의 교섭가", en: "The Silent Negotiator" },
   how: { ko: "1장: 평화 + 완전 수리", en: "Ch.1: peace + full repair" },
-  first: "은서"
+  first: { ko: "은서", en: "Eunseo" }
 }, {
   id: "1pj",
   ch: 1,
@@ -2322,6 +2335,32 @@ function MonasteryScene({
     opacity: [0.14, 0.1, 0.07, 0.02][stage]
   }));
 }
+function HealthMeter({ hp, maxHp, ui }) {
+  const value = Math.max(0, Math.min(maxHp, hp));
+  return React.createElement("div", { className: "health" },
+    React.createElement("div", { className: "healthLabel" },
+      React.createElement("span", null, ui("health")),
+      React.createElement("strong", null, value, " / ", maxHp)),
+    React.createElement("div", {
+      className: "hpbar", role: "progressbar", "aria-label": ui("health"),
+      "aria-valuemin": 0, "aria-valuemax": maxHp, "aria-valuenow": value,
+      "aria-valuetext": `${value} / ${maxHp}`
+    }, React.createElement("i", {
+      style: { width: (maxHp > 0 ? value / maxHp * 100 : 0) + "%" },
+      "aria-hidden": true
+    })));
+}
+function StatsHelp({ ui }) {
+  return React.createElement("details", { className: "statsHelp" },
+    React.createElement("summary", null, ui("statsHelp")),
+    ...["hpHelp", "acHelp", "abilityHelp", "abilityNames", "specialHelp"].map(key =>
+      React.createElement("p", { key }, ui(key))));
+}
+function RecordScope({ ui }) {
+  return React.createElement("div", { className: "recordScope" },
+    React.createElement("strong", null, ui("recordScope")),
+    React.createElement("p", null, ui("recordHelp")));
+}
 function JumpBar({
   total,
   dc,
@@ -2329,11 +2368,12 @@ function JumpBar({
   lang
 }) {
   const max = Math.max(total, dc) * 1.3;
-  const rollWord = lang === "en" ? "Roll" : "기록";
-  const dcWord = lang === "en" ? "DC" : "장애물";
+  const ui = key => UI[key][lang] || UI[key].ko;
+  const rollWord = ui("jumpRoll");
+  const dcWord = ui("jumpDc");
   return /*#__PURE__*/React.createElement("div", {
     className: "jump",
-    "aria-label": `${rollWord} ${total}, ${dcWord} ${dc}`
+    "aria-label": `${ui("jumpTitle")}: ${rollWord} ${total}, ${dcWord} ${dc}`
   }, /*#__PURE__*/React.createElement("div", {
     className: "track"
   }, /*#__PURE__*/React.createElement("i", {
@@ -2348,7 +2388,7 @@ function JumpBar({
     }
   })), /*#__PURE__*/React.createElement("span", {
     className: "jlbl"
-  }, rollWord, " ", total, " \xB7 ", dcWord, " ", dc));
+  }, ui("jumpTitle"), " · ", rollWord, " ", total, " \xB7 ", dcWord, " ", dc));
 }
 
 /* ---------- 제안하기 (서버 없이: 클립보드 → 카톡 붙여넣기) ---------- */
@@ -2630,8 +2670,17 @@ const css = `
   border:1px solid var(--line); border-radius:8px; padding:10px 14px; margin-bottom:16px; font-size:13px; }
 .crpg .sheet .nm { font-weight:600; color:var(--gold); }
 .crpg .sheet .cls { font-style:normal; font-size:11px; color:var(--dim); margin-left:4px; }
-.crpg .hpbar { flex:1; min-width:110px; height:8px; background:#0a0f18; border-radius:4px; overflow:hidden; }
+.crpg .health { flex:1 1 160px; min-width:110px; }
+.crpg .healthLabel { display:flex; justify-content:space-between; gap:12px; margin-bottom:5px; font-size:12px; }
+.crpg .hpbar { height:8px; background:#0a0f18; border-radius:4px; overflow:hidden; }
 .crpg .hpbar i { display:block; height:100%; background:linear-gradient(90deg,#a33,#d96a5f); transition:width .4s; }
+.crpg .statsHelp { width:100%; margin:8px 0; color:var(--dim); font-size:12px; line-height:1.65; }
+.crpg .statsHelp summary { color:var(--gold); cursor:pointer; }
+.crpg .statsHelp p { margin:6px 0; }
+.crpg .recordScope { margin:16px 0 8px; color:var(--dim); font-size:12px; line-height:1.6; }
+.crpg .recordScope strong { color:var(--text); }
+.crpg .recordScope p { margin:4px 0; }
+.crpg .actionHelp { display:block; margin-top:6px; color:var(--dim); font-size:12px; line-height:1.5; }
 .crpg .ab { font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--dim); }
 .crpg .scene { animation:fadeIn .6s ease; }
 .crpg .narr { white-space:pre-wrap; line-height:2.05; font-size:17px; margin-bottom:10px; letter-spacing:.01em; }
@@ -3317,7 +3366,7 @@ function CRPG() {
     } else if (isDef) {
       log.push({
         who: "you",
-        t: bi("▶ 자세를 낮추고 일격에 대비한다", "▶ You drop low and brace for the blow")
+        t: bi(`▶ 방어 — 이번 공격 AC ${pc.ac} → ${pc.ac + 4}. 맞으면 피해량은 그대로다`, `▶ Defend — AC ${pc.ac} → ${pc.ac + 4} for this attack. A hit still deals full damage`)
       });
     } else if (action === "breath") {
       setBreathLeft(0);
@@ -3523,7 +3572,7 @@ function CRPG() {
     className: "ci"
   }, c.icon), /*#__PURE__*/React.createElement("h2", null, tx(c.name)), /*#__PURE__*/React.createElement("p", null, tx(c.blurb)), /*#__PURE__*/React.createElement("div", {
     className: "st"
-  }, "HP ", c.maxHp, " \xB7 AC ", c.ac, " \xB7 ", tx(c.weapon.name), " \xB7 ", ui("special"), " ", tx(SPECIALS[k].name), /*#__PURE__*/React.createElement("br", null), ui("proficient"), " ", c.proficiencies.map(s => tx(SKILL_NAMES[s])).join(" · "))))), /*#__PURE__*/React.createElement("div", {
+  }, "HP ", c.maxHp, " \xB7 AC ", c.ac, " \xB7 ", tx(c.weapon.name), " \xB7 ", ui("special"), " ", tx(SPECIALS[k].name), /*#__PURE__*/React.createElement("br", null), ui("proficient"), " ", c.proficiencies.map(s => tx(SKILL_NAMES[s])).join(" · "))))), React.createElement(StatsHelp, { ui }), /*#__PURE__*/React.createElement("div", {
     className: "daily" + (dailyDone ? " done" : "")
   }, /*#__PURE__*/React.createElement("span", {
     className: "daily-h"
@@ -3531,15 +3580,15 @@ function CRPG() {
     className: "daily-l"
   }, tx(daily.label)), /*#__PURE__*/React.createElement("span", {
     className: "daily-s"
-  }, dailyDone ? ui("dailyDone") : ui("dailyTodo"))), /*#__PURE__*/React.createElement("p", {
+  }, dailyDone ? ui("dailyDone") : ui("dailyTodo"))), React.createElement(RecordScope, { ui }), /*#__PURE__*/React.createElement("p", {
     className: "bcount"
   }, ui("badgeCount"), " ", badges.length, "/", BADGES.length), /*#__PURE__*/React.createElement("div", {
     className: "badges"
   }, BADGES.map(b => /*#__PURE__*/React.createElement("span", {
     key: b.id,
     className: "badge" + (badges.includes(b.id) ? " on" : ""),
-    title: badges.includes(b.id) ? tx(b.how) + (records[b.id] ? (lang === "en" ? " · best success rate " + records[b.id].rate + "% (" + records[b.id].rolls + " checks)" : " · 최고 성공률 " + records[b.id].rate + "% (판정 " + records[b.id].rolls + "회)") : "") + (b.first ? (lang === "en" ? " — first to rank 1: " : " — 초대 랭크 1: ") + b.first : "") : "???"
-  }, badges.includes(b.id) ? "★ " + tx(b.name) + (b.first ? (lang === "en" ? " · first " : " · 초대 ") + b.first : "") : "???"))), /*#__PURE__*/React.createElement("p", {
+    title: badges.includes(b.id) ? tx(b.how) + (records[b.id] ? (lang === "en" ? " · best success rate " + records[b.id].rate + "% (" + records[b.id].rolls + " checks)" : " · 최고 성공률 " + records[b.id].rate + "% (판정 " + records[b.id].rolls + "회)") : "") + (b.first ? " — " + ui("creditLabel") + ": " + tx(b.first) : "") : "???"
+  }, badges.includes(b.id) ? "★ " + tx(b.name) + (b.first ? " · " + ui("creditLabel") + ": " + tx(b.first) : "") : "???"))), /*#__PURE__*/React.createElement("p", {
     className: "bcount"
   }, ui("loreCount"), " ", lore.length, "/", Object.keys(CLUES).length), /*#__PURE__*/React.createElement("div", {
     className: "lorebook"
@@ -3567,17 +3616,13 @@ function CRPG() {
     className: "nm"
   }, pc.icon, " ", pc.name, " ", /*#__PURE__*/React.createElement("em", {
     className: "cls"
-  }, tx(CLASSES[pc.classKey].name))), /*#__PURE__*/React.createElement("div", {
-    className: "hpbar"
-  }, /*#__PURE__*/React.createElement("i", {
-    style: {
-      width: pc.hp / pc.maxHp * 100 + "%"
-    }
-  })), /*#__PURE__*/React.createElement("span", {
+  }, tx(CLASSES[pc.classKey].name))), React.createElement(HealthMeter, {
+    hp: pc.hp, maxHp: pc.maxHp, ui
+  }), /*#__PURE__*/React.createElement("span", {
     className: "ab"
-  }, "HP ", pc.hp, "/", pc.maxHp, " \xB7 AC ", pc.ac, " \xB7 ", ui("fate"), fate, " \xB7 ", tx(SPECIALS[pc.classKey].name), "\xD7", specialLeft), /*#__PURE__*/React.createElement("span", {
+  }, "AC ", pc.ac, " \xB7 ", ui("fate"), fate, " \xB7 ", tx(SPECIALS[pc.classKey].name), "\xD7", specialLeft), /*#__PURE__*/React.createElement("span", {
     className: "ab"
-  }, Object.entries(pc.abilities).map(([a, v]) => `${tx(ABILITY_NAMES[a])}${v}(${rules.abilityMod(v) >= 0 ? "+" : ""}${rules.abilityMod(v)})`).join(" ")), flags.some(f => CLUES[f]) && /*#__PURE__*/React.createElement("span", {
+  }, Object.entries(pc.abilities).map(([a, v]) => `${tx(ABILITY_NAMES[a])}${v}(${rules.abilityMod(v) >= 0 ? "+" : ""}${rules.abilityMod(v)})`).join(" ")), React.createElement(StatsHelp, { ui }), flags.some(f => CLUES[f]) && /*#__PURE__*/React.createElement("span", {
     className: "ab clueLine"
   }, lang === "en" ? "\u2726 Clues: " : "\u2726 \uB2E8\uC11C: ", flags.filter(f => CLUES[f]).map(f => tx(CLUES[f])).join(" · "))), pc && rolling && /*#__PURE__*/React.createElement("div", {
     className: "diceWrap"
@@ -3717,7 +3762,7 @@ function CRPG() {
     onClick: () => looterAction("guard")
   }, lang === "en" ? "\uD83D\uDEE1 Brace to parry " : "\uD83D\uDEE1 \uBC1B\uC544\uB118\uAE38 \uC900\uBE44 ", /*#__PURE__*/React.createElement("span", {
     className: "tag"
-  }, lang === "en" ? "next hit \u2193 (esp. vs Hook) \xB7 no attack this turn" : "\uB2E4\uC74C \uD53C\uD574\u2193(\uAC15\uD0C0\uC5D0 \uD2B9\uD788) \xB7 \uC774\uBC88 \uD0C0\uACA9 \uC5C6\uC74C")), /*#__PURE__*/React.createElement("button", {
+  }, ui("parryTag")), React.createElement("span", { className: "actionHelp" }, ui("parryHelp"))), /*#__PURE__*/React.createElement("button", {
     className: "choice",
     onClick: () => looterAction("disrupt")
   }, lang === "en" ? "\uD83E\uDD3A Close in and cut it off " : "\uD83E\uDD3A \uD30C\uACE0\uB4E4\uC5B4 \uB055\uAE30 ", /*#__PURE__*/React.createElement("span", {
@@ -3749,7 +3794,7 @@ function CRPG() {
     onClick: () => combatAction("defend")
   }, lang === "en" ? "\uD83D\uDEE1 Defend " : "\uD83D\uDEE1 \uBC29\uC5B4 ", /*#__PURE__*/React.createElement("span", {
     className: "tag"
-  }, lang === "en" ? "dodge vs this attack \u2191" : "\uC774\uBC88 \uC801 \uACF5\uACA9 \uD68C\uD53C\uC728\u2191")), breathLeft > 0 && /*#__PURE__*/React.createElement("button", {
+  }, ui("defendTag")), React.createElement("span", { className: "actionHelp" }, ui("defendHelp"))), breathLeft > 0 && /*#__PURE__*/React.createElement("button", {
     className: "choice",
     onClick: () => combatAction("breath")
   }, lang === "en" ? "\uD83C\uDF2C Catch breath " : "\uD83C\uDF2C \uC228 \uACE0\uB974\uAE30 ", /*#__PURE__*/React.createElement("span", {
@@ -3776,7 +3821,7 @@ function CRPG() {
     className: "badges"
   }, /*#__PURE__*/React.createElement("span", {
     className: "badge on new"
-  }, ui("newBadge"), tx(BADGES.find(b => b.id === newBadge)?.name), BADGES.find(b => b.id === newBadge)?.first ? " (" + ui("firstRank") + " — " + BADGES.find(b => b.id === newBadge)?.first + ")" : "")), /*#__PURE__*/React.createElement("p", {
+  }, ui("newBadge"), tx(BADGES.find(b => b.id === newBadge)?.name), BADGES.find(b => b.id === newBadge)?.first ? " (" + ui("creditLabel") + " — " + tx(BADGES.find(b => b.id === newBadge)?.first) + ")" : "")), React.createElement(RecordScope, { ui }), /*#__PURE__*/React.createElement("p", {
     className: "bcount"
   }, ui("badgeCount"), " ", badges.length, "/", BADGES.length), allBadges && /*#__PURE__*/React.createElement("div", {
     className: "teaser"
