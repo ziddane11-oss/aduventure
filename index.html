@@ -500,7 +500,7 @@ const UI = {
   ch1: { ko: "제1장 잿빛 등대", en: "Ch.1 · The Ashen Lighthouse" },
   ch2: { ko: "제2장 검은 코트", en: "Ch.2 · The Black Coat" },
   ch3: { ko: "제3장 사라진 종소리", en: "Ch.3 · The Silenced Bell" },
-  langBtn: { ko: "EN", en: "한국어" },
+  langBtn: { ko: "English", en: "한국어" },
   fbBtn: { ko: "피드백·그만두기", en: "Feedback / Quit" },
   fbTitle: { ko: "플레이테스트 피드백", en: "Playtest Feedback" },
   fbIntro: { ko: "솔직한 경험을 그대로 적어 주세요. 정답은 없고, 좋게 써 주실 필요도 없습니다. 중간에 그만두셨어도 어디서 왜 멈췄는지 적어 주시면 큰 도움이 됩니다.", en: "Please describe your honest experience. There are no right answers, and no need to be kind. If you stopped partway, telling us where and why is just as valuable." },
@@ -2656,10 +2656,11 @@ const css = `
   font-family:'Noto Serif KR',serif; display:flex; flex-direction:column; align-items:center; padding:0 16px 48px;
 }
 .crpg .frame { width:100%; max-width:760px; }
-.crpg header { display:flex; justify-content:space-between; align-items:baseline; gap:10px;
+.crpg header { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;
   padding:18px 4px 12px; border-bottom:1px solid var(--line); margin-bottom:14px; }
 .crpg h1 { font-weight:900; font-size:21px; letter-spacing:.2em; color:var(--gold); }
 .crpg h1 span { color:var(--dim); font-weight:400; font-size:11px; letter-spacing:.08em; margin-left:10px; }
+.crpg h1 .build { white-space:nowrap; }
 .crpg .hctrl { display:flex; gap:8px; align-items:center; font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--dim); }
 .crpg .hctrl select, .crpg .hctrl button { background:var(--panel); color:var(--gold); border:1px solid var(--line);
   border-radius:4px; padding:4px 9px; font-family:inherit; font-size:11px; cursor:pointer; }
@@ -3482,7 +3483,7 @@ function CRPG() {
     onClose: () => setFeedbackOpen(false)
   }), /*#__PURE__*/React.createElement("div", {
     className: "frame"
-  }, /*#__PURE__*/React.createElement("header", null, /*#__PURE__*/React.createElement("h1", null, ui("brand"), /*#__PURE__*/React.createElement("span", null, chapterTitle, " \xB7 ", BUILD)), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("header", null, /*#__PURE__*/React.createElement("h1", null, ui("brand"), /*#__PURE__*/React.createElement("span", null, chapterTitle, " \xB7 ", /*#__PURE__*/React.createElement("span", { className: "build" }, BUILD))), /*#__PURE__*/React.createElement("div", {
     className: "hctrl"
   }, /*#__PURE__*/React.createElement("button", {
     onClick: () => {
