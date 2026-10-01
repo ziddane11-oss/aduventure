@@ -318,18 +318,19 @@ function(a,b,c){if(!Vd(b))throw Error(n(200));return Wd(null,a,b,!1,c)};Q.unmoun
    GAS 피드백 파이프 — v0.7 재구현 (제안/신호/텔레메트리)
    ============================================================ */
 /* 플레이테스트 빌드 태그 — 테스트 중 버전 구분용. 수정할 때마다 뒤 번호를 올린다. */
-const BUILD = "v0.7.3-pt8";
+const BUILD = "v0.7.3-pt9";
 const GAS_URL = "https://script.google.com/macros/s/AKfycbxFx_m5rhCZmqGoy3JcUUNqEgiObMWNHe9hx-LnZrhzIkfwa9-yJGBWP0lVulptnNQeCQ/exec";
-function gasPost(payload) {
+function gasPost(payload, options = {}) {
   return fetch(GAS_URL, {
     method: "POST",
     headers: {
       "Content-Type": "text/plain;charset=utf-8"
     },
-    body: JSON.stringify(payload)
+    body: JSON.stringify(payload),
+    keepalive: !!options.keepalive
   }).then(r => r.text()).then(t => String(t).indexOf("ok") >= 0);
 }
-function tele(event, scene, who, extra) {
+function tele(event, scene, who, extra, keepalive = false) {
   try {
     gasPost({
       type: "telemetry",
@@ -337,8 +338,63 @@ function tele(event, scene, who, extra) {
       who: who || "",
       text: event,
       extra: extra || ""
-    }).catch(() => {});
+    }, {keepalive}).catch(() => {});
   } catch (e) {}
+}
+
+// Small, framework-independent clock: it measures visible, actionable time,
+// including reading time. It does not claim to measure thought or attention.
+function createDecisionClock(now = () => typeof performance !== "undefined" ? performance.now() : Date.now()) {
+  let key = null, elapsed = 0, since = null, measured = false;
+  function pause() {
+    if (since !== null) elapsed += Math.max(0, now() - since);
+    since = null;
+  }
+  return {
+    sync(nextKey, paused) {
+      if (nextKey !== key) { pause(); key = nextKey; elapsed = 0; measured = !!key; }
+      if (!key || paused) pause();
+      else if (since === null) since = now();
+    },
+    read(expectedKey) {
+      if (!measured || key !== expectedKey) return null;
+      return Math.round(elapsed + (since === null ? 0 : Math.max(0, now() - since)));
+    },
+    pause
+  };
+}
+function telemetryId(prefix) {
+  const random = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+    ? crypto.randomUUID().replace(/-/g, "").slice(0, 12)
+    : Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  return prefix + random;
+}
+function telemetryPlayer() {
+  let id = store.get("aduventure_anon_player");
+  if (typeof id !== "string" || !/^p[a-z0-9]{8,20}$/i.test(id)) {
+    id = telemetryId("p");
+    store.set("aduventure_anon_player", id);
+  }
+  return id;
+}
+function newTelemetryRun(previous) {
+  return {id: telemetryId("r"), seq: 0, player: telemetryPlayer(), previous: previous || undefined};
+}
+function restoreTelemetryRun(saved) {
+  if (!saved || typeof saved.id !== "string" || !/^r[a-z0-9]{8,20}$/i.test(saved.id)) return newTelemetryRun();
+  return {id: saved.id, seq: Number.isSafeInteger(saved.seq) && saved.seq >= 0 ? saved.seq : 0, player: telemetryPlayer()};
+}
+function encodeTelemetry(data) {
+  const text = JSON.stringify(data);
+  // Do not send invalid/truncated JSON through the legacy six-column GAS sink.
+  return text.length <= 950 ? text : null;
+}
+function emitTelemetry(event, run, data, keepalive = false) {
+  try {
+    if (!run) return;
+    const extra = encodeTelemetry({v: 1, build: BUILD, run_id: run.id, player_id: run.player, ...data});
+    if (extra) tele(event, data.scene_id, run.player, extra, keepalive);
+  } catch (e) { /* Analytics must never stop a game. */ }
 }
 function reportClientError(msg, extra) {
   try {
@@ -498,6 +554,8 @@ const wname = (w, l) => {
 /* ---------- 다국어 UI 문자열(ko/en). 서사(SCENES)는 각 항목에 {ko,en}로 확장한다. ---------- */
 const UI = {
   disruptRisk: { ko: "성공: 1d6 피해·행동 취소 / 실패: 추가 피해", en: "success: 1d6 damage + cancel his move / fail: extra damage" },
+  disruptHelp: { ko: "시도 후에는 다른 행동을 한 번 해야 다시 쓸 수 있습니다.", en: "After an attempt, take one other action before using this again." },
+  disruptWait: { ko: "다른 행동을 한 번 하면 다시 사용 가능", en: "Take another action to use this again" },
   ch1: { ko: "제1장 잿빛 등대", en: "Ch.1 · The Ashen Lighthouse" },
   ch2: { ko: "제2장 검은 코트", en: "Ch.2 · The Black Coat" },
   ch3: { ko: "제3장 사라진 종소리", en: "Ch.3 · The Silenced Bell" },
@@ -550,8 +608,9 @@ const UI = {
   specialHelp: { ko: "일반 전투의 특수기는 장마다 2회, 실패한 판정을 다시 굴리는 운명 주사위는 장마다 1회입니다.", en: "You get 2 special moves for regular combat per chapter, and 1 Fate reroll for a failed check per chapter." },
   recordScope: { ko: "이 브라우저의 개인 기록", en: "Personal records in this browser" },
   recordHelp: { ko: "엔딩·지식·유물과 최고 기록은 이 브라우저에 저장됩니다. 브라우저 데이터를 지우면 사라질 수 있습니다. 저장이 차단되면 이 페이지를 닫을 때 사라집니다.", en: "Endings, lore, artifacts and best marks are saved in this browser. Clearing browser data may erase them. If storage is blocked, they last only until you leave this page." },
-  defendTag: { ko: "이번 공격 AC +4 · 내 공격 없음", en: "AC +4 for this attack · no attack of your own" },
-  defendHelp: { ko: "맞을 확률만 낮춥니다. 맞았을 때 피해량은 그대로입니다.", en: "Lowers the chance of being hit. A hit still deals full damage." },
+  defendTag: { ko: "이번 공격 AC +4 · 다음 기본 공격 피해 +4", en: "AC +4 for this attack · next basic attack +4 damage" },
+  defendHelp: { ko: "이번에는 공격하지 않고 맞을 확률을 낮춥니다. 맞으면 피해량은 그대로입니다. 다음 기본 공격이 명중하면 피해 +4(중첩 없음). 빗나가거나 특수기·회복을 쓰면 보너스가 사라집니다.", en: "You do not attack this turn. A hit still deals full damage. Your next basic attack deals +4 damage if it hits (does not stack). A miss, special move or heal spends the bonus." },
+  riposteReady: { ko: "반격 준비: 명중 시 피해 +4 · 빗나가도 소모", en: "Riposte ready: +4 damage on hit · spent even on a miss" },
   parryTag: { ko: "이번 피해 감소 · 내 공격 없음", en: "Reduce this hit's damage · no attack of your own" },
   parryHelp: { ko: "갈고리 강타 피해 ×0.2, 베기 피해 ×0.5(반올림). 다음 타격이 명중하면 피해 +4. 다른 공격 행동을 고르면 반격 보너스가 사라집니다.", en: "Hook Smash damage ×0.2; Slash damage ×0.5 (rounded). Your next Strike deals +4 damage if it hits. Another attack action discards the bonus." },
   dailyH: { ko: "오늘의 도전", en: "Today's challenge" },
@@ -2772,7 +2831,8 @@ const css = `
 .crpg .choices { display:flex; flex-direction:column; gap:10px; margin-top:20px; }
 .crpg button.choice { text-align:left; background:var(--panel2); color:var(--text); border:1px solid var(--line);
   border-radius:8px; padding:13px 16px; font-family:inherit; font-size:15px; cursor:pointer; transition:all .15s; }
-.crpg button.choice:hover { border-color:var(--gold); transform:translateX(4px); }
+.crpg button.choice:hover:not(:disabled) { border-color:var(--gold); transform:translateX(4px); }
+.crpg button.choice:disabled { opacity:.65; cursor:not-allowed; border-style:dashed; }
 .crpg button.choice:focus-visible { outline:2px solid var(--gold); outline-offset:2px; }
 .crpg .tag { display:inline-block; font-size:12px; font-family:'IBM Plex Mono',monospace; margin-left:8px; color:var(--dim); }
 .crpg .tag .pct { color:var(--accent); font-weight:600; }
@@ -2981,6 +3041,7 @@ function CRPG() {
   const [enemyIntent, setEnemyIntent] = useState(null);
   const [trapUsed, setTrapUsed] = useState(false);
   const [guardBonus, setGuardBonus] = useState(0);
+  const [disruptReady, setDisruptReady] = useState(true);
   const [badges, setBadges] = useState(() => store.get("aduventure_badges") || []);
   const [newBadge, setNewBadge] = useState(null);
   const SAVE_KEY = "aduventure_save";
@@ -2990,6 +3051,12 @@ function CRPG() {
   const [lore, setLore] = useState(() => store.get("aduventure_lore") || []);
   const [artifacts, setArtifacts] = useState(() => store.get("aduventure_artifacts") || []);
   const [artifactFlash, setArtifactFlash] = useState(null);
+  const [telemetryRun, setTelemetryRun] = useState(null);
+  const decisionClock = useRef(null);
+  const decisionLock = useRef(null);
+  const decisionLive = useRef(null);
+  const restartFrom = useRef(null);
+  const visitId = useRef(null);
   const todayKey = dayKey();
   const daily = DAILY_CHALLENGES[dayHash(todayKey) % DAILY_CHALLENGES.length];
   const [dailyDone, setDailyDone] = useState(() => !!store.get("aduventure_daily_" + todayKey));
@@ -3007,6 +3074,82 @@ function CRPG() {
   const scene = SCENES[sceneKey];
   const chapter = scene?.ch || 1;
   const hasCheckChoices = scene?.choices?.some(c => c.check);
+  const visibleChoices = (scene?.choices || []).filter(ch => (!ch.classOnly || pc && ch.classOnly === pc.classKey) && (!ch.loreReq || lore.includes(ch.loreReq)) && (!ch.artifactReq || artifacts.includes(ch.artifactReq)) && (!ch.echoReq || flags.includes(ch.echoReq)));
+  const narrativeId = choice => sceneKey + ":" + scene.choices.indexOf(choice);
+  let availableIds = [], decisionKind = null;
+  if (pc && scene && !rolling && !scene.ending && !scene.gameover) {
+    if (pending) { decisionKind = "fate"; availableIds = ["fate:reroll", "fate:accept"]; }
+    else if (scene.combat && enemy && !enemy.done && !enemy.playerDown) {
+      decisionKind = "combat";
+      availableIds = scene.enemy === "looter"
+        ? ["strike", "guard", ...(disruptReady ? ["disrupt"] : []), ...(flags.includes("sawTrap") && !trapUsed ? ["trap"] : [])]
+        : ["attack", ...(specialLeft > 0 ? ["special"] : []), "defend", ...(breathLeft > 0 ? ["breath"] : [])];
+    } else if (!scene.combat) {
+      decisionKind = "choice";
+      availableIds = visibleChoices.map(narrativeId);
+      if (sceneKey === "intro" && badges.some(b => b.startsWith("1"))) availableIds.push("skip:ch2");
+      if (sceneKey === "intro" && badges.some(b => b.startsWith("2"))) availableIds.push("skip:ch3");
+    }
+  }
+  const decisionKey = telemetryRun && decisionKind ? telemetryRun.id + ":" + telemetryRun.seq + ":" + sceneKey + ":" + decisionKind : null;
+  const decisionPaused = rolling || tutOpen || feedbackOpen || (pc && hasCheckChoices && !tutSeen);
+  const decisionData = {
+    scene_id: sceneKey, seq: telemetryRun?.seq, kind: decisionKind,
+    available_ids: availableIds, lang, rule: ruleKey, class: pc?.classKey,
+    hp: pc?.hp, enemy_hp: scene?.combat ? enemy?.hp : undefined,
+    enemy_intent: scene?.enemy === "looter" ? enemyIntent : undefined,
+    special_left: specialLeft, breath_left: breathLeft, fate_left: fate,
+    disrupt_ready: scene?.enemy === "looter" ? disruptReady : undefined,
+    guard_bonus: scene?.combat ? guardBonus : undefined,
+    trap_used: scene?.enemy === "looter" ? trapUsed : undefined
+  };
+  // Commit-phase setup: language/UI rerenders refresh context without resetting
+  // the current decision. IDs and storage writes are never generated in render.
+  useEffect(() => {
+    if (!decisionClock.current) decisionClock.current = createDecisionClock();
+    if (!visitId.current) visitId.current = telemetryId("v");
+    decisionLive.current = {key: decisionKey, paused: decisionPaused, data: decisionData, run: telemetryRun};
+    decisionClock.current.sync(decisionKey, decisionPaused || document.hidden === true);
+  });
+  useEffect(() => {
+    function visibility() {
+      const live = decisionLive.current;
+      if (live && decisionClock.current) decisionClock.current.sync(live.key, live.paused || document.hidden === true);
+    }
+    function pagehide() {
+      const live = decisionLive.current;
+      if (!live?.key || decisionLock.current === live.key || !decisionClock.current) return;
+      decisionClock.current.pause();
+      emitTelemetry("decision_unfinished", live.run, {
+        ...live.data, decision_id: live.key + ":" + visitId.current,
+        choice_id: null, dwell_ms: decisionClock.current.read(live.key), reason: "pagehide"
+      }, true);
+    }
+    document.addEventListener?.("visibilitychange", visibility);
+    window.addEventListener("pagehide", pagehide);
+    window.addEventListener("pageshow", visibility);
+    return () => {
+      document.removeEventListener?.("visibilitychange", visibility);
+      window.removeEventListener?.("pagehide", pagehide);
+      window.removeEventListener?.("pageshow", visibility);
+    };
+  }, []);
+  function recordDecision(choiceId) {
+    // Only a confirmed duplicate blocks input. Unavailable analytics fails open.
+    if (decisionKey && decisionLock.current === decisionKey) return false;
+    try {
+      if (decisionKey) decisionLock.current = decisionKey;
+      const dwell = decisionClock.current?.read(decisionKey) ?? null;
+      decisionClock.current?.pause();
+      if (!visitId.current) visitId.current = telemetryId("v");
+      emitTelemetry(decisionKind === "combat" ? "combat_action" : "choice", telemetryRun, {
+        ...decisionData, decision_id: decisionKey + ":" + visitId.current,
+        choice_id: choiceId, dwell_ms: dwell
+      });
+    } catch (e) { /* Never turn a telemetry problem into a gameplay problem. */ }
+    setTelemetryRun(r => r ? {...r, seq: r.seq + 1} : r);
+    return true;
+  }
   useEffect(() => {
     if (pc && hasCheckChoices && !tutSeen) setTutOpen(true);
   }, [sceneKey, pc]);
@@ -3030,11 +3173,12 @@ function CRPG() {
       breathLeft,
       ruleKey,
       tutSeen,
+      telemetry: telemetryRun ? {id: telemetryRun.id, seq: telemetryRun.seq} : undefined,
       savedAt: Date.now()
     };
     store.set(SAVE_KEY, snapshot);
     setSavedGame(snapshot);
-  }, [sceneKey, pc, flags, stats, fate, specialLeft, breathLeft, ruleKey, tutSeen, rolling, pending]);
+  }, [sceneKey, pc, flags, stats, fate, specialLeft, breathLeft, ruleKey, tutSeen, rolling, pending, telemetryRun]);
   // 회차가 끝나면(엔딩·게임오버) 이어하기 기록을 비운다. 엔딩 도감(badges)은 별도로 영구 보관된다.
   useEffect(() => {
     if (pc && scene && (scene.ending || scene.gameover)) {
@@ -3119,6 +3263,10 @@ function CRPG() {
   }
   function pickClass(key) {
     const c = CLASSES[key];
+    const run = newTelemetryRun(restartFrom.current);
+    setTelemetryRun(run);
+    emitTelemetry("run_start", run, {scene_id: "intro", lang, rule: ruleKey, class: key, reason: restartFrom.current ? "restart" : "new", previous_run_id: restartFrom.current || undefined});
+    restartFrom.current = null;
     setPc({
       ...c,
       classKey: key,
@@ -3127,7 +3275,6 @@ function CRPG() {
     });
     setFate(1);
     setSpecialLeft(2);
-    tele("start", "intro", nameInput.trim() || (lang === "en" ? "Nameless Hero" : "이름 없는 용사"), key);
   }
   function goto(key, extraFlag) {
     setShowCalc(false);
@@ -3144,9 +3291,10 @@ function CRPG() {
         t: (lang === "en" ? "⚔ Battle — " : "⚔ 전투 개시 — ") + tx(e.name)
       }]);
       setBreathLeft(1);
+      setGuardBonus(0);
+      setDisruptReady(true);
       if (target.enemy === "looter") {
         setTrapUsed(false);
-        setGuardBonus(0);
         setEnemyIntent(rollLooterIntent(e.maxHp, e.maxHp));
       }
     }
@@ -3160,14 +3308,14 @@ function CRPG() {
       setLastResult(null);
     }
     if (target?.ending) {
-      tele("chapter_clear", key, pc && pc.name, "ch" + target.ch);
+      emitTelemetry("chapter_clear", telemetryRun, {scene_id: key, chapter: target.ch, lang, rule: ruleKey, class: pc?.classKey});
       setFlags(f => {
         const all = extraFlag && !f.includes(extraFlag) ? [...f, extraFlag] : f;
         unlockLater(target.ending, all);
         return f;
       });
     }
-    if (target?.gameover) tele("death", sceneKey, pc && pc.name, key);
+    if (target?.gameover) emitTelemetry("death", telemetryRun, {scene_id: sceneKey, to_scene: key, lang, rule: ruleKey, class: pc?.classKey});
     setSceneKey(key);
   }
 
@@ -3230,6 +3378,7 @@ function CRPG() {
     }, 70);
   }
   function doChoice(choice) {
+    if (!recordDecision(narrativeId(choice))) return;
     setLastResult(null);
     setPending(null);
     if (!choice.check) {
@@ -3243,6 +3392,13 @@ function CRPG() {
   // 전투 — 매 턴이 결정: 공격 / 특수기 / 방어 / 숨 고르기
   // 도굴꾼 전투 시제품 — 적 의도를 보고 대응을 고른다. 얻는 것/감수하는 것이 상황따라 갈린다.
   function looterAction(action) {
+    if (!enemy || enemy.done || enemy.playerDown) return;
+    if (action === "disrupt" && !disruptReady) return;
+    if (action === "trap" && (!flags.includes("sawTrap") || trapUsed)) return;
+    if (!["strike", "guard", "disrupt", "trap"].includes(action)) return;
+    if (!recordDecision(action)) return;
+    // Both success and failure require another action before the next attempt.
+    setDisruptReady(action !== "disrupt");
     setLastResult(null);
     const foe = ENEMIES.looter;
     const intent = enemyIntent;
@@ -3366,6 +3522,11 @@ function CRPG() {
     setEnemyIntent(rollLooterIntent(eHp, foe.maxHp));
   }
   function combatAction(action) {
+    if (!enemy || enemy.done || enemy.playerDown) return;
+    if (!["attack", "special", "defend", "breath"].includes(action)) return;
+    if (action === "special" && specialLeft <= 0) return;
+    if (action === "breath" && breathLeft <= 0) return;
+    if (!recordDecision(action)) return;
     setLastResult(null);
     const foe = ENEMIES[scene.enemy];
     const log = [];
@@ -3421,7 +3582,15 @@ function CRPG() {
           attacker: pc,
           defender: enemy
         });
+        if (guardBonus && atk.hit) {
+          atk = {
+            ...atk,
+            damage: atk.damage + guardBonus,
+            detail: bi(`${atk.detail.ko} (+${guardBonus} 방어 후 반격)`, `${atk.detail.en} (+${guardBonus} defensive riposte)`)
+          };
+        }
       }
+      if (guardBonus) setGuardBonus(0);
       setStats(s => ({
         rolls: s.rolls + 1,
         success: s.success + (atk.hit ? 1 : 0)
@@ -3445,11 +3614,13 @@ function CRPG() {
         return;
       }
     } else if (isDef) {
+      setGuardBonus(4);
       log.push({
         who: "you",
-        t: bi(`▶ 방어 — 이번 공격 AC ${pc.ac} → ${pc.ac + 4}. 맞으면 피해량은 그대로다`, `▶ Defend — AC ${pc.ac} → ${pc.ac + 4} for this attack. A hit still deals full damage`)
+        t: bi(`▶ 방어 — 이번 공격 AC ${pc.ac} → ${pc.ac + 4}. 맞으면 피해량은 그대로다. 다음 기본 공격에 피해 +4 준비(중첩 없음)`, `▶ Defend — AC ${pc.ac} → ${pc.ac + 4} for this attack. A hit still deals full damage. Next basic attack: +4 damage ready (does not stack)`)
       });
     } else if (action === "breath") {
+      if (guardBonus) setGuardBonus(0);
       setBreathLeft(0);
       const heal = d(4);
       curHp = Math.min(pc.maxHp, curHp + heal);
@@ -3482,6 +3653,14 @@ function CRPG() {
     setClog(l => [...l, ...log]);
   }
   function restart(toScene) {
+    emitTelemetry("run_restart", telemetryRun, {scene_id: sceneKey, to_scene: toScene || "intro", reason: scene?.gameover ? "death" : "replay"});
+    restartFrom.current = telemetryRun?.id || null;
+    if (toScene) {
+      const nextRun = newTelemetryRun(restartFrom.current);
+      setTelemetryRun(nextRun);
+      emitTelemetry("run_start", nextRun, {scene_id: toScene, lang, rule: ruleKey, class: pc?.classKey, reason: "restart", previous_run_id: restartFrom.current || undefined});
+      restartFrom.current = null;
+    } else setTelemetryRun(null);
     setSceneKey(toScene || "intro");
     setRolling(false);
     setRollFace(null);
@@ -3497,6 +3676,7 @@ function CRPG() {
     setEnemyIntent(null);
     setTrapUsed(false);
     setGuardBonus(0);
+    setDisruptReady(true);
     setClog([]);
     setNewBadge(null);
     setRecordFlash(null);
@@ -3517,6 +3697,9 @@ function CRPG() {
   function continueGame() {
     const s = savedGame || store.get(SAVE_KEY);
     if (!s || !s.pc) return;
+    const run = restoreTelemetryRun(s.telemetry);
+    setTelemetryRun(run);
+    emitTelemetry("run_continue", run, {scene_id: s.sceneKey, seq: run.seq, lang, rule: s.ruleKey || "srd20", class: s.pc.classKey, legacy_save: !s.telemetry});
     setRuleKey(s.ruleKey || "srd20");
     setPc(s.pc);
     setFlags(s.flags || []);
@@ -3529,6 +3712,10 @@ function CRPG() {
     setBreathLeft(typeof s.breathLeft === "number" ? s.breathLeft : 1);
     setTutSeen(!!s.tutSeen);
     setEnemy(null);
+    setEnemyIntent(null);
+    setTrapUsed(false);
+    setGuardBonus(0);
+    setDisruptReady(true);
     setClog([]);
     setLastResult(null);
     setPending(null);
@@ -3537,7 +3724,6 @@ function CRPG() {
     setRolling(false);
     setRollFace(null);
     setSceneKey(s.sceneKey || "intro");
-    tele("continue", s.sceneKey, s.pc && s.pc.name, "ch" + (SCENES[s.sceneKey]?.ch || 1));
   }
   const pct = choice => Math.round(rules.successChance({
     actor: pc,
@@ -3756,10 +3942,10 @@ function CRPG() {
   }, /*#__PURE__*/React.createElement("button", {
     className: "choice fate",
     onClick: () => {
+      if (!recordDecision("fate:reroll")) return;
       const c = pending.choice;
       setPending(null);
       setFate(0);
-      tele("fate_used", sceneKey, pc && pc.name, c.check.label);
       resolveCheck(c, false);
     }
   }, lang === "en" ? "\uD83C\uDFB2 Fate die — reroll the same check " : "\uD83C\uDFB2 \uC6B4\uBA85 \uC8FC\uC0AC\uC704 \u2014 \uAC19\uC740 \uD310\uC815\uC744 \uB2E4\uC2DC \uAD74\uB9B0\uB2E4 ", /*#__PURE__*/React.createElement("span", {
@@ -3767,6 +3953,7 @@ function CRPG() {
   }, lang === "en" ? "once per chapter" : "\uC774 \uC7A5\uC5D0\uC11C 1\uD68C\uBFD0")), /*#__PURE__*/React.createElement("button", {
     className: "choice",
     onClick: () => {
+      if (!recordDecision("fate:accept")) return;
       const p = pending;
       setPending(null);
       applyBranch(p.choice.fail, p.res, p.choice.check.skill);
@@ -3787,7 +3974,7 @@ function CRPG() {
     className: "narr"
   }, fmt(tx(scene.text), pc)), /*#__PURE__*/React.createElement("div", {
     className: "choices"
-  }, scene.choices.filter(ch => (!ch.classOnly || pc && ch.classOnly === pc.classKey) && (!ch.loreReq || lore.includes(ch.loreReq)) && (!ch.artifactReq || artifacts.includes(ch.artifactReq)) && (!ch.echoReq || flags.includes(ch.echoReq))).map((ch, i) => /*#__PURE__*/React.createElement("button", {
+  }, visibleChoices.map((ch, i) => /*#__PURE__*/React.createElement("button", {
     key: i,
     className: "choice",
     onClick: () => doChoice(ch)
@@ -3805,10 +3992,10 @@ function CRPG() {
     className: "tag echo"
   }, "\uD83E\uDD8B " + tx(ch.echo)))), sceneKey === "intro" && ch1Cleared && /*#__PURE__*/React.createElement("button", {
     className: "choice",
-    onClick: () => goto("intro2")
+    onClick: () => { if (recordDecision("skip:ch2")) goto("intro2"); }
   }, lang === "en" ? "(Ch.1 cleared) Start from Ch.2 \u2192" : "(1\uC7A5 \uD074\uB9AC\uC5B4 \uAE30\uB85D \uC788\uC74C) 2\uC7A5\uBD80\uD130 \uC2DC\uC791\uD55C\uB2E4 \u2192"), sceneKey === "intro" && badges.some(b => b.startsWith("2")) && /*#__PURE__*/React.createElement("button", {
     className: "choice",
-    onClick: () => goto("intro3")
+    onClick: () => { if (recordDecision("skip:ch3")) goto("intro3"); }
   }, lang === "en" ? "(Ch.2 cleared) Start from Ch.3 \u2192" : "(2\uC7A5 \uD074\uB9AC\uC5B4 \uAE30\uB85D \uC788\uC74C) 3\uC7A5\uBD80\uD130 \uC2DC\uC791\uD55C\uB2E4 \u2192")), /*#__PURE__*/React.createElement(SuggestBox, {
     sceneKey: sceneKey,
     pc: pc,
@@ -3846,13 +4033,14 @@ function CRPG() {
     className: "tag"
   }, ui("parryTag")), React.createElement("span", { className: "actionHelp" }, ui("parryHelp"))), /*#__PURE__*/React.createElement("button", {
     className: "choice",
+    disabled: !disruptReady,
     onClick: () => looterAction("disrupt")
   }, tx(disruptMove.label), /*#__PURE__*/React.createElement("span", {
     className: "tag"
   }, tx(SKILL_NAMES[disruptMove.check.skill]), " ", Math.round(rules.successChance({
     actor: pc,
     ...disruptMove.check
-  }) * 100), "% · ", ui("disruptRisk"))), flags.includes("sawTrap") && !trapUsed && /*#__PURE__*/React.createElement("button", {
+  }) * 100), "% · ", ui("disruptRisk")), React.createElement("span", { className: "actionHelp" }, ui(disruptReady ? "disruptHelp" : "disruptWait"))), flags.includes("sawTrap") && !trapUsed && /*#__PURE__*/React.createElement("button", {
     className: "choice",
     onClick: () => looterAction("trap")
   }, lang === "en" ? "\uD83D\uDD25 Drive him into the oil & wire " : "\uD83D\uDD25 \uAE30\uB984\u00B7\uCCA0\uC0AC \uCABD\uC73C\uB85C \uBAB0\uAE30 ", /*#__PURE__*/React.createElement("span", {
@@ -3864,7 +4052,7 @@ function CRPG() {
     onClick: () => combatAction("attack")
   }, lang === "en" ? "\u2694 Attack " : "\u2694 " + tx(pc.weapon.name) + "(\uC73C)\uB85C \uACF5\uACA9 ", /*#__PURE__*/React.createElement("span", {
     className: "tag"
-  }, "1d", pc.weapon.die)), specialLeft > 0 && /*#__PURE__*/React.createElement("button", {
+  }, "1d", pc.weapon.die), guardBonus > 0 && React.createElement("span", { className: "actionHelp" }, ui("riposteReady"))), specialLeft > 0 && /*#__PURE__*/React.createElement("button", {
     className: "choice",
     onClick: () => combatAction("special")
   }, "\u2726 ", tx(SPECIALS[pc.classKey].name), " ", /*#__PURE__*/React.createElement("span", {
