@@ -318,7 +318,7 @@ function(a,b,c){if(!Vd(b))throw Error(n(200));return Wd(null,a,b,!1,c)};Q.unmoun
    GAS 피드백 파이프 — v0.7 재구현 (제안/신호/텔레메트리)
    ============================================================ */
 /* 플레이테스트 빌드 태그 — 테스트 중 버전 구분용. 수정할 때마다 뒤 번호를 올린다. */
-const BUILD = "v0.7.3-pt9";
+const BUILD = "v0.7.3-pt10";
 const GAS_URL = "https://script.google.com/macros/s/AKfycbxFx_m5rhCZmqGoy3JcUUNqEgiObMWNHe9hx-LnZrhzIkfwa9-yJGBWP0lVulptnNQeCQ/exec";
 function gasPost(payload, options = {}) {
   return fetch(GAS_URL, {
@@ -553,7 +553,7 @@ const wname = (w, l) => {
 };
 /* ---------- 다국어 UI 문자열(ko/en). 서사(SCENES)는 각 항목에 {ko,en}로 확장한다. ---------- */
 const UI = {
-  disruptRisk: { ko: "성공: 1d6 피해·행동 취소 / 실패: 추가 피해", en: "success: 1d6 damage + cancel his move / fail: extra damage" },
+  disruptRisk: { ko: "성공: {damage} 피해·행동 취소 / 실패: 맞으면 추가 피해", en: "success: {damage} damage + cancel his move / fail: extra damage if hit" },
   disruptHelp: { ko: "시도 후에는 다른 행동을 한 번 해야 다시 쓸 수 있습니다.", en: "After an attempt, take one other action before using this again." },
   disruptWait: { ko: "다른 행동을 한 번 하면 다시 사용 가능", en: "Take another action to use this again" },
   ch1: { ko: "제1장 잿빛 등대", en: "Ch.1 · The Ashen Lighthouse" },
@@ -602,17 +602,19 @@ const UI = {
   health: { ko: "HP · 체력", en: "HP · Health" },
   statsHelp: { ko: "HP·AC·능력치가 뭔가요?", en: "What do HP, AC and abilities mean?" },
   hpHelp: { ko: "HP는 남은 체력입니다. 빨간 막대와 숫자는 같은 체력을 나타냅니다. 전투 중 0이 되면 패배합니다.", en: "HP is your remaining health. The red bar and numbers show the same health. At 0 HP, you lose the fight." },
-  acHelp: { ko: "AC는 일반 전투에서 높을수록 맞기 어렵습니다. 도굴꾼전에서는 예고된 행동에 맞춰 대응하세요.", en: "Higher AC makes you harder to hit in regular combat. Against the grave-robber, respond to his telegraphed move." },
+  acHelp: { ko: "AC가 높을수록 적의 공격에 맞기 어렵습니다. 렌의 베기와 갈고리 강타도 AC로 명중을 판정합니다. 예고된 행동에 맞춰 대응하세요.", en: "Higher AC makes you harder to hit. Ren's Slash and Hook Smash also roll against your AC. Respond to his telegraphed move." },
   abilityHelp: { ko: "능력치 뒤 괄호는 주사위에 더하는 보정치입니다. 선택지마다 사용하는 능력치가 다릅니다.", en: "The number in parentheses after an ability is its dice modifier. Different choices use different abilities." },
   abilityNames: { ko: "STR 근력 · DEX 민첩 · CON 건강 · INT 지능 · WIS 지혜 · CHA 매력", en: "STR Strength · DEX Dexterity · CON Constitution · INT Intelligence · WIS Wisdom · CHA Charisma" },
   specialHelp: { ko: "일반 전투의 특수기는 장마다 2회, 실패한 판정을 다시 굴리는 운명 주사위는 장마다 1회입니다.", en: "You get 2 special moves for regular combat per chapter, and 1 Fate reroll for a failed check per chapter." },
   recordScope: { ko: "이 브라우저의 개인 기록", en: "Personal records in this browser" },
   recordHelp: { ko: "엔딩·지식·유물과 최고 기록은 이 브라우저에 저장됩니다. 브라우저 데이터를 지우면 사라질 수 있습니다. 저장이 차단되면 이 페이지를 닫을 때 사라집니다.", en: "Endings, lore, artifacts and best marks are saved in this browser. Clearing browser data may erase them. If storage is blocked, they last only until you leave this page." },
-  defendTag: { ko: "이번 공격 AC +4 · 다음 기본 공격 피해 +4", en: "AC +4 for this attack · next basic attack +4 damage" },
-  defendHelp: { ko: "이번에는 공격하지 않고 맞을 확률을 낮춥니다. 맞으면 피해량은 그대로입니다. 다음 기본 공격이 명중하면 피해 +4(중첩 없음). 빗나가거나 특수기·회복을 쓰면 보너스가 사라집니다.", en: "You do not attack this turn. A hit still deals full damage. Your next basic attack deals +4 damage if it hits (does not stack). A miss, special move or heal spends the bonus." },
-  riposteReady: { ko: "반격 준비: 명중 시 피해 +4 · 빗나가도 소모", en: "Riposte ready: +4 damage on hit · spent even on a miss" },
+  defendTag: { ko: "이번 공격 AC +4 · 다음 기본 공격 피해 +{riposte}", en: "AC +4 for this attack · next basic attack +{riposte} damage" },
+  defendHelp: { ko: "이번에는 공격하지 않고 맞을 확률을 낮춥니다. 맞으면 피해량은 그대로입니다. 다음 기본 공격이 명중하면 피해 +{riposte}(중첩 없음). 빗나가거나 특수기·회복을 쓰면 보너스가 사라집니다.", en: "You do not attack this turn. A hit still deals full damage. Your next basic attack deals +{riposte} damage if it hits (does not stack). A miss, special move or heal spends the bonus." },
+  riposteReady: { ko: "반격 준비: 명중 시 피해 +{riposte} · 빗나가도 소모", en: "Riposte ready: +{riposte} damage on hit · spent even on a miss" },
   parryTag: { ko: "이번 피해 감소 · 내 공격 없음", en: "Reduce this hit's damage · no attack of your own" },
-  parryHelp: { ko: "갈고리 강타 피해 ×0.2, 베기 피해 ×0.5(반올림). 다음 타격이 명중하면 피해 +4. 다른 공격 행동을 고르면 반격 보너스가 사라집니다.", en: "Hook Smash damage ×0.2; Slash damage ×0.5 (rounded). Your next Strike deals +4 damage if it hits. Another attack action discards the bonus." },
+  parryHelp: { ko: "맞으면 갈고리 강타 피해 ×0.2, 베기 피해 ×0.5(반올림). 다음 타격이 명중하면 피해 +{riposte}. 빗나가거나 방해·함정을 고르면 반격 보너스가 사라집니다.", en: "If hit: Hook Smash damage ×0.2; Slash damage ×0.5 (rounded). Your next Strike deals +{riposte} damage if it hits. A miss, Disrupt or Trap spends the bonus." },
+  weaponDamage: { ko: "일반 명중 {damage} 피해", en: "normal hit: {damage} damage" },
+  breathRange: { ko: "HP {heal} 회복 · 전투당 1회", en: "heal {heal} HP · once per fight" },
   dailyH: { ko: "오늘의 도전", en: "Today's challenge" },
   dailyDone: { ko: "✔ 달성", en: "✔ Done" },
   dailyTodo: { ko: "미달성", en: "Not yet" },
@@ -664,11 +666,17 @@ const UI = {
   brand: { ko: "어두밴처", en: "Aduventure" }
 };
 const SRD20 = {
+  scaleEffect: value => Math.max(0, value),
+  rollDamage({ die, bonus = 0, critical = false }) {
+    return this.scaleEffect(d(die) + (critical ? d(die) : 0) + bonus);
+  },
+  rollRecovery(profile) { return this.rollDamage(profile); },
+  damageRange({ die, bonus = 0 }) { return [this.scaleEffect(1 + bonus), this.scaleEffect(die + bonus)]; },
   name: { ko: "SRD d20", en: "SRD d20" },
   desc: { ko: "d20 + 보정치 + 숙련(+2) vs DC", en: "d20 + modifier + proficiency (+2) vs DC" },
   tutorial: {
-    ko: ["⓪ 판정은 높이뛰기다. 난이도(DC)는 가로 바의 높이, 주사위는 그날의 운, 보정은 평소 실력 — 합쳐서 바를 넘으면 성공.", "① 20면 주사위(d20)를 굴린다 — 1부터 20까지 모두 같은 확률(균등분포).", "② 능력치 보정을 더한다. 보정 = (능력치−10)÷2 내림.", "③ 숙련 기능이면 +2를 더한다.", "★ 20은 무조건 성공, 1은 무조건 실패."],
-    en: ["⓪ A check is a high jump. The DC is the bar, the die is that day's luck, the modifier is your usual skill — together they clear the bar.", "① Roll a twenty-sided die (d20). Every face from 1 to 20 is equally likely.", "② Add your ability modifier. Modifier = floor((score − 10) ÷ 2).", "③ If you're proficient in the skill, add +2.", "★ A 20 always succeeds. A 1 always fails."]
+    ko: ["⓪ 판정은 높이뛰기다. 난이도(DC)는 가로 바의 높이, 주사위는 그날의 운, 보정은 평소 실력 — 합쳐서 바를 넘으면 성공.", "① 20면 주사위(d20)를 굴린다 — 1부터 20까지 모두 같은 확률(균등분포).", "② 능력치 보정을 더한다. 보정 = (능력치−10)÷2 내림.", "③ 숙련 기능이면 +2를 더한다.", "★ 20은 무조건 성공, 1은 무조건 실패. 렌의 예고 공격은 20에 자동 명중하지만 치명타 피해는 추가하지 않습니다."],
+    en: ["⓪ A check is a high jump. The DC is the bar, the die is that day's luck, the modifier is your usual skill — together they clear the bar.", "① Roll a twenty-sided die (d20). Every face from 1 to 20 is equally likely.", "② Add your ability modifier. Modifier = floor((score − 10) ÷ 2).", "③ If you're proficient in the skill, add +2.", "★ A 20 always succeeds. A 1 always fails. Ren's telegraphed attacks automatically hit on 20 but gain no critical damage."]
   },
   abilityMod: s => Math.floor((s - 10) / 2),
   successChance({
@@ -704,7 +712,8 @@ const SRD20 = {
   },
   attack({
     attacker,
-    defender
+    defender,
+    damageProfile
   }) {
     const roll = d(20);
     const w = attacker.weapon;
@@ -712,14 +721,16 @@ const SRD20 = {
     const total = roll + mod + 2;
     const crit = roll === 20;
     const hit = crit ? true : roll === 1 ? false : total >= defender.ac;
-    const damage = hit ? d(w.die) + (crit ? d(w.die) : 0) + Math.max(0, mod) : 0;
+    // Intent damage is a separate profile: a natural maximum guarantees a hit,
+    // but does not double a telegraphed move's damage.
+    const damage = hit ? this.rollDamage(damageProfile || { die: w.die, bonus: Math.max(0, mod), critical: crit }) : 0;
     return {
       roll,
       total,
       hit,
       damage,
       crit,
-      detail: crit ? bi(`주사위 20 치명타! ${wname(w, "ko")} ${damage} 피해`, `Natural 20 — critical! ${wname(w, "en")} deals ${damage}`) : hit ? bi(`주사위 ${roll}+${mod + 2}=${total} ≥ 방어 ${defender.ac} 명중 — ${damage} 피해`, `Die ${roll}+${mod + 2}=${total} ≥ AC ${defender.ac} — hit, ${damage} damage`) : bi(`주사위 ${roll}+${mod + 2}=${total} < 방어 ${defender.ac} 빗나감`, `Die ${roll}+${mod + 2}=${total} < AC ${defender.ac} — miss`)
+      detail: crit ? (damageProfile ? bi(`주사위 20 자동 명중 — ${damage} 피해`, `Natural 20 — automatic hit, ${damage} damage`) : bi(`주사위 20 치명타! ${wname(w, "ko")} ${damage} 피해`, `Natural 20 — critical! ${wname(w, "en")} deals ${damage}`)) : hit ? bi(`주사위 ${roll}+${mod + 2}=${total} ≥ 방어 ${defender.ac} 명중 — ${damage} 피해`, `Die ${roll}+${mod + 2}=${total} ≥ AC ${defender.ac} — hit, ${damage} damage`) : bi(`주사위 ${roll}+${mod + 2}=${total} < 방어 ${defender.ac} 빗나감`, `Die ${roll}+${mod + 2}=${total} < AC ${defender.ac} — miss`)
     };
   }
 };
@@ -737,11 +748,17 @@ const WAYS = {
   12: 1
 };
 const Simple2d6 = {
+  scaleEffect: value => Math.max(0, Math.ceil(value / 2)),
+  rollDamage({ die, bonus = 0, critical = false }) {
+    return this.scaleEffect(d(die) + bonus) + (critical ? 2 : 0);
+  },
+  rollRecovery(profile) { return this.rollDamage(profile); },
+  damageRange({ die, bonus = 0 }) { return [this.scaleEffect(1 + bonus), this.scaleEffect(die + bonus)]; },
   name: { ko: "Simple 2d6", en: "Simple 2d6" },
   desc: { ko: "2d6 + 보정치 vs 목표값 (종형 분포)", en: "2d6 + modifier vs target (a bell curve)" },
   tutorial: {
-    ko: ["⓪ 판정은 높이뛰기다. 목표값은 가로 바의 높이 — 주사위+보정으로 바를 넘으면 성공.", "① 6면 주사위 두 개의 합 — 7 근처가 잘 나오고 2·12는 드물다(종형분포).", "② 보정 = (능력치−10)÷3 내림, 숙련이면 +1.", "★ 합 12는 무조건 성공, 2는 무조건 실패.", "※ 물리 질문: 같은 모험인데 왜 d20과 분포가 다를까?"],
-    en: ["⓪ A check is a high jump. The target is the bar — die plus modifier clears it and you succeed.", "① The sum of two six-sided dice. Near 7 is common; 2 and 12 are rare (a bell curve).", "② Modifier = floor((score − 10) ÷ 3). Add +1 if proficient.", "★ A sum of 12 always succeeds. A 2 always fails.", "※ A physics question: same adventure — why is the spread different from a d20?"]
+    ko: ["⓪ 판정은 높이뛰기다. 목표값은 가로 바의 높이 — 주사위+보정으로 바를 넘으면 성공.", "① 6면 주사위 두 개의 합 — 7 근처가 잘 나오고 2·12는 드물다(종형분포).", "② 보정 = (능력치−10)÷3 내림, 숙련이면 +1.", "③ 전투는 2d6+보정+숙련 1을 AC×0.55 반올림(최소 4)과 비교합니다. 기본 피해는 (무기 주사위+양수 보정)÷2 올림, 치명타는 +2입니다. 특수 피해·회복·반격 보너스도 절반으로 환산합니다.", "★ 합 12는 무조건 성공, 2는 무조건 실패. 렌의 예고 공격은 자동 명중만 적용하고 치명타 피해를 더하지 않습니다.", "※ 물리 질문: 같은 모험인데 왜 d20과 분포가 다를까?"],
+    en: ["⓪ A check is a high jump. The target is the bar — die plus modifier clears it and you succeed.", "① The sum of two six-sided dice. Near 7 is common; 2 and 12 are rare (a bell curve).", "② Modifier = floor((score − 10) ÷ 3). Add +1 if proficient.", "③ Combat compares 2d6 + modifier + 1 proficiency against AC × 0.55, rounded (minimum 4). Basic damage is (weapon die + positive modifier) ÷ 2, rounded up; a critical adds 2. Special damage, recovery and riposte bonuses are also scaled to half.", "★ A sum of 12 always succeeds. A 2 always fails. Ren's telegraphed attacks automatically hit on 12 but gain no critical damage.", "※ A physics question: same adventure — why is the spread different from a d20?"]
   },
   abilityMod: s => Math.floor((s - 10) / 3),
   toTarget: dc => Math.max(4, Math.round(dc * 0.55)),
@@ -782,25 +799,26 @@ const Simple2d6 = {
   },
   attack({
     attacker,
-    defender
+    defender,
+    damageProfile
   }) {
     const r1 = d(6),
       r2 = d(6),
       roll = r1 + r2;
     const w = attacker.weapon;
     const mod = this.abilityMod(attacker.abilities[w.ability]);
-    const total = roll + mod;
-    const target = this.toTarget(defender.ac + 6);
+    const total = roll + mod + 1;
+    const target = this.toTarget(defender.ac);
     const crit = roll === 12;
     const hit = crit ? true : roll === 2 ? false : total >= target;
-    const damage = hit ? Math.max(1, Math.ceil(d(w.die) / 2) + (crit ? 2 : 0)) : 0;
+    const damage = hit ? this.rollDamage(damageProfile || { die: w.die, bonus: Math.max(0, mod), critical: crit }) : 0;
     return {
       roll,
       total,
       hit,
       damage,
       crit,
-      detail: crit ? bi(`2d6=12 치명타! ${damage} 피해`, `2d6=12 — critical! ${damage} damage`) : hit ? bi(`2d6=${roll}+${mod} ≥ ${target} 명중 — ${damage} 피해`, `2d6=${roll}+${mod} ≥ ${target} — hit, ${damage} damage`) : bi(`2d6=${roll}+${mod} < ${target} 빗나감`, `2d6=${roll}+${mod} < ${target} — miss`)
+      detail: crit ? (damageProfile ? bi(`2d6=12 자동 명중 — ${damage} 피해`, `2d6=12 — automatic hit, ${damage} damage`) : bi(`2d6=12 치명타! ${damage} 피해`, `2d6=12 — critical! ${damage} damage`)) : hit ? bi(`2d6=${roll} ${mod >= 0 ? "+" : ""}${mod} 보정 +1 숙련 = ${total} ≥ ${target} 명중 — ${damage} 피해`, `2d6=${roll} ${mod >= 0 ? "+" : ""}${mod} mod +1 prof = ${total} ≥ ${target} — hit, ${damage} damage`) : bi(`2d6=${roll} ${mod >= 0 ? "+" : ""}${mod} 보정 +1 숙련 = ${total} < ${target} 빗나감`, `2d6=${roll} ${mod >= 0 ? "+" : ""}${mod} mod +1 prof = ${total} < ${target} — miss`)
     };
   }
 };
@@ -907,7 +925,7 @@ const ENEMIES = {
       WIS: 9,
       CHA: 11
     },
-    maxHp: 16,
+    maxHp: 14,
     ac: 12,
     weapon: {
       name: { ko: "녹슨 갈고리칼", en: "Rusty Hook-knife" },
@@ -985,7 +1003,7 @@ function looterDisruptFor(classKey) {
 const LOOTER_INTENTS = {
   slash: {
     icon: "\uD83D\uDDE1",
-    tele: { ko: "\uB155\uC2AC\uC740 \uCE7C\uC744 \uB0AE\uAC8C \uACB0\uD55C\uB2E4 \u2014 \uBE60\uB978 \uB2E4.", en: "Levels the rusty knife low — quick." },
+    tele: { ko: "녹슨 칼을 낮게 겨눈다 — 빠르게 베어 올 기세다.", en: "Levels the rusty knife low — ready for a quick slash." },
     dmg: [2, 3],
     label: { ko: "\uBCA0\uAE30", en: "Slash" }
   },
@@ -1917,7 +1935,7 @@ function buildEnding3(flags) {
 const SPECIALS = {
   fighter: {
     name: { ko: "강타", en: "Power Strike" },
-    tag: { ko: "명중↓ 피해+1d6", en: "–to hit, +1d6 dmg" }
+    tag: { ko: "명중↓ 피해+{damage}", en: "–to hit, +{damage} damage" }
   },
   rogue: {
     name: { ko: "급소 찌르기", en: "Vital Strike" },
@@ -1925,7 +1943,7 @@ const SPECIALS = {
   },
   wizard: {
     name: { ko: "마법 화살", en: "Magic Missile" },
-    tag: { ko: "자동 명중 1d8+2", en: "auto-hit 1d8+2" }
+    tag: { ko: "자동 명중 {damage} 피해", en: "auto-hit: {damage} damage" }
   }
 };
 const TEASER = bi("잿돌 수도원에서 회수한 편지의 봉인이 풀렸다 — \"등대는 시험이었다. 통과한 자에게는, 이제 내가 직접 간다. — S\"", "The seal on a letter recovered from the Ashstone Monastery has broken — \"The lighthouse was a test. For the one who passed, I am coming myself. — S\"");
@@ -3425,10 +3443,10 @@ function CRPG() {
       if (guardBonus) setGuardBonus(0);
     } else if (action === "guard") {
       SFX.good();
-      setGuardBonus(4);
+      setGuardBonus(rules.scaleEffect(4));
       log.push({
         who: "you",
-        t: bi("▶ 자세를 낮추고 갈고리를 받아넘길 준비를 한다 — 다음 공격에 +4", "▶ You drop your stance, ready to turn the hook — +4 on your next strike")
+        t: bi(`▶ 자세를 낮추고 갈고리를 받아넘길 준비를 한다 — 다음 공격에 +${rules.scaleEffect(4)}`, `▶ You drop your stance, ready to turn the hook — +${rules.scaleEffect(4)} on your next strike`)
       });
       incomingMult = intent === "hook" ? 0.2 : 0.5;
     } else if (action === "disrupt") {
@@ -3444,7 +3462,7 @@ function CRPG() {
       }));
       if (res.success) {
         SFX.good();
-        const dmg = d(6);
+        const dmg = rules.rollDamage({ die: 6 });
         eHp = Math.max(0, enemy.hp - dmg);
         enemyActs = false;
         log.push({
@@ -3463,7 +3481,7 @@ function CRPG() {
       if (guardBonus) setGuardBonus(0);
       setTrapUsed(true);
       SFX.good();
-      const dmg = d(4) + 2;
+      const dmg = rules.rollDamage({ die: 4, bonus: 2 });
       eHp = Math.max(0, enemy.hp - dmg);
       enemyActs = false;
       log.push({
@@ -3493,19 +3511,19 @@ function CRPG() {
     if (enemyActs) {
       const info = LOOTER_INTENTS[intent];
       if (intent === "feint") {
-        const heal = d(info.heal[1]) + info.heal[0] - 1;
+        const heal = rules.rollRecovery({ die: info.heal[1], bonus: info.heal[0] - 1 });
         eHp = Math.min(foe.maxHp, eHp + heal);
         log.push({
           who: "foe",
           t: bi(`◀ 렌: 물러나 숨을 고른다 — HP ${heal} 회복`, `◀ Ren steps back to catch his breath — recovers ${heal} HP`)
         });
       } else {
-        let dmg = d(info.dmg[1]) + info.dmg[0] - 1;
-        dmg = Math.max(0, Math.round(dmg * incomingMult));
+        const atk = rules.attack({ attacker: foe, defender: pc, damageProfile: { die: info.dmg[1], bonus: info.dmg[0] - 1 } });
+        const dmg = Math.max(0, Math.round(atk.damage * incomingMult));
         curHp = Math.max(0, curHp - dmg);
         log.push({
           who: "foe",
-          t: (lang === "en" ? `◀ Ren's ${tx(info.label)} — ${dmg} dmg` : `◀ 렌의 ${tx(info.label)} — ${dmg} 피해`) + (incomingMult < 1 ? (lang === "en" ? " (blocked)" : " (막아냈다)") : incomingMult > 1 ? (lang === "en" ? " (caught in the open)" : " (빈틈을 찔렸다)") : "")
+          t: bi(`◀ 렌의 ${info.label.ko} — ${atk.hit ? `${dmg} 피해${incomingMult < 1 ? " (막아냈다)" : incomingMult > 1 ? " (빈틈을 찔렸다)" : ""}` : `빗나감 (방어 ${pc.ac})`}`, `◀ Ren's ${info.label.en} — ${atk.hit ? `${dmg} damage${incomingMult < 1 ? " (blocked)" : incomingMult > 1 ? " (caught in the open)" : ""}` : `miss (AC ${pc.ac})`}`)
         });
       }
     }
@@ -3538,7 +3556,7 @@ function CRPG() {
       if (action === "special") {
         setSpecialLeft(n => n - 1);
         if (pc.classKey === "wizard") {
-          const dmg = d(8) + 2;
+          const dmg = rules.rollDamage({ die: 8, bonus: 2 });
           atk = {
             hit: true,
             damage: dmg,
@@ -3566,7 +3584,7 @@ function CRPG() {
             }
           });
           if (base.hit) {
-            const bonus = d(6);
+            const bonus = rules.rollDamage({ die: 6 });
             atk = {
               ...base,
               damage: base.damage + bonus,
@@ -3614,15 +3632,15 @@ function CRPG() {
         return;
       }
     } else if (isDef) {
-      setGuardBonus(4);
+      setGuardBonus(rules.scaleEffect(4));
       log.push({
         who: "you",
-        t: bi(`▶ 방어 — 이번 공격 AC ${pc.ac} → ${pc.ac + 4}. 맞으면 피해량은 그대로다. 다음 기본 공격에 피해 +4 준비(중첩 없음)`, `▶ Defend — AC ${pc.ac} → ${pc.ac + 4} for this attack. A hit still deals full damage. Next basic attack: +4 damage ready (does not stack)`)
+        t: bi(`▶ 방어 — 이번 공격 AC ${pc.ac} → ${pc.ac + 4}. 맞으면 피해량은 그대로다. 다음 기본 공격에 피해 +${rules.scaleEffect(4)} 준비(중첩 없음)`, `▶ Defend — AC ${pc.ac} → ${pc.ac + 4} for this attack. A hit still deals full damage. Next basic attack: +${rules.scaleEffect(4)} damage ready (does not stack)`)
       });
     } else if (action === "breath") {
       if (guardBonus) setGuardBonus(0);
       setBreathLeft(0);
-      const heal = d(4);
+      const heal = rules.rollRecovery({ die: 4 });
       curHp = Math.min(pc.maxHp, curHp + heal);
       log.push({
         who: "you",
@@ -3733,7 +3751,10 @@ function CRPG() {
   const ch1Cleared = badges.some(b => b.startsWith("1"));
   const allBadges = badges.length >= BADGES.length;
   const tx = v => v && typeof v === "object" && !Array.isArray(v) && ("ko" in v || "en" in v) ? (v[lang] || v.ko || v.en || "") : v;
-  const ui = k => UI[k] && (UI[k][lang] || UI[k].ko) || k;
+  const ui = (k, values = {}) => Object.entries(values).reduce((text, [key, value]) => text.replaceAll("{" + key + "}", String(value)), UI[k] && (UI[k][lang] || UI[k].ko) || k);
+  const combatRange = profile => rules.damageRange(profile).join("–");
+  const riposteText = { riposte: rules.scaleEffect(4) };
+  const specialTag = pc && tx(SPECIALS[pc.classKey].tag).replace("{damage}", combatRange(pc.classKey === "wizard" ? { die: 8, bonus: 2 } : { die: 6 }));
   const chapterTitle = chapter === 3 ? ui("ch3") : chapter === 2 ? ui("ch2") : ui("ch1");
   const disruptMove = pc && looterDisruptFor(pc.classKey);
   return /*#__PURE__*/React.createElement("div", {
@@ -4026,12 +4047,12 @@ function CRPG() {
     onClick: () => looterAction("strike")
   }, lang === "en" ? "\u2694 Strike " : "\u2694 " + tx(pc.weapon.name) + "(\uC73C)\uB85C \uCE5C\uB2E4 ", /*#__PURE__*/React.createElement("span", {
     className: "tag"
-  }, guardBonus ? (lang === "en" ? "dmg +" + guardBonus + " \xB7 take the telegraphed hit" : "\uD53C\uD574 +" + guardBonus + " \xB7 \uC608\uACE0\uB97C \uADF8\uB300\uB85C \uB9DE\uC74C") : (lang === "en" ? "deal damage \xB7 take the telegraphed hit" : "\uD53C\uD574\uB97C \uC900\uB2E4 \xB7 \uC608\uACE0\uB97C \uADF8\uB300\uB85C \uB9DE\uC74C"))), /*#__PURE__*/React.createElement("button", {
+  }, guardBonus ? (lang === "en" ? "dmg +" + guardBonus + " \xB7 risk his next attack" : "\uD53C\uD574 +" + guardBonus + " \xB7 렌의 다음 공격을 감수") : (lang === "en" ? "deal damage \xB7 risk his next attack" : "\uD53C\uD574\uB97C \uC900\uB2E4 \xB7 렌의 다음 공격을 감수"))), /*#__PURE__*/React.createElement("button", {
     className: "choice",
     onClick: () => looterAction("guard")
   }, lang === "en" ? "\uD83D\uDEE1 Brace to parry " : "\uD83D\uDEE1 \uBC1B\uC544\uB118\uAE38 \uC900\uBE44 ", /*#__PURE__*/React.createElement("span", {
     className: "tag"
-  }, ui("parryTag")), React.createElement("span", { className: "actionHelp" }, ui("parryHelp"))), /*#__PURE__*/React.createElement("button", {
+  }, ui("parryTag")), React.createElement("span", { className: "actionHelp" }, ui("parryHelp", riposteText))), /*#__PURE__*/React.createElement("button", {
     className: "choice",
     disabled: !disruptReady,
     onClick: () => looterAction("disrupt")
@@ -4040,7 +4061,7 @@ function CRPG() {
   }, tx(SKILL_NAMES[disruptMove.check.skill]), " ", Math.round(rules.successChance({
     actor: pc,
     ...disruptMove.check
-  }) * 100), "% · ", ui("disruptRisk")), React.createElement("span", { className: "actionHelp" }, ui(disruptReady ? "disruptHelp" : "disruptWait"))), flags.includes("sawTrap") && !trapUsed && /*#__PURE__*/React.createElement("button", {
+  }) * 100), "% · ", ui("disruptRisk", { damage: combatRange({ die: 6 }) })), React.createElement("span", { className: "actionHelp" }, ui(disruptReady ? "disruptHelp" : "disruptWait"))), flags.includes("sawTrap") && !trapUsed && /*#__PURE__*/React.createElement("button", {
     className: "choice",
     onClick: () => looterAction("trap")
   }, lang === "en" ? "\uD83D\uDD25 Drive him into the oil & wire " : "\uD83D\uDD25 \uAE30\uB984\u00B7\uCCA0\uC0AC \uCABD\uC73C\uB85C \uBAB0\uAE30 ", /*#__PURE__*/React.createElement("span", {
@@ -4052,22 +4073,22 @@ function CRPG() {
     onClick: () => combatAction("attack")
   }, lang === "en" ? "\u2694 Attack " : "\u2694 " + tx(pc.weapon.name) + "(\uC73C)\uB85C \uACF5\uACA9 ", /*#__PURE__*/React.createElement("span", {
     className: "tag"
-  }, "1d", pc.weapon.die), guardBonus > 0 && React.createElement("span", { className: "actionHelp" }, ui("riposteReady"))), specialLeft > 0 && /*#__PURE__*/React.createElement("button", {
+  }, ui("weaponDamage", { damage: combatRange({ die: pc.weapon.die, bonus: Math.max(0, rules.abilityMod(pc.abilities[pc.weapon.ability])) }) })), guardBonus > 0 && React.createElement("span", { className: "actionHelp" }, ui("riposteReady", riposteText))), specialLeft > 0 && /*#__PURE__*/React.createElement("button", {
     className: "choice",
     onClick: () => combatAction("special")
   }, "\u2726 ", tx(SPECIALS[pc.classKey].name), " ", /*#__PURE__*/React.createElement("span", {
     className: "tag"
-  }, tx(SPECIALS[pc.classKey].tag), (lang === "en" ? " \xB7 " + specialLeft + " left" : " \xB7 \uB0A8\uC740 " + specialLeft + "\uD68C"))), /*#__PURE__*/React.createElement("button", {
+  }, specialTag, (lang === "en" ? " \xB7 " + specialLeft + " left" : " \xB7 \uB0A8\uC740 " + specialLeft + "\uD68C"))), /*#__PURE__*/React.createElement("button", {
     className: "choice",
     onClick: () => combatAction("defend")
   }, lang === "en" ? "\uD83D\uDEE1 Defend " : "\uD83D\uDEE1 \uBC29\uC5B4 ", /*#__PURE__*/React.createElement("span", {
     className: "tag"
-  }, ui("defendTag")), React.createElement("span", { className: "actionHelp" }, ui("defendHelp"))), breathLeft > 0 && /*#__PURE__*/React.createElement("button", {
+  }, ui("defendTag", riposteText)), React.createElement("span", { className: "actionHelp" }, ui("defendHelp", riposteText))), breathLeft > 0 && /*#__PURE__*/React.createElement("button", {
     className: "choice",
     onClick: () => combatAction("breath")
   }, lang === "en" ? "\uD83C\uDF2C Catch breath " : "\uD83C\uDF2C \uC228 \uACE0\uB974\uAE30 ", /*#__PURE__*/React.createElement("span", {
     className: "tag"
-  }, lang === "en" ? "heal HP 1d4 \xB7 once per fight" : "HP 1d4 \uD68C\uBCF5 \xB7 \uC804\uD22C\uB2F9 1\uD68C"))), enemy.done && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+  }, ui("breathRange", { heal: combatRange({ die: 4 }) })))), enemy.done && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     className: "result good"
   }, fmt(tx(scene.victory.text), pc)), /*#__PURE__*/React.createElement("div", {
     className: "choices"
