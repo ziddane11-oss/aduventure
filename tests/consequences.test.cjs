@@ -110,8 +110,8 @@ test('other combat outcomes still use their old game-over rule', () => {
 });
 
 for (const [label, gained, artifact] of [
-  ["Grab Ren's wrist", ['caughtRen', 'lensCracked'], false],
-  ['Grab the lens sack', ['keptLens'], true]
+  ["Grab Ren's wrist", ['caughtRen', 'lensCracked', 'f_ren_keeper'], false],
+  ['Grab the lens sack', ['keptLens', 'f_receipt'], true]
 ]) {
   test(`railing: "${label}" trades one thing for another`, () => {
     const g = game({sceneKey: 'railing'});
