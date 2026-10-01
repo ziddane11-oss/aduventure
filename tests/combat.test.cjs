@@ -35,10 +35,11 @@ function battle(ruleKey, enemyKey = 'smuggler', intent = 'hook', classKey = 'fig
     let pc = {...CLASSES[${JSON.stringify(classKey)}], classKey: ${JSON.stringify(classKey)}, name: 'QA', hp: CLASSES[${JSON.stringify(classKey)}].maxHp};
     let scene = {enemy: ${JSON.stringify(enemyKey)}};
     let enemy = {...ENEMIES[scene.enemy], hp: ENEMIES[scene.enemy].maxHp};
-    let enemyIntent = ${JSON.stringify(intent)}, guardBonus = 0, trapUsed = false;
-    let specialLeft = 2, breathLeft = 1, stats = {rolls: 0, success: 0}, clog = [];
+    let enemyIntent = ${JSON.stringify(intent)}, guardBonus = 0, trapUsed = false, disruptReady = true;
+    let specialLeft = 2, breathLeft = 1, stats = {rolls: 0, success: 0}, clog = [], flags = [];
     const lang = 'en', tx = value => value.en || value;
     const SFX = {good() {}, bad() {}};
+    const recordDecision = () => true;
     const setLastResult = () => {};
     const setPc = value => pc = value;
     const setEnemy = value => enemy = value;
@@ -49,6 +50,7 @@ function battle(ruleKey, enemyKey = 'smuggler', intent = 'hook', classKey = 'fig
     const setEnemyIntent = value => enemyIntent = value;
     const setGuardBonus = value => guardBonus = value;
     const setTrapUsed = value => trapUsed = value;
+    const setDisruptReady = value => disruptReady = value;
     ${between('  function looterAction(action)', '  function restart(')}
   `, ctx);
   return {
@@ -83,7 +85,8 @@ for (const [ruleKey, successRolls, failRolls] of [
         assert.equal(game.run('enemy.hp'), 9, 'Exactly 1d6 damage, no riposte added or enemy healing');
         assert.equal(game.run('pc.hp'), hp, 'The telegraphed attack is cancelled');
         assert.equal(game.run('guardBonus'), 0, 'Attempting disruption consumes an existing riposte');
-        assert.equal(game.run('specialLeft'), 2, 'This remains an unlimited tactical action');
+        assert.equal(game.run('specialLeft'), 2, 'Disruption does not spend the limited chapter specials');
+        assert.equal(game.run('disruptReady'), false, 'Another action is required before repeating disruption');
         assert.equal(game.run('stats.success'), 1);
         assert.ok(game.run('clog[0].t.en').includes(successPhrase));
         assert.equal(game.run('clog.some(entry => entry.who === "foe")'), false);
@@ -99,10 +102,70 @@ for (const [ruleKey, successRolls, failRolls] of [
       assert.equal(game.run('guardBonus'), 0);
       assert.equal(game.run('stats.success'), 0);
       assert.equal(game.run('specialLeft'), 2);
+      assert.equal(game.run('disruptReady'), false, 'A failed attempt also requires another action');
       assert.ok(game.run('clog[0].t.en').includes(failPhrase));
       assert.equal(game.run('clog.filter(entry => entry.who === "foe").length'), 1);
     });
   }
+}
+
+test('Ren: a repeated disruption is ignored until another real action resolves', () => {
+  const game = battle('srd20', 'looter', 'slash');
+  game.run('looterAction("disrupt")', [7, 3, 1]);
+  const before = game.run('JSON.stringify({pc, enemy, stats, clog, enemyIntent})');
+  game.run('looterAction("disrupt")');
+  assert.equal(game.run('JSON.stringify({pc, enemy, stats, clog, enemyIntent})'), before,
+    'Unavailable actions do not roll, damage, log or advance the enemy');
+  game.run('looterAction("guard")', [1, 1]);
+  assert.equal(game.run('disruptReady'), true);
+  game.run('looterAction("disrupt")', [7, 3, 1]);
+  assert.equal(game.run('enemy.hp'), 10);
+  assert.equal(game.run('disruptReady'), false);
+});
+
+test('unavailable combat resources cannot advance the turn or recharge disruption', () => {
+  const ren = battle('srd20', 'looter');
+  ren.run('disruptReady = false; looterAction("trap")');
+  assert.equal(ren.run('disruptReady'), false, 'An undiscovered trap is not an alternate action');
+  ren.run('flags = ["sawTrap"]; trapUsed = true; looterAction("trap")');
+  assert.equal(ren.run('clog.length'), 0, 'A spent trap does not advance combat');
+  const regular = battle('srd20');
+  regular.run('specialLeft = 0; breathLeft = 0; guardBonus = 4; combatAction("special"); combatAction("breath")');
+  assert.equal(regular.run('clog.length'), 0);
+  assert.equal(regular.run('guardBonus'), 4, 'Rejected actions do not spend a prepared riposte');
+});
+
+for (const [ruleKey, defendRolls, attackRolls, missRolls, expectedDamage] of [
+  ['srd20', [1], [15, 1, 1], [1, 1], 8],
+  ['simple2d6', [1, 1], [5, 5, 1, 1, 1], [1, 1, 1, 1], 5]
+]) {
+  test(`${ruleKey}: repeated defense grants one +4 riposte, consumed by the next basic attack`, () => {
+    const game = battle(ruleKey);
+    game.run('combatAction("defend")', defendRolls);
+    game.run('combatAction("defend")', defendRolls);
+    assert.equal(game.run('guardBonus'), 4, 'Defending twice does not stack bonuses');
+    game.run('combatAction("attack")', attackRolls);
+    assert.equal(game.run('enemy.hp'), 11 - expectedDamage);
+    assert.equal(game.run('guardBonus'), 0);
+    assert.ok(game.run('clog.some(entry => entry.t.en.includes("+4 defensive riposte"))'));
+  });
+  test(`${ruleKey}: a missed basic attack spends the prepared riposte without bonus damage`, () => {
+    const game = battle(ruleKey);
+    game.run('combatAction("defend")', defendRolls);
+    game.run('combatAction("attack")', missRolls);
+    assert.equal(game.run('enemy.hp'), 11);
+    assert.equal(game.run('guardBonus'), 0);
+  });
+  test(`${ruleKey}: special attacks and healing discard a defensive riposte`, () => {
+    for (const action of ['special', 'breath']) {
+      const game = battle(ruleKey, 'smuggler', 'hook', 'wizard');
+      game.run('combatAction("defend")', defendRolls);
+      game.run(`combatAction("${action}")`, [1, ...defendRolls]);
+      assert.equal(game.run('guardBonus'), 0);
+      assert.equal(game.run('enemy.hp'), action === 'special' ? 8 : 11,
+        'Magic Missile keeps its own 1d8+2 damage and never receives the +4');
+    }
+  });
 }
 
 for (const [ruleKey, guardRolls, hitRolls, attackRolls] of [

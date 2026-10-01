@@ -54,7 +54,12 @@ function game({flags = [], lore = [], lang = 'en', sceneKey = 'confront', classK
       useEffect() {}
     }
   });
-  vm.runInContext(app, ctx);
+  // Expose the real transition handlers only inside this test VM, so temporary
+  // combat state can be checked across new fights, restarts and legacy saves.
+  vm.runInContext(app.replace('  const pct = choice =>', `
+    globalThis.testTransitions = {goto, restart, continueGame};
+    globalThis.testCombatState = {guardBonus, disruptReady};
+    const pct = choice =>`), ctx);
   data.set('aduventure_save', JSON.stringify({
     v: 1, sceneKey, flags, ruleKey, fate: 0, specialLeft: 2, breathLeft: 1, tutSeen: true,
     pc: {...vm.runInContext(`CLASSES[${JSON.stringify(classKey)}]`, ctx), classKey, name: 'QA', hp: 8},
@@ -65,6 +70,8 @@ function game({flags = [], lore = [], lang = 'en', sceneKey = 'confront', classK
   return {
     render,
     run: code => vm.runInContext(code, ctx),
+    transition: (name, ...args) => ctx.testTransitions[name](...args),
+    combatState: () => ctx.testCombatState,
     finishRoll() {
       for (let tick = 0; tick < 12 && intervals.some(Boolean); tick++) {
         intervals.forEach(fn => fn && fn());
@@ -72,6 +79,51 @@ function game({flags = [], lore = [], lang = 'en', sceneKey = 'confront', classK
       assert.equal(intervals.some(Boolean), false, 'The dice animation and resolution completed');
     }
   };
+}
+
+for (const lang of ['ko', 'en']) {
+  test(`${lang}: a spent disruption visibly locks and another action unlocks it`, () => {
+    const g = game({lang, sceneKey: 'stairs'});
+    g.transition('goto', 'combat');
+    const label = g.run(`LOOTER_DISRUPTS.fighter.label.${lang}`);
+    const disruption = () => choices(g.render()).find(node => text(node).startsWith(label));
+    assert.equal(disruption().props.disabled, false);
+    assert.ok(text(disruption()).includes(g.run(`UI.disruptHelp.${lang}`)));
+    disruption().props.onClick();
+    assert.equal(disruption().props.disabled, true);
+    assert.ok(text(disruption()).includes(g.run(`UI.disruptWait.${lang}`)));
+    const parryTag = g.run(`UI.parryTag.${lang}`);
+    choices(g.render()).find(node => text(node).includes(parryTag)).props.onClick();
+    assert.equal(disruption().props.disabled, false);
+  });
+  test(`${lang}: general defense shows its cost and highlights the prepared basic attack`, () => {
+    const g = game({lang, sceneKey: 'confront'});
+    g.transition('goto', 'combat2');
+    g.run('Math.random = () => 0'); // Enemy misses while the hero prepares a riposte.
+    const tag = g.run(`UI.defendTag.${lang}`);
+    const defense = choices(g.render()).find(node => text(node).includes(tag));
+    assert.ok(text(defense).includes(g.run(`UI.defendHelp.${lang}`)));
+    defense.props.onClick();
+    assert.ok(choices(g.render()).some(node => text(node).includes(g.run(`UI.riposteReady.${lang}`))));
+  });
+}
+
+for (const [transition, args] of [['goto', ['combat2']], ['restart', ['intro2']], ['continueGame', []]]) {
+  test(`${transition}: combat preparation resets without changing the legacy save format`, () => {
+    for (const prepare of ['disrupt', 'guard']) {
+      const g = game({sceneKey: 'stairs'});
+      g.transition('goto', 'combat');
+      const label = prepare === 'disrupt' ? g.run('LOOTER_DISRUPTS.fighter.label.en') : '🛡 Brace to parry';
+      choices(g.render()).find(node => text(node).startsWith(label)).props.onClick();
+      g.render();
+      if (prepare === 'disrupt') assert.equal(g.combatState().disruptReady, false);
+      else assert.equal(g.combatState().guardBonus, 4);
+      g.transition(transition, ...args);
+      g.render();
+      assert.equal(g.combatState().disruptReady, true);
+      assert.equal(g.combatState().guardBonus, 0);
+    }
+  });
 }
 function choices(tree) {
   return nodes(tree).filter(node => node.type === 'button' && node.props.className === 'choice');
