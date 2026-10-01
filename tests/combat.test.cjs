@@ -13,7 +13,7 @@ function between(start, end) {
   assert.ok(from >= 0 && to > from, `Source section exists: ${start}`);
   return source.slice(from, to);
 }
-function battle(ruleKey, enemyKey = 'smuggler', intent = 'hook') {
+function battle(ruleKey, enemyKey = 'smuggler', intent = 'hook', classKey = 'fighter') {
   const dice = [];
   const ctx = vm.createContext({
     Math, bi: (ko, en) => ({ko, en}),
@@ -27,8 +27,12 @@ function battle(ruleKey, enemyKey = 'smuggler', intent = 'hook') {
   vm.runInContext(between('const SRD20 =', 'const SCENE_TITLES ='), ctx);
   vm.runInContext(`
     let ruleKey = ${JSON.stringify(ruleKey)};
-    let rules = RULE_SYSTEMS[ruleKey];
-    let pc = {...CLASSES.fighter, classKey: 'fighter', name: 'QA', hp: 12};
+    let checkArgs;
+    let rules = {...RULE_SYSTEMS[ruleKey], check(args) {
+      checkArgs = args;
+      return RULE_SYSTEMS[ruleKey].check(args);
+    }};
+    let pc = {...CLASSES[${JSON.stringify(classKey)}], classKey: ${JSON.stringify(classKey)}, name: 'QA', hp: CLASSES[${JSON.stringify(classKey)}].maxHp};
     let scene = {enemy: ${JSON.stringify(enemyKey)}};
     let enemy = {...ENEMIES[scene.enemy], hp: ENEMIES[scene.enemy].maxHp};
     let enemyIntent = ${JSON.stringify(intent)}, guardBonus = 0, trapUsed = false;
@@ -55,6 +59,50 @@ function battle(ruleKey, enemyKey = 'smuggler', intent = 'hook') {
       return result;
     }
   };
+}
+
+for (const [ruleKey, successRolls, failRolls] of [
+  // Boundary success/failure with the hero's trained primary ability (+5 / +3).
+  ['srd20', [7], [6]],
+  ['simple2d6', [2, 2], [1, 2]]
+]) {
+  for (const [classKey, ability, skill, successPhrase, failPhrase] of [
+    ['fighter', 'STR', 'athletics', 'twist his hook-arm', 'lose your balance'],
+    ['rogue', 'DEX', 'stealth', 'slip out of sight', 'blind spot'],
+    ['wizard', 'INT', 'arcana', 'quick spell', 'binding spell']
+  ]) {
+    test(`${ruleKey} ${classKey}: trained disruption cancels attacks and healing without spending a special`, () => {
+      for (const intent of ['slash', 'feint']) {
+        const game = battle(ruleKey, 'looter', intent, classKey);
+        game.run('enemy.hp = 12; guardBonus = 4');
+        const hp = game.run('pc.hp');
+        game.run('looterAction("disrupt")', [...successRolls, 3, 1]);
+        assert.equal(game.run('checkArgs.ability'), ability);
+        assert.equal(game.run('checkArgs.skill'), skill);
+        assert.equal(game.run('checkArgs.dc'), 12);
+        assert.equal(game.run('enemy.hp'), 9, 'Exactly 1d6 damage, no riposte added or enemy healing');
+        assert.equal(game.run('pc.hp'), hp, 'The telegraphed attack is cancelled');
+        assert.equal(game.run('guardBonus'), 0, 'Attempting disruption consumes an existing riposte');
+        assert.equal(game.run('specialLeft'), 2, 'This remains an unlimited tactical action');
+        assert.equal(game.run('stats.success'), 1);
+        assert.ok(game.run('clog[0].t.en').includes(successPhrase));
+        assert.equal(game.run('clog.some(entry => entry.who === "foe")'), false);
+      }
+    });
+    test(`${ruleKey} ${classKey}: failed disruption keeps extra damage and consumes riposte`, () => {
+      const game = battle(ruleKey, 'looter', 'slash', classKey);
+      game.run('guardBonus = 4');
+      const hp = game.run('pc.hp');
+      game.run('looterAction("disrupt")', [...failRolls, 2, 1]);
+      assert.equal(game.run('pc.hp'), hp - 4, 'round((2 + d3(2) - 1) × 1.3) = 4');
+      assert.equal(game.run('enemy.hp'), 16);
+      assert.equal(game.run('guardBonus'), 0);
+      assert.equal(game.run('stats.success'), 0);
+      assert.equal(game.run('specialLeft'), 2);
+      assert.ok(game.run('clog[0].t.en').includes(failPhrase));
+      assert.equal(game.run('clog.filter(entry => entry.who === "foe").length'), 1);
+    });
+  }
 }
 
 for (const [ruleKey, guardRolls, hitRolls, attackRolls] of [

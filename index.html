@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>어두밴처 v0.7.3-pt7</title>
+<title>어두밴처 v0.7.3-pt8</title>
 <style>body{margin:0;background:#0e1420}</style>
 </head>
 <body>
@@ -318,7 +318,7 @@ function(a,b,c){if(!Vd(b))throw Error(n(200));return Wd(null,a,b,!1,c)};Q.unmoun
    GAS 피드백 파이프 — v0.7 재구현 (제안/신호/텔레메트리)
    ============================================================ */
 /* 플레이테스트 빌드 태그 — 테스트 중 버전 구분용. 수정할 때마다 뒤 번호를 올린다. */
-const BUILD = "v0.7.3-pt7";
+const BUILD = "v0.7.3-pt8";
 const GAS_URL = "https://script.google.com/macros/s/AKfycbxFx_m5rhCZmqGoy3JcUUNqEgiObMWNHe9hx-LnZrhzIkfwa9-yJGBWP0lVulptnNQeCQ/exec";
 function gasPost(payload) {
   return fetch(GAS_URL, {
@@ -497,6 +497,7 @@ const wname = (w, l) => {
 };
 /* ---------- 다국어 UI 문자열(ko/en). 서사(SCENES)는 각 항목에 {ko,en}로 확장한다. ---------- */
 const UI = {
+  disruptRisk: { ko: "성공: 1d6 피해·행동 취소 / 실패: 추가 피해", en: "success: 1d6 damage + cancel his move / fail: extra damage" },
   ch1: { ko: "제1장 잿빛 등대", en: "Ch.1 · The Ashen Lighthouse" },
   ch2: { ko: "제2장 검은 코트", en: "Ch.2 · The Black Coat" },
   ch3: { ko: "제3장 사라진 종소리", en: "Ch.3 · The Silenced Bell" },
@@ -898,6 +899,30 @@ const ENEMIES = {
 
 /* ---------- 전투 시제품(1장 도굴꾼) — 적 의도 예고 + 상황따라 갈리는 대응 ----------
    dmg: [min, die] → min + d(die) - 1 만큼 피해 */
+// 같은 방해 행동을 직업의 강점으로 수행한다. 버튼·확률·판정·로그가 이 맵을 공유한다.
+const LOOTER_DISRUPTS = {
+  fighter: {
+    label: { ko: "🤺 팔을 비틀어 끊기", en: "🤺 Twist his hook-arm" },
+    check: { ability: "STR", skill: "athletics", dc: 12 },
+    success: (roll, damage) => bi(`▶ 갈고리 팔을 비틀어 동작을 끊었다 — 성공(주사위 ${roll}). ${damage} 피해`, `▶ You twist his hook-arm and cut off his move — success (die ${roll}). ${damage} damage`),
+    fail: roll => bi(`▶ 팔을 잡으려다 중심이 무너진다 — 실패(주사위 ${roll}). 빈틈을 보인다`, `▶ You reach for his arm and lose your balance — fail (die ${roll}). You're open`)
+  },
+  rogue: {
+    label: { ko: "🗡 사각으로 파고들어 끊기", en: "🗡 Slip into his blind spot" },
+    check: { ability: "DEX", skill: "stealth", dc: 12 },
+    success: (roll, damage) => bi(`▶ 시야 밖으로 미끄러져 들어가 갈고리 팔을 걷어찼다 — 성공(주사위 ${roll}). ${damage} 피해, 동작을 끊었다`, `▶ You slip out of sight and kick his hook-arm aside — success (die ${roll}). ${damage} damage, his move is cut off`),
+    fail: roll => bi(`▶ 사각으로 돌려는 순간 렌이 몸을 틀어 따라온다 — 실패(주사위 ${roll}). 빈틈을 보인다`, `▶ Ren turns with you before you reach his blind spot — fail (die ${roll}). You're open`)
+  },
+  wizard: {
+    label: { ko: "✦ 주문으로 갈고리 묶기", en: "✦ Bind the hook with magic" },
+    check: { ability: "INT", skill: "arcana", dc: 12 },
+    success: (roll, damage) => bi(`▶ 짧은 주문이 갈고리를 옭아매 동작을 끊었다 — 성공(주사위 ${roll}). ${damage} 피해`, `▶ A quick spell binds the hook and cuts off his move — success (die ${roll}). ${damage} damage`),
+    fail: roll => bi(`▶ 갈고리가 주문의 매듭을 찢고 날아든다 — 실패(주사위 ${roll}). 빈틈을 보인다`, `▶ The hook tears through the binding spell — fail (die ${roll}). You're open`)
+  }
+};
+function looterDisruptFor(classKey) {
+  return LOOTER_DISRUPTS[classKey] || LOOTER_DISRUPTS.fighter;
+}
 const LOOTER_INTENTS = {
   slash: {
     icon: "\uD83D\uDDE1",
@@ -1414,6 +1439,52 @@ const SCENES = {
       en: `The man in the black coat — Scully. Cornered eyes.\n\n"Wait — I'm just the errand boy. A contract to kill the light, half paid up front, signed 'S.' That's everything I know."`
     },
     choices: [{
+      echoReq: "ledger",
+      echo: { ko: "들키지 않고 챙긴 밀수 장부", en: "The ledger you took unseen" },
+      label: {
+        ko: `[증거] 장부를 펼쳐 스컬리의 말과 대조한다`,
+        en: `[Evidence] Open the ledger and test Scully's story`
+      },
+      check: { ability: "INT", skill: "investigation", dc: 9, label: "조사" },
+      success: {
+        text: {
+          ko: `"심부름값치곤 큰돈인데. 이 항목은 뭘까?"\n\n장부의 금액을 짚자 스컬리가 입을 다문다. 잠시 뒤, 품에서 편지 뭉치를 꺼낸다.\n\n"…잿돌 수도원. S가 보낸 거야. 그 장부면 확인할 수 있겠지." 손에 넣은 증거가 거짓말의 여지를 지웠다.`,
+          en: `"A lot of money for an errand. What is this entry?"\n\nYou point to the payment. Scully falls silent, then produces a bundle of letters.\n\n"…Ashstone Monastery. S sent them. That ledger should let you check." The evidence you recovered leaves him nowhere to hide.`
+        },
+        flag: "peaceful2",
+        goto: "ending2"
+      },
+      fail: {
+        text: {
+          ko: `암호 같은 장부를 읽는 사이, 스컬리의 손이 허리로 내려간다.\n\n"남의 장부 함부로 펼치지 마." 칼이 번뜩인다. 장부는 품에 넣었다 — 이제 지켜야 한다.`,
+          en: `While you untangle the coded entries, Scully's hand drops to his belt.\n\n"Keep your nose out of my books." A blade flashes. You tuck the ledger away — now you must defend it.`
+        },
+        goto: "combat2"
+      }
+    }, {
+      echoReq: "grip",
+      echo: { ko: "매복을 뚫고 먼저 제압했다", en: "You overpowered his ambush" },
+      label: {
+        ko: `[위협] 제압한 스컬리를 압박한다. "의뢰받은 증거를 내놔."`,
+        en: `[Intimidate] Press your advantage. "Show me proof of the contract."`
+      },
+      check: { ability: "STR", skill: "intimidation", dc: 9, label: "위협" },
+      success: {
+        text: {
+          ko: `스컬리가 다시 빠져나가려다 멈춘다. 같은 힘겨루기를 반복할 생각은 없는 눈치다.\n\n천천히 품에서 편지 뭉치를 꺼낸다. "잿돌 수도원이야. 서명은 S. 이제 놔줘."\n\n매복을 역이용해 잡은 주도권이, 싸움 대신 답을 끌어냈다.`,
+          en: `Scully starts to pull away, then stops. He has no appetite for another struggle.\n\nSlowly, he produces a bundle of letters from his coat. "Ashstone Monastery. Signed S. Now let go."\n\nTurning his ambush against him has won you an answer without another fight.`
+        },
+        flag: "peaceful2",
+        goto: "ending2"
+      },
+      fail: {
+        text: {
+          ko: `스컬리가 몸을 비틀어 손아귀를 빠져나간다. "두 번은 안 당해."\n\n벽을 차고 거리를 벌린 사내가 단검을 뽑는다.`,
+          en: `Scully twists free of your grip. "Not twice."\n\nHe kicks off the wall, opens a gap, and draws his dagger.`
+        },
+        goto: "combat2"
+      }
+    }, {
       echoReq: "ren_tip",
       echo: {
         ko: "렌이 일러준 스컬리의 빚",
@@ -1822,6 +1893,12 @@ const ECHOES = {
   confront: [{
     req: "ren_tip",
     text: { ko: "렌이 귀띔한 스컬리의 약점 — 목에 걸린 빚이 떠오른다.", en: "Scully's weakness, the one Ren tipped you off about — the debt around his neck comes to mind." }
+  }, {
+    req: "ledger",
+    text: { ko: "창고에서 챙긴 장부가 품 안에 있다. 적힌 거래와 스컬리의 말을 대조할 수 있다.", en: "The ledger you took from the warehouse is in your coat. You can check Scully's story against its entries." }
+  }, {
+    req: "grip",
+    text: { ko: "매복을 뚫고 스컬리를 먼저 제압했다. 반격할 틈을 주지 않고 압박할 수 있다.", en: "You turned the ambush around and overpowered Scully. You can press him before he gets a chance to fight back." }
   }]
 };
 
@@ -2801,6 +2878,11 @@ const css = `
 @keyframes popIn { from{transform:scale(.6); opacity:0} to{transform:scale(1); opacity:1} }
 @keyframes shake { 0%{transform:rotate(-4deg)} 50%{transform:rotate(4deg)} 100%{transform:rotate(-4deg)} }
 @media (max-width: 700px) {
+  .crpg header { flex-wrap:wrap; }
+  .crpg h1 { min-width:0; overflow-wrap:anywhere; }
+  .crpg .hctrl { width:100%; flex-wrap:wrap; }
+  .crpg .hctrl select, .crpg .hctrl button { min-height:44px; }
+  .crpg .diceMeta, .crpg .jump { min-width:0; overflow-wrap:anywhere; }
   .crpg .lhscene { position:sticky; top:6px; z-index:20; height:110px;
     box-shadow:0 6px 18px rgba(0,0,0,.55); }
   .crpg .artimg { position:sticky; top:6px; z-index:20; max-height:130px; object-fit:cover; }
@@ -3195,11 +3277,10 @@ function CRPG() {
       incomingMult = intent === "hook" ? 0.2 : 0.5;
     } else if (action === "disrupt") {
       if (guardBonus) setGuardBonus(0);
+      const move = looterDisruptFor(pc.classKey);
       const res = rules.check({
         actor: pc,
-        ability: "STR",
-        skill: "athletics",
-        dc: 12
+        ...move.check
       });
       setStats(s => ({
         rolls: s.rolls + 1,
@@ -3212,14 +3293,14 @@ function CRPG() {
         enemyActs = false;
         log.push({
           who: "you",
-          t: bi(`▶ 파고들어 갈고리 팔을 비튼다 — 성공(주사위 ${res.roll}). ${dmg} 피해, 놈의 동작을 끊었다`, `▶ You close and twist the hook-arm — success (die ${res.roll}). ${dmg} damage, his move is cut off`)
+          t: move.success(res.roll, dmg)
         });
       } else {
         SFX.bad();
         incomingMult = 1.3;
         log.push({
           who: "you",
-          t: bi(`▶ 파고들려다 중심이 무너진다 — 실패(주사위 ${res.roll}). 빈틈을 보인다`, `▶ You lunge and lose your balance — fail (die ${res.roll}). You're open`)
+          t: move.fail(res.roll)
         });
       }
     } else if (action === "trap") {
@@ -3468,6 +3549,7 @@ function CRPG() {
   const tx = v => v && typeof v === "object" && !Array.isArray(v) && ("ko" in v || "en" in v) ? (v[lang] || v.ko || v.en || "") : v;
   const ui = k => UI[k] && (UI[k][lang] || UI[k].ko) || k;
   const chapterTitle = chapter === 3 ? ui("ch3") : chapter === 2 ? ui("ch2") : ui("ch1");
+  const disruptMove = pc && looterDisruptFor(pc.classKey);
   return /*#__PURE__*/React.createElement("div", {
     className: "crpg"
   }, /*#__PURE__*/React.createElement("style", null, css), feedbackOpen && /*#__PURE__*/React.createElement(PlaytestFeedback, {
@@ -3765,14 +3847,12 @@ function CRPG() {
   }, ui("parryTag")), React.createElement("span", { className: "actionHelp" }, ui("parryHelp"))), /*#__PURE__*/React.createElement("button", {
     className: "choice",
     onClick: () => looterAction("disrupt")
-  }, lang === "en" ? "\uD83E\uDD3A Close in and cut it off " : "\uD83E\uDD3A \uD30C\uACE0\uB4E4\uC5B4 \uB055\uAE30 ", /*#__PURE__*/React.createElement("span", {
+  }, tx(disruptMove.label), /*#__PURE__*/React.createElement("span", {
     className: "tag"
-  }, (lang === "en" ? "Athletics " : "\uC6B4\uB3D9 "), Math.round(rules.successChance({
+  }, tx(SKILL_NAMES[disruptMove.check.skill]), " ", Math.round(rules.successChance({
     actor: pc,
-    ability: "STR",
-    skill: "athletics",
-    dc: 12
-  }) * 100), lang === "en" ? "% \xB7 hit: cancel his move / miss: extra dmg" : "% \xB7 \uC131\uACF5:\uD589\uB3D9\uCDE8\uC18C / \uC2E4\uD328:\uCD94\uAC00\uD53C\uD574")), flags.includes("sawTrap") && !trapUsed && /*#__PURE__*/React.createElement("button", {
+    ...disruptMove.check
+  }) * 100), "% · ", ui("disruptRisk"))), flags.includes("sawTrap") && !trapUsed && /*#__PURE__*/React.createElement("button", {
     className: "choice",
     onClick: () => looterAction("trap")
   }, lang === "en" ? "\uD83D\uDD25 Drive him into the oil & wire " : "\uD83D\uDD25 \uAE30\uB984\u00B7\uCCA0\uC0AC \uCABD\uC73C\uB85C \uBAB0\uAE30 ", /*#__PURE__*/React.createElement("span", {
