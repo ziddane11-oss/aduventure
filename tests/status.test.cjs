@@ -76,6 +76,9 @@ test('language toggle keeps the active hero and existing local records', () => {
   const game = harness();
   const beforeRecords = game.data.get('aduventure_records');
   let tree = game.render();
+  // pt14: 첫 화면은 공식 기록 — 태도를 고른 뒤 직업 카드가 나온다.
+  nodes(tree).find(node => node.props.className === 'choice primaryChoice').props.onClick();
+  tree = game.render();
   nodes(tree).find(node => node.props.className === 'card').props.onClick();
   tree = game.render();
   const healthBefore = nodes(tree).find(node => node.type.name === 'HealthMeter').props;
