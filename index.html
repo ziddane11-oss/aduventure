@@ -3306,7 +3306,7 @@ function CRPG() {
       });
       setClog([{
         who: "sys",
-        t: (lang === "en" ? "⚔ Battle — " : "⚔ 전투 개시 — ") + tx(e.name)
+        t: bi("⚔ 전투 개시 — " + e.name.ko, "⚔ Battle — " + e.name.en)
       }]);
       setBreathLeft(1);
       setGuardBonus(0);

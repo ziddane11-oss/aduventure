@@ -81,6 +81,19 @@ function game({flags = [], lore = [], lang = 'en', sceneKey = 'confront', classK
   };
 }
 
+test('changing language during combat translates the existing battle-start log', () => {
+  const g = game({lang: 'ko', sceneKey: 'stairs'});
+  g.transition('goto', 'combat');
+  let tree = g.render();
+  assert.ok(text(tree).includes('⚔ 전투 개시 —'));
+  nodes(tree).find(node => node.props['aria-label'] === 'language').props.onClick();
+  tree = g.render();
+  assert.ok(text(tree).includes("⚔ Battle — 'Hook' Ren"));
+  assert.ok(!text(tree).includes('⚔ 전투 개시 —'));
+  nodes(tree).find(node => node.props['aria-label'] === 'language').props.onClick();
+  assert.ok(text(g.render()).includes('⚔ 전투 개시 —'));
+});
+
 for (const lang of ['ko', 'en']) {
   test(`${lang}: a spent disruption visibly locks and another action unlocks it`, () => {
     const g = game({lang, sceneKey: 'stairs'});
