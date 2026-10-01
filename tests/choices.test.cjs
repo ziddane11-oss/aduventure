@@ -4,7 +4,7 @@ const vm = require('node:vm');
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+const html = fs.readFileSync(process.env.GAME_HTML || path.join(__dirname, '..', 'index.html'), 'utf8');
 const app = [...html.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/g)].at(-1)[1].split('ReactDOM.createRoot')[0];
 function nodes(node) {
   if (!node || typeof node !== 'object') return [];
@@ -100,11 +100,11 @@ for (const lang of ['ko', 'en']) {
     const g = game({lang, sceneKey: 'confront'});
     g.transition('goto', 'combat2');
     g.run('Math.random = () => 0'); // Enemy misses while the hero prepares a riposte.
-    const tag = g.run(`UI.defendTag.${lang}`);
+    const tag = resolvedUI(g, 'defendTag', lang, {riposte: 4});
     const defense = choices(g.render()).find(node => text(node).includes(tag));
-    assert.ok(text(defense).includes(g.run(`UI.defendHelp.${lang}`)));
+    assert.ok(text(defense).includes(resolvedUI(g, 'defendHelp', lang, {riposte: 4})));
     defense.props.onClick();
-    assert.ok(choices(g.render()).some(node => text(node).includes(g.run(`UI.riposteReady.${lang}`))));
+    assert.ok(choices(g.render()).some(node => text(node).includes(resolvedUI(g, 'riposteReady', lang, {riposte: 4}))));
   });
 }
 
@@ -124,6 +124,9 @@ for (const [transition, args] of [['goto', ['combat2']], ['restart', ['intro2']]
       assert.equal(g.combatState().guardBonus, 0);
     }
   });
+}
+function resolvedUI(g, key, lang, values = {}) {
+  return g.run(`UI.${key}.${lang}`).replace(/\{(\w+)\}/g, (_, name) => values[name] ?? `{${name}}`);
 }
 function choices(tree) {
   return nodes(tree).filter(node => node.type === 'button' && node.props.className === 'choice');
@@ -179,8 +182,43 @@ for (const ruleKey of ['srd20', 'simple2d6']) {
         assert.ok(text(button).includes(ruleKey === 'srd20' ? '70%' : '92%'));
         const skill = {fighter: 'athletics', rogue: 'stealth', wizard: 'arcana'}[classKey];
         assert.ok(text(button).includes(g.run(`SKILL_NAMES.${skill}.${lang}`)));
-        assert.ok(text(button).includes(g.run(`UI.disruptRisk.${lang}`)));
+        const damage = g.run(`RULE_SYSTEMS.${ruleKey}.damageRange({die: 6}).join('–')`);
+        assert.ok(text(button).includes(resolvedUI(g, 'disruptRisk', lang, {damage})));
       }
+    });
+  }
+}
+
+for (const ruleKey of ['srd20', 'simple2d6']) {
+  for (const lang of ['ko', 'en']) {
+    test(`${ruleKey} ${lang}: combat controls display their actual damage, healing and riposte values`, () => {
+      const riposte = ruleKey === 'srd20' ? 4 : 2;
+      for (const classKey of ['fighter', 'wizard']) {
+        const g = game({ruleKey, lang, classKey, sceneKey: 'confront'});
+        g.transition('goto', 'combat2');
+        const buttons = choices(g.render());
+        const normalRange = g.run(`(() => {const rule = RULE_SYSTEMS.${ruleKey}, actor = CLASSES.${classKey}; return rule.damageRange({die: actor.weapon.die, bonus: Math.max(0, rule.abilityMod(actor.abilities[actor.weapon.ability]))}).join('–');})()`);
+        assert.ok(text(buttons[0]).includes(normalRange), 'Basic attack range includes its ability modifier and rule scaling');
+        const specialRange = classKey === 'wizard'
+          ? (ruleKey === 'srd20' ? '3–10' : '2–5')
+          : (ruleKey === 'srd20' ? '1–6' : '1–3');
+        assert.ok(text(buttons[1]).includes(specialRange), 'Special damage or extra damage agrees with the rule');
+        assert.ok(text(buttons[2]).includes(resolvedUI(g, 'defendHelp', lang, {riposte})));
+        assert.ok(text(buttons[2]).includes(`+${riposte}`));
+        assert.ok(text(buttons[3]).includes(ruleKey === 'srd20' ? '1–4' : '1–2'), 'Catch breath shows scaled recovery');
+        assert.doesNotMatch(buttons.map(text).join(' '), /\{(?:damage|heal|riposte)\}/, 'No unresolved UI placeholders');
+        g.run('Math.random = () => 0');
+        buttons[2].props.onClick();
+        const prepared = choices(g.render())[0];
+        assert.equal(g.combatState().guardBonus, riposte);
+        assert.ok(text(prepared).includes(resolvedUI(g, 'riposteReady', lang, {riposte})));
+      }
+      const ren = game({ruleKey, lang, sceneKey: 'stairs'});
+      ren.transition('goto', 'combat');
+      const buttons = choices(ren.render());
+      assert.ok(text(buttons[1]).includes(resolvedUI(ren, 'parryHelp', lang, {riposte})));
+      assert.ok(text(buttons[1]).includes(`+${riposte}`));
+      assert.ok(text(buttons[2]).includes(ruleKey === 'srd20' ? '1–6' : '1–3'), 'Ren disruption shows scaled damage');
     });
   }
 }
