@@ -160,6 +160,7 @@ test('legacy save upgrades, reload continues the same run, restart gets a new ru
   const ending = game({sceneKey: 'ending', data: new Map([['aduventure_anon_player', JSON.stringify(a.player_id)]])});
   const oldRun = ending.events('run_continue')[0].run_id;
   nodes(ending.render()).find(n => n.type === 'button' && n.props.className === 'restart').props.onClick();
+  nodes(ending.render()).find(n => n.props.className === 'choice primaryChoice').props.onClick(); // pt14: 기록 화면
   nodes(ending.render()).find(n => n.props.className === 'card').props.onClick(); ending.render();
   const restarted = ending.events('run_start')[0];
   assert.notEqual(restarted.run_id, oldRun);

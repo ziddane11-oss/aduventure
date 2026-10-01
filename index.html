@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>어두밴처 v0.7.3-pt13</title>
+<title>어두밴처 v0.7.3-pt14</title>
 <style>body{margin:0;background:#0e1420}</style>
 </head>
 <body>
@@ -318,7 +318,7 @@ function(a,b,c){if(!Vd(b))throw Error(n(200));return Wd(null,a,b,!1,c)};Q.unmoun
    GAS 피드백 파이프 — v0.7 재구현 (제안/신호/텔레메트리)
    ============================================================ */
 /* 플레이테스트 빌드 태그 — 테스트 중 버전 구분용. 수정할 때마다 뒤 번호를 올린다. */
-const BUILD = "v0.7.3-pt13";
+const BUILD = "v0.7.3-pt14";
 const GAS_URL = "https://script.google.com/macros/s/AKfycbxFx_m5rhCZmqGoy3JcUUNqEgiObMWNHe9hx-LnZrhzIkfwa9-yJGBWP0lVulptnNQeCQ/exec";
 function gasPost(payload, options = {}) {
   return fetch(GAS_URL, {
@@ -786,7 +786,17 @@ const UI = {
   needCount: { ko: "조각 4개 이상", en: "4+ fragments" },
   fragNew: { ko: "◇ 아직 못 본 조각", en: "◇ unseen fragment" },
   fragSeen: { ko: "◆ 이미 본 조각", en: "◆ fragment already seen" },
-  accuseGo: { ko: "소금여울로 돌아가 결론을 내린다 →", en: "Return to Saltmarsh and reach a verdict →" }
+  accuseGo: { ko: "소금여울로 돌아가 결론을 내린다 →", en: "Return to Saltmarsh and reach a verdict →" },
+  shareRec: { ko: "📋 이 기록 복사하기 (공유)", en: "📋 Copy this record (share)" },
+  shareDone: { ko: "복사됨 — 붙여넣어 공유하세요", en: "Copied — paste it anywhere" },
+  shareFail: { ko: "복사 실패 — 화면을 캡처해 주세요", en: "Couldn't copy — take a screenshot instead" },
+  recordLie: { ko: "거짓말이다 — 이 기록을 다시 쓴다", en: "It's a lie — rewrite this record" },
+  recordBelieve: { ko: "기록을 믿는다", en: "I believe the record" },
+  nameRecord: { ko: "기록에 남을 이름은?", en: "What name goes on the record?" },
+  rewrite: { ko: "이 기록을 다시 쓴다", en: "Rewrite this record" },
+  archive: { ko: "기록 보관소 — 도감·지식·유물", en: "Archive — endings, lore, artifacts" },
+  recNo: { ko: "기록 제{n}호", en: "Record No. {n}" },
+  caseSub: { ko: "공식 기록에 맞서 당신이 쓰는 반박 기록", en: "Your rebuttal to the official record" }
 };
 const SRD20 = {
   scaleEffect: value => Math.max(0, value),
@@ -2602,6 +2612,109 @@ function caseState(lore) {
   return { found, score, decisive, confession, ready: missing.length === 0, missing };
 }
 
+/* ---------- 공식 기록 — 게임의 첫 화면이자 모든 결말의 거울. "기록은 거짓말을 한다" ----------
+   한 회차 = 기록 한 호(제113호부터). 촌장 세온이 쓴 공식 기록과, 플레이어가 아는 반박(붉은 손글씨)을 나란히 둔다. */
+const RECORD_FIRST = 113;
+function officialRecord(kind, flags, no) {
+  const has = f => flags.includes(f);
+  const n = no || RECORD_FIRST;
+  const head = bi(`소금여울 공식 기록 · 제${n}호`, `Saltmarsh Official Record · No. ${n}`);
+  const seon = bi("기록자: 촌장 세온", "Recorded by: Chief Seon");
+  if (kind === "opening") return {
+    head,
+    lines: [bi("폭풍의 밤. 등대지기 베른, 사고로 부상.", "Night of the storm. Lighthouse keeper Bern, injured in an accident."),
+      bi("떠돌이 모험가 1명, 사망. 이름은 기록되지 않았다.", "One wandering adventurer: dead. The name was not recorded."),
+      bi("어선 3척, 암초에 좌초. 원인: 불운.", "Three fishing boats wrecked on the rocks. Cause: bad luck.")],
+    signer: seon,
+    rebut: bi("거짓말이다.", "This is a lie.")
+  };
+  if (kind === "gameover") return {
+    head,
+    lines: [bi("떠돌이 모험가 {이름}, 사망.", "A wandering adventurer, {name}: dead."), bi("원인: 불운.", "Cause: bad luck.")],
+    signer: seon,
+    rebut: null,
+    stamp: bi("기록대로 되었다", "It went as recorded")
+  };
+  const doubt = has("believed") ? bi("처음에 당신은 이 기록을 믿었다. ", "At first, you believed this record. ") : bi("", "");
+  const join = (a, b) => bi(a.ko + b.ko, a.en + b.en);
+  if (kind === 1) return {
+    head,
+    lines: has("signal")
+      ? [bi("등대: 렌즈 도난. 임시 봉화로 어선 3척 귀항.", "Lighthouse: lens stolen. Three boats home by a makeshift beacon."), bi("원인: 좀도둑.", "Cause: a petty thief.")]
+      : [bi("등대: 기관 고장, 수리 완료. 어선 3척 귀항.", "Lighthouse: mechanism failure, repaired. Three boats home."), bi("원인: 불운.", "Cause: bad luck.")],
+    signer: seon,
+    rebut: has("sabotage") ? join(doubt, bi("불운이 아니다. 톱니는 누군가 빼냈다.", "Not bad luck. Someone pulled that gear.")) : null
+  };
+  if (kind === 2) return {
+    head,
+    lines: [has("peaceful2") ? bi("부두: 밀수 혐의자 스컬리, 도주.", "Docks: smuggling suspect Scully, fled.") : bi("부두: 밀수 혐의자 스컬리, 체포.", "Docks: smuggling suspect Scully, arrested."), bi("배후: 없음.", "Behind it: no one.")],
+    signer: seon,
+    rebut: has("f_fund") ? bi("배후가 없다고? 돈은 소금여울 공동 기금으로 갔다.", "No one behind it? The money went to the Saltmarsh Common Fund.")
+      : has("peaceful2") ? bi("배후가 없다고? 편지마다 S가 있다.", "No one behind it? Every letter is signed S.") : null
+  };
+  if (kind === 3) return {
+    head,
+    lines: [bi("잿돌 수도원: 실종 여행자 구조.", "Ashstone Monastery: missing travelers rescued."), bi("경위: 수도원 내부 문제. 소금여울과 무관.", "Cause: an internal monastery matter. Unrelated to Saltmarsh.")],
+    signer: seon,
+    rebut: has("f_addressee") ? bi("무관하다고? 편지의 수신인은 세온이다.", "Unrelated? The letters were addressed to Seon.")
+      : has("f_hand_match") ? bi("무관하다고? S의 글씨는 열쇠 꼬리표와 같다.", "Unrelated? S's hand matches the key tag.") : null
+  };
+  if (kind === 4) {
+    if (has("accuseSeon")) return {
+      head: bi(`소금여울 공식 기록 · 제${n}호 (정정)`, `Saltmarsh Official Record · No. ${n} (corrected)`),
+      lines: [bi("등대 사건의 주모자: 촌장 세온.", "Mastermind of the lighthouse affair: Chief Seon."), bi("떠돌이 모험가 {이름}: 생존.", "Wandering adventurer {name}: alive.")],
+      signer: bi("기록자: {이름}", "Recorded by: {name}"),
+      rebut: null,
+      stamp: bi("정정됨", "Corrected")
+    };
+    if (has("accuseBern")) return {
+      head,
+      lines: [bi("등대 사건의 주모자: 등대지기 베른(자백).", "Mastermind of the lighthouse affair: keeper Bern (confessed)."), bi("사건 종결.", "Case closed.")],
+      signer: seon,
+      rebut: bi("당신은 이 기록이 거짓임을 안다. 그리고 그대로 두었다.", "You know this record is a lie. And you let it stand.")
+    };
+    return {
+      head,
+      lines: [bi("등대 사건: 원인 불운. 사건 종결.", "Lighthouse affair: bad luck. Case closed."), bi("입회인: {이름}.", "Witnessed by: {name}.")],
+      signer: seon,
+      rebut: null,
+      stamp: bi("함께 서명함", "Co-signed")
+    };
+  }
+  return null;
+}
+// 공유용 평문 — 엔딩의 공식 기록과 반박을 그대로 옮긴다(이름 외 개인 정보 없음).
+function recordShareText(record, pc, lang) {
+  if (!record) return "";
+  const t = v => fmt(v[lang] || v.ko, pc);
+  const out = ["[" + t(record.head) + "]", ...record.lines.map(t), t(record.signer)];
+  if (record.stamp) out.push("<" + t(record.stamp) + ">");
+  if (record.rebut && t(record.rebut)) out.push(lang === "en" ? "In red ink: " + t(record.rebut) : "붉은 손글씨: " + t(record.rebut));
+  out.push("", lang === "en" ? "— Aduventure · rewrite your own record:" : "— 어두밴처 · 당신의 기록을 다시 써 보세요:", "https://ziddane11-oss.github.io/aduventure/");
+  return out.join("\n");
+}
+// 지난 회차 요약 — 새 기록 첫 화면에 "지난 기록의 당신은 …" 한 줄로 돌아온다.
+function runSummary(flags, no, died) {
+  return { no: no || RECORD_FIRST, died: !!died, keys: ["accuseSeon", "accuseBern", "dealSeon", "saved3", "chase3", "caughtRen", "keptLens", "signal", "peaceful", "believed"].filter(f => flags.includes(f)) };
+}
+function lastRunLine(sum) {
+  if (!sum) return null;
+  const has = f => sum.keys.includes(f);
+  const what = has("accuseSeon") ? bi("세온을 고발했다", "accused Seon")
+    : has("accuseBern") ? bi("베른에게 죄를 씌웠다", "let Bern take the blame")
+    : has("dealSeon") ? bi("세온과 거래했다", "made a deal with Seon")
+    : has("saved3") ? bi("증거 대신 배달부를 구했다", "saved the courier over the evidence")
+    : has("chase3") ? bi("배달부 대신 증거를 쫓았다", "chased the evidence over the courier")
+    : sum.died ? bi("기록대로 죽었다", "died, just as recorded")
+    : has("caughtRen") ? bi("렌을 붙잡고 렌즈를 잃었다", "caught Ren and lost the lens")
+    : has("keptLens") ? bi("렌즈를 붙잡고 렌을 떨어뜨렸다", "grabbed the lens and let Ren fall")
+    : has("signal") ? bi("쓰러졌다가 봉화를 올렸다", "fell, then lit a beacon")
+    : has("peaceful") ? bi("렌을 말로 돌려보냈다", "talked Ren down")
+    : null;
+  if (!what) return null;
+  return bi(`제${sum.no}호의 당신은 ${what.ko}. 이번 기록은?`, `In Record No. ${sum.no}, you ${what.en}. And this time?`);
+}
+
 /* ============================================================
    장면 비주얼 — 1장: 어둠이 걷히는 등대 / 2장: 안개 걷히는 부두
    ============================================================ */
@@ -3007,6 +3120,22 @@ function MonasteryScene({
     fill: "#5e8fb8",
     opacity: [0.14, 0.1, 0.07, 0.02][stage]
   }));
+}
+function RecordCard({ record, pc, lang, children }) {
+  if (!record) return null;
+  const t = v => fmt(v[lang] || v.ko, pc);
+  return React.createElement("div", {
+    className: "recordCard",
+    role: "group",
+    "aria-label": t(record.head)
+  }, React.createElement("div", { className: "recHead" }, t(record.head)), record.lines.map((l, i) => React.createElement("p", {
+    key: i,
+    className: "recLine"
+  }, t(l))), React.createElement("div", { className: "recSign" }, t(record.signer)), record.stamp && React.createElement("div", {
+    className: "recStamp"
+  }, t(record.stamp)), record.rebut && t(record.rebut) && React.createElement("div", {
+    className: "redhand"
+  }, t(record.rebut)), children);
 }
 function HealthMeter({ hp, maxHp, ui }) {
   const value = Math.max(0, Math.min(maxHp, hp));
@@ -3520,6 +3649,20 @@ const css = `
 .crpg .intent.hook { border-color:var(--bad); background:rgba(217,106,95,.12); }
 .crpg .intent.hook .intent-h { color:var(--bad); }
 .crpg .intent.feint { border-color:var(--accent); background:rgba(94,143,184,.1); }
+.crpg .titleArt.compact { max-height:17vh; width:100%; object-fit:cover; object-position:center 64%; }
+.crpg .recordCard { position:relative; margin:6px 0 14px; padding:16px 16px 14px; border-radius:4px; background:#e9e1cf; color:#2a2418; font-family:'Noto Serif KR', Georgia, serif; box-shadow:0 6px 18px rgba(0,0,0,.35); overflow-wrap:anywhere; }
+.crpg .recHead { font-size:12px; letter-spacing:.08em; color:#6b5d44; border-bottom:1px solid #b9a988; padding-bottom:6px; margin-bottom:8px; }
+.crpg .recLine { margin:4px 0; font-size:15px; line-height:1.6; }
+.crpg .recSign { margin-top:10px; font-size:12px; color:#6b5d44; text-align:right; }
+.crpg .recStamp { position:absolute; top:12px; right:12px; padding:2px 8px; border:2px solid #8a2e22; color:#8a2e22; font-weight:700; font-size:12px; transform:rotate(-6deg); opacity:.85; }
+.crpg .redhand { margin-top:10px; color:#b0281c; font-size:19px; font-weight:700; font-style:italic; transform:rotate(-2deg); animation:fadeIn 1.2s ease .9s both; }
+.crpg .shareRec { display:block; margin:12px 0 0 auto; padding:5px 10px; font-size:12px; border:1px solid #8a7a5a; border-radius:4px; background:transparent; color:#4a3f2c; cursor:pointer; }
+.crpg .opening .choices { margin-top:6px; }
+.crpg .choice.primaryChoice { border-color:var(--gold); }
+.crpg .lastRun { margin:0 0 10px; font-size:14px; color:#c9a35a; font-style:italic; }
+.crpg .caseSub { margin:-4px 0 8px; font-size:12px; opacity:.75; }
+.crpg details.archive { margin-top:18px; }
+.crpg details.archive > summary { cursor:pointer; font-size:13px; color:var(--gold); padding:6px 0; }
 .crpg .castRow { display:flex; flex-wrap:wrap; gap:6px; margin:0 0 12px; }
 .crpg .castChip { font-size:12px; padding:3px 9px; border:1px solid var(--line); border-radius:999px; background:rgba(255,255,255,.04); overflow-wrap:anywhere; }
 .crpg .tag.frag { border-color:#6aa3c9; color:#8fc3e6; }
@@ -3595,6 +3738,12 @@ function CRPG() {
   const [lang, setLang] = useState(() => store.get("aduventure_lang") || "ko");
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [caseOpen, setCaseOpen] = useState(false);
+  // 공식 기록: opening = 첫 화면에서 고른 태도(lie/believe), recordNo = 다음 회차의 기록 번호, runNo = 이번 회차
+  const [opening, setOpening] = useState(null);
+  const [recordNo, setRecordNo] = useState(() => store.get("aduventure_record_no") || RECORD_FIRST);
+  const [runNo, setRunNo] = useState(null);
+  const [lastRun, setLastRun] = useState(() => store.get("aduventure_lastrun"));
+  const [shared, setShared] = useState(null);
   const [met, setMet] = useState(() => store.get("aduventure_met") || []);
   const [reached, setReached] = useState([]);
   const startedRef = useRef(Date.now());
@@ -3754,6 +3903,7 @@ function CRPG() {
       breathLeft,
       ruleKey,
       tutSeen,
+      runNo: runNo || undefined,
       telemetry: telemetryRun ? {id: telemetryRun.id, seq: telemetryRun.seq} : undefined,
       savedAt: Date.now()
     };
@@ -3763,6 +3913,9 @@ function CRPG() {
   // 회차가 끝나면(엔딩·게임오버) 이어하기 기록을 비운다. 엔딩 도감(badges)은 별도로 영구 보관된다.
   useEffect(() => {
     if (pc && scene && (scene.ending || scene.gameover)) {
+      const sum = runSummary(flags, runNo, !!scene.gameover);
+      store.set("aduventure_lastrun", sum);
+      setLastRun(sum);
       store.remove(SAVE_KEY);
       setSavedGame(null);
     }
@@ -3846,7 +3999,11 @@ function CRPG() {
     const c = CLASSES[key];
     const run = newTelemetryRun(restartFrom.current);
     setTelemetryRun(run);
-    emitTelemetry("run_start", run, {scene_id: "intro", lang, rule: ruleKey, class: key, reason: restartFrom.current ? "restart" : "new", previous_run_id: restartFrom.current || undefined});
+    emitTelemetry("run_start", run, {scene_id: "intro", lang, rule: ruleKey, class: key, reason: restartFrom.current ? "restart" : "new", previous_run_id: restartFrom.current || undefined, opening: opening || undefined, record_no: recordNo});
+    setRunNo(recordNo);
+    store.set("aduventure_record_no", recordNo + 1);
+    setRecordNo(recordNo + 1);
+    setFlags(opening === "believe" ? ["believed"] : []);
     restartFrom.current = null;
     setPc({
       ...c,
@@ -3927,6 +4084,7 @@ function CRPG() {
       setFlags(f => [...f, ...gained.filter(x => !f.includes(x))]);
       for (const g of gained) {
         if (CLUES[g]) extra += (lang === "en" ? `\n\n✦ Clue found — ${tx(CLUES[g])}` : `\n\n✦ 단서 획득 — ${tx(CLUES[g])}`);
+        if (FRAGMENTS[g]) extra += (lang === "en" ? `\n\n✎ Rebuttal recorded — ${tx(FRAGMENTS[g].text)}` : `\n\n✎ 반박 기록 — ${tx(FRAGMENTS[g].text)}`);
       }
     }
     setLastResult({
@@ -4288,6 +4446,7 @@ function CRPG() {
       hp: p.maxHp
     }));else {
       setPc(null);
+      setOpening(null);
       store.remove(SAVE_KEY);
       setSavedGame(null);
     }
@@ -4302,6 +4461,7 @@ function CRPG() {
     setRuleKey(s.ruleKey || "srd20");
     setPc(s.pc);
     setFlags(s.flags || []);
+    setRunNo(s.runNo || null);
     setStats(s.stats || {
       rolls: 0,
       success: 0
@@ -4346,7 +4506,7 @@ function CRPG() {
     role: "dialog"
   }, React.createElement("div", {
     className: "fbCard"
-  }, React.createElement("h3", null, ui("caseTitle")), React.createElement("h4", null, ui("caseSuspects")), SUSPECTS.map(id => React.createElement("div", {
+  }, React.createElement("h3", null, ui("caseTitle")), React.createElement("p", { className: "caseSub" }, ui("caseSub")), React.createElement("h4", null, ui("caseSuspects")), SUSPECTS.map(id => React.createElement("div", {
     key: id,
     className: "suspect"
   }, React.createElement("span", { className: "suspectName" }, CAST[id].mark + " " + tx(CAST[id].name)), React.createElement("span", {
@@ -4413,7 +4573,7 @@ function CRPG() {
   }), ART_CREDIT[sceneKey] && /*#__PURE__*/React.createElement("div", {
     className: "artcredit"
   }, ART_CREDIT[sceneKey])) : !pc ? /*#__PURE__*/React.createElement("img", {
-    className: "titleArt",
+    className: "titleArt" + (opening ? "" : " compact"),
     src: TITLE_ART,
     alt: ui("titleAlt")
   }) : chapter === 3 ? /*#__PURE__*/React.createElement(MonasteryScene, {
@@ -4436,7 +4596,26 @@ function CRPG() {
       setTutOpen(false);
       setTutSeen(true);
     }
-  }, ui("rulesGot"))), !pc && /*#__PURE__*/React.createElement("div", {
+  }, ui("rulesGot"))), !pc && !opening && React.createElement("div", {
+    className: "scene opening"
+  }, React.createElement(RecordCard, {
+    record: officialRecord("opening", [], recordNo),
+    pc: null,
+    lang
+  }), lastRunLine(lastRun) && React.createElement("p", {
+    className: "lastRun"
+  }, tx(lastRunLine(lastRun))), React.createElement("div", {
+    className: "choices"
+  }, React.createElement("button", {
+    className: "choice primaryChoice",
+    onClick: () => setOpening("lie")
+  }, ui("recordLie")), React.createElement("button", {
+    className: "choice",
+    onClick: () => setOpening("believe")
+  }, ui("recordBelieve"))), savedGame && savedGame.pc && React.createElement("button", {
+    className: "continueBtn",
+    onClick: continueGame
+  }, lang === "en" ? "\u21BB Continue" : "\u21BB \uC774\uC5B4\uC11C \uD558\uAE30")), !pc && opening && /*#__PURE__*/React.createElement("div", {
     className: "scene"
   }, /*#__PURE__*/React.createElement("div", {
     className: "about"
@@ -4448,7 +4627,7 @@ function CRPG() {
     className: "cont-meta"
   }, (SCENES[savedGame.sceneKey]?.ch === 3 ? (lang === "en" ? "Ch.3" : "\uC81C3\uC7A5") : SCENES[savedGame.sceneKey]?.ch === 2 ? (lang === "en" ? "Ch.2" : "\uC81C2\uC7A5") : (lang === "en" ? "Ch.1" : "\uC81C1\uC7A5")) + " \xB7 " + savedGame.pc.name + " (" + tx(CLASSES[savedGame.pc.classKey] ? CLASSES[savedGame.pc.classKey].name : "\uC6A9\uC0AC") + ")")), /*#__PURE__*/React.createElement("label", {
     className: "nameLb"
-  }, lang === "en" ? "Your hero's name?" : "\uC6A9\uC0AC\uC758 \uC774\uB984\uC740?"), /*#__PURE__*/React.createElement("input", {
+  }, ui("nameRecord")), /*#__PURE__*/React.createElement("input", {
     className: "nameIn",
     value: nameInput,
     maxLength: 12,
@@ -4469,7 +4648,9 @@ function CRPG() {
     className: "ci"
   }, c.icon), /*#__PURE__*/React.createElement("h2", null, tx(c.name)), /*#__PURE__*/React.createElement("p", null, tx(c.blurb)), /*#__PURE__*/React.createElement("div", {
     className: "st"
-  }, "HP ", c.maxHp, " \xB7 AC ", c.ac, " \xB7 ", tx(c.weapon.name), " \xB7 ", ui("special"), " ", tx(SPECIALS[k].name), /*#__PURE__*/React.createElement("br", null), ui("proficient"), " ", c.proficiencies.map(s => tx(SKILL_NAMES[s])).join(" · "))))), React.createElement(StatsHelp, { ui }), /*#__PURE__*/React.createElement("div", {
+  }, "HP ", c.maxHp, " \xB7 AC ", c.ac, " \xB7 ", tx(c.weapon.name), " \xB7 ", ui("special"), " ", tx(SPECIALS[k].name), /*#__PURE__*/React.createElement("br", null), ui("proficient"), " ", c.proficiencies.map(s => tx(SKILL_NAMES[s])).join(" · "))))), React.createElement(StatsHelp, { ui }), React.createElement("details", {
+    className: "archive"
+  }, React.createElement("summary", null, ui("archive")), /*#__PURE__*/React.createElement("div", {
     className: "daily" + (dailyDone ? " done" : "")
   }, /*#__PURE__*/React.createElement("span", {
     className: "daily-h"
@@ -4507,7 +4688,7 @@ function CRPG() {
     className: "teaser"
   }, /*#__PURE__*/React.createElement("span", {
     className: "badge on new"
-  }, ui("teaserTitle")), /*#__PURE__*/React.createElement("p", null, tx(TEASER)))), pc && /*#__PURE__*/React.createElement("div", {
+  }, ui("teaserTitle")), /*#__PURE__*/React.createElement("p", null, tx(TEASER))))), pc && /*#__PURE__*/React.createElement("div", {
     className: "sheet"
   }, /*#__PURE__*/React.createElement("span", {
     className: "nm"
@@ -4592,7 +4773,7 @@ function CRPG() {
     key: sceneKey
   }, (sceneKey === "intro" || sceneKey === "intro2" || sceneKey === "intro3") && /*#__PURE__*/React.createElement("div", {
     className: "chBanner"
-  }, "\u2014 ", chapterTitle, " \u2014"), (SCENE_CAST[sceneKey] || []).length > 0 && React.createElement("div", {
+  }, "\u2014 ", chapterTitle, sceneKey === "intro" && runNo ? " \u00B7 " + ui("recNo", { n: runNo }) : "", " \u2014"), (SCENE_CAST[sceneKey] || []).length > 0 && React.createElement("div", {
     className: "castRow"
   }, SCENE_CAST[sceneKey].map(id => React.createElement("span", {
     key: id,
@@ -4723,7 +4904,21 @@ function CRPG() {
     className: "scene epi"
   }, /*#__PURE__*/React.createElement("p", {
     className: "narr"
-  }, fmt(tx(scene.ending === 1 ? buildEnding1(flags) : scene.ending === 2 ? buildEnding2(flags) : scene.ending === 4 ? buildEnding4(flags) : buildEnding3(flags)), pc)), React.createElement("div", {
+  }, fmt(tx(scene.ending === 1 ? buildEnding1(flags) : scene.ending === 2 ? buildEnding2(flags) : scene.ending === 4 ? buildEnding4(flags) : buildEnding3(flags)), pc)), React.createElement(RecordCard, {
+    record: officialRecord(scene.ending, flags, runNo),
+    pc,
+    lang
+  }, React.createElement("button", {
+    className: "shareRec",
+    onClick: () => {
+      const text = recordShareText(officialRecord(scene.ending, flags, runNo), pc, lang);
+      try {
+        navigator.clipboard.writeText(text).then(() => setShared(sceneKey), () => setShared("fail"));
+      } catch (e) {
+        setShared("fail");
+      }
+    }
+  }, shared === sceneKey ? ui("shareDone") : shared === "fail" ? ui("shareFail") : ui("shareRec"))), React.createElement("div", {
     className: "ledger"
   }, React.createElement("h4", null, ui("ledgerH")), chapterLedger(scene.ending, flags).map((r, i) => React.createElement("div", {
     key: "ledger" + i,
@@ -4784,10 +4979,14 @@ function CRPG() {
     className: "scene epi"
   }, /*#__PURE__*/React.createElement("p", {
     className: "narr"
-  }, ui("gameover")), /*#__PURE__*/React.createElement("button", {
+  }, ui("gameover")), React.createElement(RecordCard, {
+    record: officialRecord("gameover", flags, runNo),
+    pc,
+    lang
+  }), /*#__PURE__*/React.createElement("button", {
     className: "restart primary",
     onClick: () => restart()
-  }, ui("restart"))), /*#__PURE__*/React.createElement("footer", null, ui("footer1"), /*#__PURE__*/React.createElement("br", null), ui("footer2"), /*#__PURE__*/React.createElement("br", null), ui("footer3"), BUILD, /*#__PURE__*/React.createElement("br", null), ui("footer4"))));
+  }, ui("rewrite"))), /*#__PURE__*/React.createElement("footer", null, ui("footer1"), /*#__PURE__*/React.createElement("br", null), ui("footer2"), /*#__PURE__*/React.createElement("br", null), ui("footer3"), BUILD, /*#__PURE__*/React.createElement("br", null), ui("footer4"))));
 }
 ReactDOM.createRoot(document.getElementById('root')).render(/*#__PURE__*/React.createElement(CRPG, null));
 </script>
