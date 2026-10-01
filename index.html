@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>어두밴처 v0.7.3-pt11</title>
+<title>어두밴처 v0.7.3-pt12</title>
 <style>body{margin:0;background:#0e1420}</style>
 </head>
 <body>
@@ -318,7 +318,7 @@ function(a,b,c){if(!Vd(b))throw Error(n(200));return Wd(null,a,b,!1,c)};Q.unmoun
    GAS 피드백 파이프 — v0.7 재구현 (제안/신호/텔레메트리)
    ============================================================ */
 /* 플레이테스트 빌드 태그 — 테스트 중 버전 구분용. 수정할 때마다 뒤 번호를 올린다. */
-const BUILD = "v0.7.3-pt11";
+const BUILD = "v0.7.3-pt12";
 const GAS_URL = "https://script.google.com/macros/s/AKfycbxFx_m5rhCZmqGoy3JcUUNqEgiObMWNHe9hx-LnZrhzIkfwa9-yJGBWP0lVulptnNQeCQ/exec";
 function gasPost(payload, options = {}) {
   return fetch(GAS_URL, {
@@ -463,41 +463,12 @@ function _ctx() {
 }
 const SFX = {
   enabled: false,
-  _rain: null,
   toggle() {
     this.enabled = !this.enabled;
     try {
-      this.enabled ? this._rainOn() : this._rainOff();
+      this.enabled ? BGM.start() : BGM.stop();
     } catch (e) {}
     return this.enabled;
-  },
-  _rainOn() {
-    const c = _ctx();
-    const len = c.sampleRate * 2;
-    const buf = c.createBuffer(1, len, c.sampleRate);
-    const ch = buf.getChannelData(0);
-    for (let i = 0; i < len; i++) ch[i] = Math.random() * 2 - 1;
-    const src = c.createBufferSource();
-    src.buffer = buf;
-    src.loop = true;
-    const f = c.createBiquadFilter();
-    f.type = "lowpass";
-    f.frequency.value = 800;
-    const g = c.createGain();
-    g.gain.value = 0.045;
-    src.connect(f);
-    f.connect(g);
-    g.connect(c.destination);
-    src.start();
-    this._rain = src;
-  },
-  _rainOff() {
-    if (this._rain) {
-      try {
-        this._rain.stop();
-      } catch (e) {}
-      this._rain = null;
-    }
   },
   _tone(freq, t0, dur, vol, type) {
     const c = _ctx();
@@ -540,6 +511,138 @@ const SFX = {
         this._tone(1320, t, 0.9, 0.03);
         this._tone(440, t, 1.6, 0.05);
       });
+    } catch (e) {}
+  }
+};
+/* ---------- 배경음(BGM) — 음원 파일 없이 WebAudio로 만든다. 게임 상태에 따라 실시간으로 변한다 ----------
+   bgmMood는 순수 함수(테스트 대상), BGM은 그 결과를 소리로 옮기는 층이다. 소리 토글(🔇/🔊)을 따른다. */
+const BGM_THEMES = {
+  1: { notes: [55, 82.41], wave: "triangle", noise: 700, noiseGain: 0.05 }, // 폭풍 속 등대 — 빗소리 + 낮은 A
+  2: { notes: [73.42, 110], wave: "triangle", noise: 420, noiseGain: 0.035 }, // 안개 부두 — 파도 + D
+  3: { notes: [65.41, 98, 130.81], wave: "sine", noise: 260, noiseGain: 0.015 } // 빈 수도원 — 오르간 같은 C 화음
+};
+// 숨을 멈추는 장면: 고르기 전에 소리를 비워 선택의 무게를 키운다.
+const BGM_HUSH = ["railing", "rescue", "signal"];
+function bgmMood({ sceneKey, chapter, hp, maxHp, combat, enemyIntent, enemyDone, playerDown, ending, gameover }) {
+  const theme = BGM_THEMES[chapter] ? chapter : 1;
+  if (gameover) return { theme, drone: 0, rain: 0.4, tension: 0, pulse: 0 };
+  const hush = BGM_HUSH.includes(sceneKey);
+  const fighting = !!combat && !enemyDone && !playerDown;
+  const ratio = maxHp ? hp / maxHp : 1;
+  return {
+    theme,
+    drone: hush ? 0 : ending ? 0.6 : 1,
+    rain: hush ? 0.35 : 1,
+    // 렌의 '강타' 예고에는 저음이 끝까지 차오른다. 그 외 전투는 절반.
+    tension: fighting ? (enemyIntent === "hook" ? 1 : 0.45) : 0,
+    // 체력이 줄면 심장박동이 빨라진다(분당 박동 수, 0이면 없음).
+    pulse: hp > 0 && ratio <= 1 / 3 ? 104 : fighting && ratio <= 1 / 2 ? 76 : 0
+  };
+}
+const BGM = {
+  _nodes: null,
+  _theme: null,
+  _beat: null,
+  _bpm: 0,
+  start() {
+    if (this._nodes) return;
+    const c = _ctx();
+    const master = c.createGain();
+    master.gain.value = 0.9;
+    master.connect(c.destination);
+    const len = c.sampleRate * 2;
+    const buf = c.createBuffer(1, len, c.sampleRate);
+    const ch = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) ch[i] = Math.random() * 2 - 1;
+    const noise = c.createBufferSource();
+    noise.buffer = buf;
+    noise.loop = true;
+    const noiseFilter = c.createBiquadFilter();
+    noiseFilter.type = "lowpass";
+    const noiseGain = c.createGain();
+    noiseGain.gain.value = 0;
+    noise.connect(noiseFilter);
+    noiseFilter.connect(noiseGain);
+    noiseGain.connect(master);
+    noise.start();
+    const droneGain = c.createGain();
+    droneGain.gain.value = 0;
+    const droneFilter = c.createBiquadFilter();
+    droneFilter.type = "lowpass";
+    droneFilter.frequency.value = 420;
+    droneFilter.connect(droneGain);
+    droneGain.connect(master);
+    const tension = c.createOscillator();
+    tension.type = "sine";
+    tension.frequency.value = 41;
+    const tensionGain = c.createGain();
+    tensionGain.gain.value = 0;
+    tension.connect(tensionGain);
+    tensionGain.connect(master);
+    tension.start();
+    this._nodes = { c, master, noise, noiseFilter, noiseGain, droneFilter, droneGain, oscs: [], tension, tensionGain };
+  },
+  stop() {
+    const n = this._nodes;
+    this._setPulse(0);
+    if (!n) return;
+    this._nodes = null;
+    this._theme = null;
+    try {
+      n.master.gain.setTargetAtTime(0, n.c.currentTime, 0.2);
+      setTimeout(() => {
+        [n.noise, n.tension, ...n.oscs].forEach(o => {
+          try { o.stop(); } catch (e) {}
+        });
+        n.master.disconnect();
+      }, 900);
+    } catch (e) {}
+  },
+  _setTheme(id) {
+    const n = this._nodes;
+    if (this._theme === id) return;
+    this._theme = id;
+    const t = BGM_THEMES[id], now = n.c.currentTime;
+    n.oscs.forEach(o => {
+      try { o.stop(now + 1.5); } catch (e) {}
+    });
+    n.oscs = t.notes.flatMap(f => [f, f * 1.004].map(freq => {
+      const o = n.c.createOscillator();
+      o.type = t.wave;
+      o.frequency.value = freq;
+      o.connect(n.droneFilter);
+      o.start();
+      return o;
+    }));
+    n.noiseFilter.frequency.setTargetAtTime(t.noise, now, 0.8);
+  },
+  _setPulse(bpm) {
+    if (bpm === this._bpm) return;
+    this._bpm = bpm;
+    if (this._beat !== null) clearInterval(this._beat);
+    this._beat = null;
+    if (!bpm) return;
+    const thump = () => {
+      if (!this._nodes) return;
+      try {
+        SFX._tone(52, 0, 0.16, 0.12, "sine");
+        SFX._tone(46, 0.22, 0.2, 0.08, "sine");
+      } catch (e) {}
+    };
+    thump();
+    this._beat = setInterval(thump, Math.round(60000 / bpm));
+  },
+  apply(mood) {
+    const n = this._nodes;
+    if (!n || !mood) return;
+    try {
+      this._setTheme(mood.theme);
+      const t = BGM_THEMES[mood.theme], now = n.c.currentTime;
+      n.droneGain.gain.setTargetAtTime(0.03 * mood.drone, now, mood.drone ? 1.2 : 0.25);
+      n.noiseGain.gain.setTargetAtTime(t.noiseGain * mood.rain, now, 0.6);
+      n.tension.frequency.setTargetAtTime(41 + 14 * mood.tension, now, 0.9);
+      n.tensionGain.gain.setTargetAtTime(0.06 * mood.tension, now, mood.tension ? 0.9 : 0.3);
+      this._setPulse(mood.pulse);
     } catch (e) {}
   }
 };
@@ -665,7 +768,8 @@ const UI = {
   jumpDc: { ko: "목표값", en: "Target" },
   brand: { ko: "어두밴처", en: "Aduventure" },
   trapTag: { ko: "✦ 입구에서 본 함정 · 1회 · 철사를 써 버린다", en: "✦ trap you spotted at the entrance · once · uses up the wire" },
-  ledgerH: { ko: "이번 장에서 지킨 것과 잃은 것", en: "What you kept and lost this chapter" }
+  ledgerH: { ko: "이번 장에서 지킨 것과 잃은 것", en: "What you kept and lost this chapter" },
+  stakeLabel: { ko: "걸린 것 · ", en: "At stake · " }
 };
 const SRD20 = {
   scaleEffect: value => Math.max(0, value),
@@ -1223,6 +1327,7 @@ const SCENES = {
         ko: "[전투] 무기를 뽑는다",
         en: "[Fight] Draw your weapon"
       },
+      stake: { ko: "이기면 렌과 렌즈 중 하나만 지킬 수 있다", en: "Win, and you can save only Ren or the lens" },
       goto: "combat"
     }]
   },
@@ -1258,6 +1363,7 @@ const SCENES = {
         ko: "렌의 손목을 잡는다 — 사람을 택한다",
         en: "Grab Ren's wrist — choose the man"
       },
+      stake: { ko: "렌즈에 금이 간다 · 2장에서 렌이 빚을 갚는다", en: "The lens cracks · Ren repays you in Ch.2" },
       result: {
         text: {
           ko: `렌을 끌어올린다. 아래에서 쨍 — 렌즈가 돌바닥에 부딪혔다.\n\n렌이 숨을 몰아쉰다. "…왜." 대답 대신 손을 놓는다. 렌은 이번엔 뛰지 않고 걸어서 나간다.\n\n주워 온 렌즈에 금이 갔다. 불은 켜지겠지만 — 전처럼 멀리 닿진 않을 것이다.`,
@@ -1271,6 +1377,7 @@ const SCENES = {
         ko: "렌즈 자루를 잡는다 — 등대를 택한다",
         en: "Grab the lens sack — choose the lighthouse"
       },
+      stake: { ko: "렌즈는 온전하다 · 렌은 떨어지고 원한을 품는다", en: "The lens stays whole · Ren falls and holds a grudge" },
       result: {
         text: {
           ko: `자루를 낚아챈다. 렌의 손가락이 난간에서 미끄러진다 — 둔탁한 소리.\n\n아래층에서 신음이 들리더니, 절뚝이는 발소리가 빗속으로 멀어진다.\n\n렌즈는 무사하다. 렌의 눈빛은, 아마 아닐 것이다.`,
@@ -1379,6 +1486,7 @@ const SCENES = {
         ko: "[철사] 계단의 철사를 걷어 와 톱니를 축에 동여맨다",
         en: "[Wire] Fetch the stair wire and lash the gear to its axle"
       },
+      stake: { ko: "판정 없이 확실하지만, 완전 수리는 아니다", en: "Certain, no roll — but not a full repair" },
       result: {
         text: {
           ko: `팽팽하던 함정 철사를 풀어 와 톱니를 축에 여러 번 감는다. 감다 보니 쐐기 홈의 줄질 자국이 눈에 들어온다 — 빠진 게 아니라 빼낸 것이다.\n\n기관이 느리지만 꾸준히 돈다. 불이 켜진다. 철사가 버티는 동안은.`,
@@ -2008,6 +2116,7 @@ const SCENES = {
         ko: "사람을 택한다 — 배달부를 부축해 먼저 나간다",
         en: "Choose the person — help the courier out first"
       },
+      stake: { ko: "증거 편지는 대부분 물에 녹는다", en: "Most of the evidence letters will dissolve" },
       goto: "ending3",
       flagDirect: "saved3"
     }, {
@@ -2015,6 +2124,7 @@ const SCENES = {
         ko: "증거를 택한다 — 떠내려가는 편지를 쫓는다",
         en: "Choose the evidence — chase the letters being swept away"
       },
+      stake: { ko: "배달부는 혼자 기어 나와야 한다", en: "The courier must crawl out on his own" },
       goto: "ending3",
       flagDirect: "chase3"
     }]
@@ -3228,6 +3338,7 @@ const css = `
 .crpg .intent.hook { border-color:var(--bad); background:rgba(217,106,95,.12); }
 .crpg .intent.hook .intent-h { color:var(--bad); }
 .crpg .intent.feint { border-color:var(--accent); background:rgba(94,143,184,.1); }
+.crpg .choice .stake { display:block; margin-top:5px; font-size:12px; line-height:1.4; color:#c9a35a; opacity:.9; overflow-wrap:anywhere; }
 .crpg .ledger { margin:12px 0 6px; padding:10px 13px; border:1px solid var(--line); border-radius:8px; background:rgba(255,255,255,.03); }
 .crpg .ledger h4 { margin:0 0 6px; font-size:13px; color:var(--gold); }
 .crpg .ledgerRow { display:flex; gap:8px; align-items:flex-start; padding:3px 0; font-size:13px; line-height:1.45; overflow-wrap:anywhere; }
@@ -3408,6 +3519,16 @@ function CRPG() {
   useEffect(() => {
     if (sceneKey === "ending3" && flags.includes("keeper")) SFX.bell();
   }, [sceneKey]);
+  // 배경음은 소리를 켠 동안 장면·체력·렌의 예고에 따라 바뀐다.
+  useEffect(() => {
+    if (!sfxOn || !pc) return;
+    BGM.apply(bgmMood({
+      sceneKey, chapter, hp: pc.hp, maxHp: pc.maxHp,
+      combat: !!scene?.combat, enemyIntent: scene?.enemy === "looter" ? enemyIntent : null,
+      enemyDone: !!enemy?.done, playerDown: !!enemy?.playerDown,
+      ending: !!scene?.ending, gameover: !!scene?.gameover
+    }));
+  }, [sfxOn, sceneKey, chapter, pc?.hp, pc?.maxHp, enemyIntent, enemy?.done, enemy?.playerDown]);
   // 자동 저장 — 안정적인 서사 장면에서만 진행 상태를 보관한다.
   // (전투·판정 중·엔딩·게임오버·첫 인트로는 제외 → 복원 시 항상 선택지 화면으로 복귀)
   useEffect(() => {
@@ -4263,7 +4384,9 @@ function CRPG() {
     className: "tag artifact"
   }, "\u25C8 " + tx(ARTIFACTS[ch.artifactReq] ? ARTIFACTS[ch.artifactReq].name : "\uC720\uBB3C")), ch.echo && /*#__PURE__*/React.createElement("span", {
     className: "tag echo"
-  }, "\uD83E\uDD8B " + tx(ch.echo)))), sceneKey === "intro" && ch1Cleared && /*#__PURE__*/React.createElement("button", {
+  }, "\uD83E\uDD8B " + tx(ch.echo)), ch.stake && React.createElement("span", {
+    className: "stake"
+  }, ui("stakeLabel"), tx(ch.stake)))), sceneKey === "intro" && ch1Cleared && /*#__PURE__*/React.createElement("button", {
     className: "choice",
     onClick: () => { if (recordDecision("skip:ch2")) goto("intro2"); }
   }, lang === "en" ? "(Ch.1 cleared) Start from Ch.2 \u2192" : "(1\uC7A5 \uD074\uB9AC\uC5B4 \uAE30\uB85D \uC788\uC74C) 2\uC7A5\uBD80\uD130 \uC2DC\uC791\uD55C\uB2E4 \u2192"), sceneKey === "intro" && badges.some(b => b.startsWith("2")) && /*#__PURE__*/React.createElement("button", {
