@@ -6,7 +6,7 @@
 
 **공개 주소:** https://ziddane11-oss.github.io/aduventure/
 
-새 세션은 [스팀 로드맵](docs/roadmap-steam.md)부터 읽는다. 이 변경의 빌드는 `v0.7.3-pt26`이다. 후보 브랜치의 코드가 공개 주소에 자동으로 배포되는 것은 아니다. 실제 배포 여부는 게임 헤더의 태그로 확인한다. 인물 초상 초안은 [pt26 작업 기록](docs/playtest-pt26.md), 휴대폰 한 손 플레이(한 줄 막대·자동 위치)는 [pt25 작업 기록](docs/playtest-pt25.md), 몰입 패치(흑백·붉은 잉크·문단 번짐·초상 자리)는 [pt24 작업 기록](docs/playtest-pt24.md), 덜어내기(꼬리표 하나·숫자 숨김·회차별 공개)는 [pt23 작업 기록](docs/playtest-pt23.md), 사건 2 「붉은 손글씨」 1장은 [pt22 작업 기록](docs/playtest-pt22.md), 해 지기 전 두 곳(시간 예산 탐문)은 [pt21 작업 기록](docs/playtest-pt21.md), 흉터·오판과 재심은 [pt20 작업 기록](docs/playtest-pt20.md), 직업마다 다른 길은 [pt19 작업 기록](docs/playtest-pt19.md), 지난 회차에 간 길·안 가 본 길 표시는 [pt18 작업 기록](docs/playtest-pt18.md), 붉은 쪽지·판결이 바꾸는 첫 화면은 [pt17 작업 기록](docs/playtest-pt17.md), 2·3장 서사 결투는 [pt16 작업 기록](docs/playtest-pt16.md), 1장 서사 결투·갈림길·위치 카드·효과음은 [pt15 작업 기록](docs/playtest-pt15.md), 첫 화면의 공식 기록과 회차 번호는 [pt14 작업 기록](docs/playtest-pt14.md), 회차를 넘는 미스터리·사건 기록장·에필로그는 [pt13 작업 기록](docs/playtest-pt13.md), 배경음과 선택 직전 예고는 [pt12 작업 기록](docs/playtest-pt12.md), 1장의 결과·패배 후 경로는 [pt11 작업 기록](docs/playtest-pt11.md), 규칙별 피해와 전투 검증은 [pt10 작업 기록](docs/playtest-pt10.md), 행동 기록은 [pt9 작업 기록](docs/playtest-pt9.md)을 참고한다.
+새 세션은 [스팀 로드맵](docs/roadmap-steam.md)부터 읽는다. 이 변경의 빌드는 `v0.7.3-pt27`이다. 후보 브랜치의 코드가 공개 주소에 자동으로 배포되는 것은 아니다. 실제 배포 여부는 게임 헤더의 태그로 확인한다. 재미 묶음(기록 반박·의뢰·결투 시간 제한·선택 비율·인물 대사)은 [pt27 작업 기록](docs/playtest-pt27.md), 인물 초상 초안은 [pt26 작업 기록](docs/playtest-pt26.md), 휴대폰 한 손 플레이(한 줄 막대·자동 위치)는 [pt25 작업 기록](docs/playtest-pt25.md), 몰입 패치(흑백·붉은 잉크·문단 번짐·초상 자리)는 [pt24 작업 기록](docs/playtest-pt24.md), 덜어내기(꼬리표 하나·숫자 숨김·회차별 공개)는 [pt23 작업 기록](docs/playtest-pt23.md), 사건 2 「붉은 손글씨」 1장은 [pt22 작업 기록](docs/playtest-pt22.md), 해 지기 전 두 곳(시간 예산 탐문)은 [pt21 작업 기록](docs/playtest-pt21.md), 흉터·오판과 재심은 [pt20 작업 기록](docs/playtest-pt20.md), 직업마다 다른 길은 [pt19 작업 기록](docs/playtest-pt19.md), 지난 회차에 간 길·안 가 본 길 표시는 [pt18 작업 기록](docs/playtest-pt18.md), 붉은 쪽지·판결이 바꾸는 첫 화면은 [pt17 작업 기록](docs/playtest-pt17.md), 2·3장 서사 결투는 [pt16 작업 기록](docs/playtest-pt16.md), 1장 서사 결투·갈림길·위치 카드·효과음은 [pt15 작업 기록](docs/playtest-pt15.md), 첫 화면의 공식 기록과 회차 번호는 [pt14 작업 기록](docs/playtest-pt14.md), 회차를 넘는 미스터리·사건 기록장·에필로그는 [pt13 작업 기록](docs/playtest-pt13.md), 배경음과 선택 직전 예고는 [pt12 작업 기록](docs/playtest-pt12.md), 1장의 결과·패배 후 경로는 [pt11 작업 기록](docs/playtest-pt11.md), 규칙별 피해와 전투 검증은 [pt10 작업 기록](docs/playtest-pt10.md), 행동 기록은 [pt9 작업 기록](docs/playtest-pt9.md)을 참고한다.
 
 ## 로컬 실행과 검증
 
@@ -14,7 +14,7 @@
 python3 -m http.server 8080
 ```
 
-브라우저에서 `http://localhost:8080/` — 빌드 헤더는 `v0.7.3-pt26`.
+브라우저에서 `http://localhost:8080/` — 빌드 헤더는 `v0.7.3-pt27`.
 
 Node.js 18 이상에서 네트워크 연결 없이 계산·렌더 입력 검증:
 

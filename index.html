@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>어두밴처 v0.7.3-pt26</title>
+<title>어두밴처 v0.7.3-pt27</title>
 <style>body{margin:0;background:#0e1420}</style>
 </head>
 <body>
@@ -318,7 +318,7 @@ function(a,b,c){if(!Vd(b))throw Error(n(200));return Wd(null,a,b,!1,c)};Q.unmoun
    GAS 피드백 파이프 — v0.7 재구현 (제안/신호/텔레메트리)
    ============================================================ */
 /* 플레이테스트 빌드 태그 — 테스트 중 버전 구분용. 수정할 때마다 뒤 번호를 올린다. */
-const BUILD = "v0.7.3-pt26";
+const BUILD = "v0.7.3-pt27";
 const GAS_URL = "https://script.google.com/macros/s/AKfycbxFx_m5rhCZmqGoy3JcUUNqEgiObMWNHe9hx-LnZrhzIkfwa9-yJGBWP0lVulptnNQeCQ/exec";
 function gasPost(payload, options = {}) {
   return fetch(GAS_URL, {
@@ -845,11 +845,31 @@ const UI = {
   pathAllWalked: { ko: "이 갈림길의 길은 모두 걸어 봤다.", en: "You have walked every road from here." },
   pathLeft: { ko: "가 보지 않은 갈림길: {n}곳", en: "Crossroads with a road not taken: {n}" },
   scarTag: { ko: "흉터 {d}", en: "scar {d}" },
+  objH: { ko: "✒ 이의 있음", en: "✒ Objection" },
+  goalsH: { ko: "이번 기록의 의뢰", en: "This record's commission" },
+  goalsDone: { ko: "의뢰 {n}/3 완수", en: "Commission {n}/3 done" },
+  objStart: { ko: "✒ 이의 있음 — 거짓 문장을 짚는다", en: "✒ Objection — point at the lie" },
+  objPickLine: { ko: "어느 줄이 거짓인가? (기회는 한 번)", en: "Which line is the lie? (One chance)" },
+  objPickEvidence: { ko: "무엇으로 뒤집을 것인가?", en: "What will you overturn it with?" },
+  objNoEvidence: { ko: "내밀 증거가 없다. 다음 기록에서 더 모아 오자.", en: "You have nothing to lay down. Gather more next record." },
+  objWithdraw: { ko: "물러선다", en: "Back down" },
+  objWon: { ko: "붉은 잉크가 그 줄을 긋는다 — '{e}'. 이 한 장이면 충분하다. (다음 장 운명 주사위 +1)", en: "Red ink strikes the line — '{e}'. One page is enough. (+1 fate die next chapter)" },
+  objWrongLine: { ko: "그 줄은 사실이다. 세온이 찻잔을 내려놓는다. \"기록관은 증거로 말하는 법이지.\" 기록이 확정된다.", en: "That line is true. Seon sets down his cup. \"An archivist speaks with evidence.\" The record stands." },
+  objWrongEvidence: { ko: "그건 이 줄을 뒤집지 못한다. 세온의 미소가 조금 더 반듯해진다. 기록이 확정된다.", en: "That doesn't overturn this line. Seon's smile grows a little straighter. The record stands." },
+  objStamp: { ko: "정정", en: "Corrected" },
+  objSealed: { ko: "확정", en: "Sealed" },
   diffEasy: { ko: "쉬움", en: "easy" },
   diffEven: { ko: "반반", en: "even odds" },
   diffHard: { ko: "어려움", en: "hard" },
   numbersOn: { ko: "숫자 보기 (확률·능력치·규칙)", en: "Show numbers (odds, stats, rules)" },
   numbersOff: { ko: "숫자 숨기기", en: "Hide numbers" },
+  shareSame: { ko: "다른 기록관의 {n}%도 이 길을 택했다.", en: "{n}% of other recorders took this road too." },
+  shareRare: { ko: "드문 길 — 다른 기록관의 {n}%만 이 길로 갔다.", en: "A rare road — only {n}% of other recorders came this way." },
+  timerLeft: { ko: "⏳ 망설일 시간 {n}초", en: "⏳ {n}s before you falter" },
+  timerOff: { ko: "⏸ 시간 제한 끄기", en: "⏸ Turn the clock off" },
+  timerOffNote: { ko: "시간 제한 꺼짐 — ", en: "Clock off — " },
+  timerOn: { ko: "▶ 켜기", en: "▶ Turn it on" },
+  timerHesitate: { ko: "— 망설이는 사이, 상대가 먼저 움직였다. —", en: "— You hesitated, and they moved first. —" },
   retrialNeed: { ko: "결정적 단서 {n}/{t}", en: "decisive fragments {n}/{t}" },
   wrongH: { ko: "⚖ 오판 기록", en: "⚖ Wrongful verdict" },
   wrongHint: { ko: "재심하려면 결정적 단서 두 개(편지의 수신인, 열쇠 꼬리표)가 모두 필요하다.", en: "A retrial needs both decisive fragments (the letters' addressee, the key tag)." },
@@ -4319,6 +4339,7 @@ const CASE_NEED = 4;
 const SCAR_MAX = 2;
 // 장치는 한 번에 하나씩 드러난다: 2번째 기록 발자국, 3번째 흉터, 4번째 붉은 쪽지.
 const UNLOCK_AT = { paths: 1, scars: 2, notes: 3 };
+const ui_bi = k => UI[k];
 const UNLOCK_LINES = {
   1: bi("이번 기록부터 — 발자국. 지난번에 간 길은 흐리게, 안 가 본 길은 금색으로 보인다.", "From this record on — footprints. Roads you took last time fade; roads not taken glow gold."),
   2: bi("이번 기록부터 — 흉터. 실패한 판정은 흉터로 남아, 다음 기록에서 그만큼 쉬워진다.", "From this record on — scars. A failed check leaves a scar, and gets easier in your next record."),
@@ -4380,6 +4401,9 @@ const SCENE_DOING = {
 // 장면 분위기: 싸움(붉게) / 정적(어둡게) / 결말(밝게)
 const DUEL_SCENES = ["duel1", "duel2", "scully1", "scully2", "monk1", "monk2", "combat", "combat2", "combat3"];
 // 서사 결투의 긴장 저음: 첫 박 0.8, 마지막 박 1
+// 결투의 마지막 수에만 시간 제한(끌 수 있음). 시간이 다 되면 첫 판정 선택지의 실패로 흘러간다.
+const TIMED_SCENES = ["duel2", "scully2", "monk2"];
+const TIMER_SEC = 12;
 const DUEL_TENSION = { duel1: 0.8, duel2: 1, scully1: 0.8, scully2: 1, monk1: 0.8, monk2: 1 };
 function stageMood(sceneKey, scene) {
   if (DUEL_SCENES.includes(sceneKey)) return "danger";
@@ -4418,6 +4442,85 @@ const SCENE_CAST = {
   intro2: ["bern"], wharfRen: ["ren"], wharfLens: ["ren"], confront: ["scully"], scully1: ["scully"], scully2: ["scully"], monk1: ["grey", "pip"], monk2: ["grey"],
   belltower: ["odo"], undercroft: ["pip", "grey"], rescue: ["pip"], accuse: ["seon", "bern"]
 };
+// 인물의 맛 — 장면마다 그 사람다운 한마디. 기록 번호로 골라 판마다 다른 말이 나온다(req/not: 플래그 조건).
+const BANTER = {
+  intro: [
+    { who: "seon", text: bi("차는 식기 전에 드시게. 기록은 식어도 괜찮지만.", "Drink your tea before it cools. A record can go cold; tea shouldn't.") },
+    { who: "seon", text: bi("기록관이 늘 같은 얼굴이면 좋겠군. 사람이 바뀌면 문장이 흔들리거든.", "I'd prefer the same recorder every time. New hands make the sentences wobble.") },
+    { who: "seon", text: bi("지난 기록이 마음에 안 들었나? 다들 처음엔 그렇지.", "Didn't care for the last record? Nobody does, at first."), req: "retrial" }
+  ],
+  stairs: [
+    { who: "ren", text: bi("계단 세면서 올라오는 놈은 처음 보네. 위에서 기다리지.", "Never met anyone who counts the stairs. I'll wait up top.") },
+    { who: "ren", text: bi("천천히 와. 난 급할 거 없어 — 자루는 급하지만.", "Take your time. I'm in no hurry — the sack is.") }
+  ],
+  duel1: [
+    { who: "ren", text: bi("갈고리는 정직해. 거는 데만 쓰거든.", "A hook is honest. It only ever does one thing.") },
+    { who: "ren", text: bi("기록관이 칼을 든다고? 그건 기록해 둬야겠네.", "A recorder with a blade? Somebody write that down.") }
+  ],
+  duel2: [
+    { who: "ren", text: bi("숨차? 나도. 그러니까 빨리 끝내자고.", "Out of breath? Me too. So let's end it.") },
+    { who: "ren", text: bi("바닥 조심해. 기름은 편을 안 들어.", "Mind the floor. Oil doesn't take sides.") }
+  ],
+  railing: [
+    { who: "ren", text: bi("자루 놔! …아니, 날 놔! 아니, 잡아!", "Let go of the sack! …No, let go of me! No — hold on!") }
+  ],
+  top: [
+    { who: "bern", text: bi("불은 꺼뜨려도 돼. 나만 안 꺼지면.", "The light can go out. Just not me.") },
+    { who: "bern", text: bi("머리 뒤가 욱신거려. 누가 때렸는지는… 기억하기 싫어.", "The back of my head aches. Who hit me — I'd rather not remember.") }
+  ],
+  signal: [
+    { who: "bern", text: bi("봉화는 거짓말을 못 해. 그래서 내가 대신 하지.", "A beacon can't lie. So I do it for it.") }
+  ],
+  intro2: [
+    { who: "bern", text: bi("부두 냄새는 거짓말을 덮지. 생선 비린내가 다 덮어.", "The wharf covers lies. The fish smell covers everything.") },
+    { who: "bern", text: bi("자네가 또 왔군. 등대는 아직 서 있네. 나도.", "Back again. The lighthouse is still standing. So am I."), req: "fixed" }
+  ],
+  wharfRen: [
+    { who: "ren", text: bi("그때 붙잡아 준 거, 빚으로 칠게. 이자는 없어.", "That time you caught me — call it a debt. No interest."), req: "caughtRen" },
+    { who: "ren", text: bi("살아 있냐고? 바다가 날 뱉더라. 맛이 없었나 봐.", "Alive? The sea spat me out. Bad taste, I guess."), not: "caughtRen" }
+  ],
+  confront: [
+    { who: "scully", text: bi("나, 난 심부름만 해. 심부름꾼한테 칼은… 장식이야.", "I-I only run errands. For an errand man, a knife is… decoration.") }
+  ],
+  scully1: [
+    { who: "scully", text: bi("편지는 내 게 아니야! 내 건 이 땀뿐이라고.", "The letters aren't mine! All that's mine is this sweat.") },
+    { who: "scully", text: bi("한 발짝만 더 오면 — 아, 아무것도 안 해. 그냥 울 거야.", "One more step and — no, I won't do anything. I'll just cry.") }
+  ],
+  scully2: [
+    { who: "scully", text: bi("문까지 세 걸음. 당신은 두 걸음이면 되겠네. 젠장.", "Three steps to the door. You'd need two. Damn it.") }
+  ],
+  monk1: [
+    { who: "grey", text: bi("침묵은 수도원의 규칙이지. 너에겐 영원한 규칙이 될 거다.", "Silence is the rule of this house. For you, a permanent one.") },
+    { who: "pip", text: bi("저 사람 수도사 아니에요! 기도할 때 숫자를 세요!", "He's no monk! He counts coins when he prays!") }
+  ],
+  monk2: [
+    { who: "grey", text: bi("물이 차는 소리, 좋지 않나? 기록보다 정직하지.", "Hear the water rising? More honest than any record.") }
+  ],
+  belltower: [
+    { who: "odo", text: bi("줄이 끊겼어요. 종은… 울고 싶어 했는데.", "The rope's cut. The bell… wanted to ring.") }
+  ],
+  rescue: [
+    { who: "pip", text: bi("편지는 젖어도 주소는 안 젖어요. 다 외웠거든요.", "Letters get wet. Addresses don't — I know them all by heart.") }
+  ],
+  undercroft: [
+    { who: "pip", text: bi("발소리 줄여요. 여긴 메아리가 고자질해요.", "Quiet feet. The echoes here tell tales.") }
+  ],
+  accuse: [
+    { who: "seon", text: bi("증거라. 자네가 쓴 기록 말인가, 내가 쓴 기록 말인가?", "Evidence? From the record you wrote, or the one I did?") },
+    { who: "bern", text: bi("난 불만 지켰어. 불 말고는… 아무것도 못 지켰지.", "I only kept the light. Nothing else did I keep.") }
+  ],
+  c2_reader: [
+    { who: "ire", text: bi("글씨는 못 봐요. 그래도 거짓말은 들려요. 종이가 바스락거리거든요.", "I can't see the writing. But I hear lies — the paper rustles.") },
+    { who: "ire", text: bi("붉은 잉크는 냄새가 달라요. 쇠 냄새가 나죠.", "Red ink smells different. Like iron.") }
+  ]
+};
+function banterFor(scene, flags, no) {
+  const pool = (BANTER[scene] || []).filter(b => (!b.req || flags.includes(b.req)) && (!b.not || !flags.includes(b.not)));
+  if (!pool.length) return null;
+  let h = Number(no) || RECORD_FIRST;
+  for (const c of scene) h = (h * 31 + c.charCodeAt(0)) % 9973;
+  return pool[h % pool.length];
+}
 // 사건 기록장의 상태 — 순수 함수(테스트 대상). lore에 든 조각만 센다.
 function caseState(lore) {
   const found = Object.keys(FRAGMENTS).filter(id => lore.includes(id));
@@ -4555,6 +4658,64 @@ function officialRecord(kind, flags, no, verdict) {
   }
   return null;
 }
+/* ---------- 기록 반박 — "이의 있음": 장이 끝나면 세온의 공식 기록에서 거짓 문장을 짚고, 그것을 뒤집을 증거를 내민다 ----------
+   한 장에 한 번. 줄을 잘못 짚거나 증거가 틀리면 기록은 그대로 확정된다. 이기면 붉은 줄이 그어지고 다음 장 운명 주사위가 둘. */
+const EVIDENCE = {
+  gear: { name: bi("일부러 빼낸 톱니", "The gear pulled out on purpose"), has: f => f.includes("sabotage") },
+  testimony: { name: bi("렌의 증언", "Ren's testimony"), has: f => f.includes("peaceful") || f.includes("f_ren_keeper") },
+  receipt: { name: bi("촌장실 반출 확인서", "The chief's removal slip"), has: f => f.includes("f_receipt") },
+  window: { name: bi("세온 집 창문의 불빛", "The light in Seon's window"), has: f => f.includes("f_window") },
+  ledger: { name: bi("밀수 장부", "The smuggling ledger"), has: f => f.includes("ledger") || f.includes("f_fund") },
+  letters: { name: bi("스컬리의 편지", "Scully's letters"), has: f => f.includes("peaceful2") },
+  hands: { name: bi("펜 쥐는 손", "A pen-holder's hands"), has: f => f.includes("f_hands") },
+  footprints: { name: bi("지하로 향한 발자국", "Footprints leading underground"), has: f => f.includes("trail") },
+  bell: { name: bi("종지기의 증언", "The bell-keeper's word"), has: f => f.includes("keeper") },
+  addressee: { name: bi("편지의 수신인", "The letters' addressee"), has: f => f.includes("f_addressee") },
+  keytag: { name: bi("열쇠 꼬리표의 글씨", "The writing on the key tag"), has: f => f.includes("f_hand_match") },
+  bundle: { name: bi("증거 편지 뭉치", "The bundle of evidence letters"), has: f => f.includes("chase3") }
+};
+// 장마다 거짓 문장(공식 기록 lines의 번호)과 그것을 뒤집는 증거.
+const REBUTTALS = {
+  1: { line: 1, proof: ["gear", "testimony", "receipt", "window"] },
+  2: { line: 1, proof: ["ledger", "letters", "hands", "receipt", "window"] },
+  3: { line: 1, proof: ["addressee", "keytag", "bundle", "ledger", "window", "receipt"] }
+};
+function heldEvidence(flags, lore) {
+  const all = [...flags, ...(lore || [])];
+  return Object.keys(EVIDENCE).filter(id => EVIDENCE[id].has(all));
+}
+function rebutJudge(ch, line, evidence) {
+  const r = REBUTTALS[ch];
+  if (!r) return "none";
+  if (line !== r.line) return "wrongLine";
+  if (evidence == null) return "pickEvidence";
+  return r.proof.includes(evidence) ? "won" : "wrongEvidence";
+}
+
+/* ---------- 이번 기록의 의뢰 — 판마다 작은 목표 셋(기록 번호로 정해진다). 같은 판도 노리는 과녁이 생긴다 ---------- */
+const GOALS = {
+  ren: { text: bi("렌을 살려 보낸다", "Let Ren walk away alive"), done: f => f.includes("caughtRen") || f.includes("peaceful") || f.includes("bothRail") },
+  light: { text: bi("등대를 흠 없이 되살린다", "Bring the lighthouse back without a crack"), done: f => f.includes("fixed") && !f.includes("lensCracked") },
+  nofight: { text: bi("1장을 칼 없이 끝낸다", "Finish Chapter 1 without a blade"), done: f => f.includes("peaceful") },
+  objection: { text: bi("공식 기록 하나를 반박한다", "Overturn one official record"), done: f => ["rebut1", "rebut2", "rebut3"].some(x => f.includes(x)) },
+  rounds: { text: bi("해 지기 전 탐문을 네 곳 들른다", "Make four stops before sundown"), done: f => f.filter(x => x.startsWith("lead")).length >= 4 },
+  scully: { text: bi("스컬리를 피 없이 굴복시킨다", "Make Scully fold without bloodshed"), done: f => f.includes("peaceful2") },
+  quiet: { text: bi("소리 없이 철창을 연다", "Open the cell without a sound"), done: f => f.includes("quiet3") },
+  courier: { text: bi("배달부를 살린다", "Save the courier"), done: f => f.includes("saved3") },
+  pieces: { text: bi("한 기록에서 단서 조각 둘을 얻는다", "Gain two clue fragments in one record"), done: f => f.filter(x => x.startsWith("f_")).length >= 2 }
+};
+function goalsFor(no) {
+  const ids = Object.keys(GOALS);
+  let seed = (Number(no) || 113) * 9301 + 49297;
+  const pick = [];
+  while (pick.length < 3) {
+    seed = (seed * 9301 + 49297) % 233280;
+    const id = ids[Math.floor(seed / 233280 * ids.length)];
+    if (!pick.includes(id)) pick.push(id);
+  }
+  return pick;
+}
+
 /* ---------- 붉은 쪽지 — 다른 모험가가 장면에 남긴 단어 조합형 쪽지(자유 문장 없음, 한·영 자동) ----------
    쓰기는 기존 피드백 파이프(type: "note")로, 읽기는 GAS doGet(?action=notes). 서버가 준비되지 않으면 기능 전체가 숨는다. */
 const NOTE_WORDS = {
@@ -4581,22 +4742,45 @@ function groupNotes(list) {
   for (const k of Object.keys(out)) out[k] = out[k].slice(0, 2);
   return out;
 }
-// 쪽지 읽기: fetch가 막히면 JSONP로 한 번 더. 실패하면 null(기능 숨김).
-function loadNotes() {
-  const url = GAS_URL + "?action=notes";
-  return fetch(url).then(r => r.json()).then(j => j && j.ok ? groupNotes(j.notes) : null).catch(() => new Promise(resolve => {
+// GAS 읽기: fetch가 막히면 JSONP로 한 번 더. 실패하면 null(기능 숨김).
+function gasGet(action, pick) {
+  const url = GAS_URL + "?action=" + action;
+  return fetch(url).then(r => r.json()).then(j => j && j.ok ? pick(j) : null).catch(() => new Promise(resolve => {
     try {
       if (typeof document === "undefined" || !document.createElement) return resolve(null);
-      const cb = "aduNotes" + Math.floor(Math.random() * 1e9);
+      const cb = "adu" + (action === "notes" ? "Notes" : "Stats") + Math.floor(Math.random() * 1e9);
       const el = document.createElement("script");
       const done = v => { try { delete window[cb]; el.remove(); } catch (e) {} resolve(v); };
-      window[cb] = j => done(j && j.ok ? groupNotes(j.notes) : null);
+      window[cb] = j => done(j && j.ok ? pick(j) : null);
       el.onerror = () => done(null);
       el.src = url + "&callback=" + cb;
       document.head.appendChild(el);
       setTimeout(() => done(null), 6000);
     } catch (e) { resolve(null); }
   }));
+}
+function loadNotes() { return gasGet("notes", j => groupNotes(j.notes)); }
+// 선택 비율: {장면: {선택지 번호: 판 수}} — 표본이 STATS_MIN 판 미만이면 보이지 않는다.
+const STATS_MIN = 10;
+function cleanStats(raw) {
+  const out = {};
+  if (!raw || typeof raw !== "object") return out;
+  for (const sc of Object.keys(raw)) {
+    if (!/^[a-zA-Z0-9_]{1,24}$/.test(sc) || !raw[sc] || typeof raw[sc] !== "object") continue;
+    for (const i of Object.keys(raw[sc])) {
+      const n = Number(raw[sc][i]);
+      if (/^\d{1,2}$/.test(i) && Number.isFinite(n) && n > 0) (out[sc] = out[sc] || {})[i] = Math.floor(n);
+    }
+  }
+  return out;
+}
+function loadStats() { return gasGet("stats", j => cleanStats(j.stats)); }
+function choiceShare(stats, scene, index) {
+  const row = stats && stats[scene];
+  if (!row) return null;
+  const total = Object.values(row).reduce((a, b) => a + b, 0);
+  if (total < STATS_MIN) return null;
+  return Math.round((row[index] || 0) / total * 100);
 }
 // 공유용 평문 — 엔딩의 공식 기록과 반박을 그대로 옮긴다(이름 외 개인 정보 없음).
 function recordShareText(record, pc, lang) {
@@ -5054,12 +5238,38 @@ function RecordCard({ record, pc, lang, children }) {
     "aria-label": t(record.head)
   }, React.createElement("div", { className: "recHead" }, t(record.head)), record.lines.map((l, i) => React.createElement("p", {
     key: i,
-    className: "recLine"
+    className: "recLine" + (record.struck === i ? " struck" : "")
   }, t(l))), React.createElement("div", { className: "recSign" }, t(record.signer)), record.stamp && React.createElement("div", {
     className: "recStamp"
   }, t(record.stamp)), record.rebut && t(record.rebut) && React.createElement("div", {
     className: "redhand"
   }, t(record.rebut)), children);
+}
+function GoalBox({ ids, flags, ui, tx }) {
+  const done = ids.filter(id => GOALS[id].done(flags)).length;
+  return React.createElement("div", { className: "goals" }, React.createElement("h4", null, ui("goalsH"), React.createElement("small", null, " \u00B7 ", ui("goalsDone", { n: done }))),
+    ids.map(id => React.createElement("div", { key: id, className: "goal" + (GOALS[id].done(flags) ? " done" : "") }, (GOALS[id].done(flags) ? "\u2611 " : "\u2610 ") + tx(GOALS[id].text))));
+}
+// 기록 반박 패널: 한 장에 한 번. 줄을 짚고(틀리면 확정) → 증거를 내민다(틀리면 확정).
+function ObjectionPanel({ ch, flags, lore, pc, lang, ui, tx, objection, setObjection, record, decide }) {
+  const won = flags.includes("rebut" + ch), lost = flags.includes("rebutX" + ch);
+  const mine = objection && objection.ch === ch ? objection : null;
+  const t = v => fmt(v[lang] || v.ko, pc);
+  const box = (...kids) => React.createElement("div", { className: "objection" + (won ? " won" : lost ? " lost" : "") }, React.createElement("h4", null, ui("objH")), ...kids);
+  if (mine && mine.step === "done") {
+    const msg = mine.result === "won" ? ui("objWon", { e: tx(EVIDENCE[mine.evidence].name) }) : mine.result === "wrongLine" ? ui("objWrongLine") : ui("objWrongEvidence");
+    return box(React.createElement("p", { className: "objResult" }, msg));
+  }
+  if (won || lost || !record) return null;
+  if (!mine) return box(React.createElement("button", { className: "choice objStart", onClick: () => setObjection({ ch, step: "line" }) }, ui("objStart")));
+  if (mine.step === "line") return box(React.createElement("p", { className: "objAsk" }, ui("objPickLine")),
+    record.lines.map((l, i) => React.createElement("button", { key: i, className: "choice objLine", onClick: () => decide(i, null) }, t(l))),
+    React.createElement("button", { className: "restart", onClick: () => setObjection(null) }, ui("objWithdraw")));
+  const held = heldEvidence(flags, lore);
+  return box(React.createElement("p", { className: "objAsk" }, ui("objPickEvidence")),
+    held.length ? held.map(id => React.createElement("button", { key: id, className: "choice objEvidence", onClick: () => decide(REBUTTALS[ch].line, id) }, "\uD83D\uDCC4 " + tx(EVIDENCE[id].name)))
+      : React.createElement("p", { className: "objAsk" }, ui("objNoEvidence")),
+    React.createElement("button", { className: "restart", onClick: () => setObjection(null) }, ui("objWithdraw")));
 }
 function HealthMeter({ hp, maxHp, ui }) {
   const value = Math.max(0, Math.min(maxHp, hp));
@@ -5594,6 +5804,20 @@ const css = `
 .crpg .scarNote { margin:6px 0 0; font-size:13px; color:#e8a07f; }
 .crpg .tag .scar { color:#e8a07f; }
 .crpg .scarLine { font-size:13px; margin:2px 0; }
+.crpg .banter { font-style:italic; color:var(--gold); margin:4px 0 10px; font-size:14px; line-height:1.5; }
+.crpg .banter .banterWho { font-style:normal; color:var(--dim); font-size:12px; }
+.crpg .pickShare { font-size:13px; color:var(--dim); font-style:italic; margin:6px 0 0; }
+.crpg .goals { margin:8px 0 12px; padding:8px 12px; border:1px dashed var(--line); border-radius:8px; font-size:14px; }
+.crpg .goals h4 { margin:0 0 4px; font-size:13px; color:var(--gold); letter-spacing:.05em; }
+.crpg .goals small { color:var(--dim); font-weight:400; }
+.crpg .goal { margin:2px 0; color:var(--dim); }
+.crpg .goal.done { color:var(--text); }
+.crpg .objection { margin:12px 0 16px; padding:10px 14px; border:1px solid var(--red); border-radius:8px; background:rgba(192,57,43,.07); }
+.crpg .objection h4 { margin:0 0 6px; color:var(--red); letter-spacing:.06em; }
+.crpg .objection .objAsk { font-size:14px; margin:4px 0 8px; }
+.crpg .objection .objResult { font-size:15px; line-height:1.6; }
+.crpg .objection.won .objResult { color:#e8b4aa; }
+.crpg .recLine.struck { text-decoration:line-through; text-decoration-color:var(--red); text-decoration-thickness:3px; animation:inkIn .8s ease both; }
 /* pt25 휴대폰 한 손 플레이: 큰 그림 대신 한 줄 막대만 따라온다 */
 .crpg .miniBar { display:none; position:sticky; top:0; z-index:30; align-items:center; gap:8px; margin:0 -16px 8px; padding:8px 16px; background:rgba(18,17,16,.94); border-bottom:1px solid var(--line); font-size:13px; backdrop-filter:blur(4px); }
 .crpg .miniBar .mbPlace { flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-family:'Black Han Sans','Noto Serif KR',sans-serif; letter-spacing:.03em; color:#f1eadb; }
@@ -5693,6 +5917,11 @@ const css = `
 .crpg .narr .para { animation:inkIn .9s ease both; }
 .crpg .narr[data-stage=instant] .para, .crpg .choices[data-stage=instant] { animation:none !important; }
 .crpg .choices[data-stage=staged] { animation:inkIn .6s ease both; }
+.crpg .duelTimer { display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:.85em; color:var(--dim); margin:0 0 8px; }
+.crpg .duelTimer .timerBar { flex:1 1 120px; height:4px; background:rgba(255,255,255,.08); border-radius:2px; overflow:hidden; }
+.crpg .duelTimer .timerBar i { display:block; height:100%; background:var(--red, #c0392b); transition:width 1s linear; }
+.crpg .duelTimer.urgent .timerText { color:var(--red, #c0392b); font-weight:bold; }
+.crpg .duelTimer .timerToggle { background:none; border:1px solid rgba(255,255,255,.15); color:inherit; font-size:.85em; padding:2px 8px; border-radius:4px; cursor:pointer; }
 @keyframes inkIn { from { opacity:0; visibility:hidden; filter:blur(2px); } to { opacity:1; visibility:visible; filter:none; } }
 @media (prefers-reduced-motion: reduce) { .crpg .narr .para, .crpg .choices[data-stage] { animation:none; } }
 .crpg .redhand { color:var(--red); }
@@ -5738,6 +5967,14 @@ function CRPG() {
   const [numbersOn, setNumbersOn] = useState(() => store.get("aduventure_numbers") === true);
   // 문단이 차례로 번진다. 글을 한 번 누르면 이 장면은 바로 전부 보인다.
   const [revealed, setRevealed] = useState(null);
+  // 결투 제한 시간: 켜짐/꺼짐은 저장, 남은 초는 장면마다 새로.
+  const [timerOn, setTimerOn] = useState(() => store.get("aduventure_timer") !== false);
+  const [timeLeft, setTimeLeft] = useState(null);
+  // 다른 기록관의 선택 비율(서버 준비 전엔 null) · 방금 고른 길의 비율
+  const [choiceStats, setChoiceStats] = useState(null);
+  const [pickShare, setPickShare] = useState(null);
+  // 기록 반박 진행: null | {ch, step: "line" | "evidence"}
+  const [objection, setObjection] = useState(null);
   const [scarredThisRun, setScarredThisRun] = useState([]);
   const [scarNote, setScarNote] = useState(null);
   // 지난 에필로그 판결 — 첫 화면의 공식 기록을 영구히 바꾼다.
@@ -5923,6 +6160,7 @@ function CRPG() {
   }, [sceneKey, pc]);
   useEffect(() => {
     loadNotes().then(n => setNotes(n)).catch(() => setNotes(null));
+    loadStats().then(x => setChoiceStats(x)).catch(() => setChoiceStats(null));
   }, []);
   // 배경음은 소리를 켠 동안 장면·체력·렌의 예고에 따라 바뀐다.
   useEffect(() => {
@@ -6119,7 +6357,7 @@ function CRPG() {
         ...p,
         hp: p.maxHp
       }));
-      setFate(1);
+      setFate(flags.includes(key === "intro2" ? "rebut1" : "rebut2") ? 2 : 1);
       setSpecialLeft(2);
       setLastResult(null);
     }
@@ -6224,6 +6462,7 @@ function CRPG() {
     setLastResult(null);
     setPending(null);
     setScarNote(null);
+    setPickShare(choiceShare(choiceStats, sceneKey, scene.choices.indexOf(choice)));
     if (choice.result) {
       applyBranch(choice.result, null, null);
       return;
@@ -6235,6 +6474,38 @@ function CRPG() {
     }
     resolveCheck(choice, fate > 0);
   }
+  // 시간이 다 되면: 첫 판정 선택지의 실패 쪽으로 흘러간다(흉터는 남기지 않는다 — 기술 실패가 아니라 망설임).
+  function hesitate() {
+    if (rolling || pending || !TIMED_SCENES.includes(sceneKey) || !scene?.choices) return;
+    const ch = pathOrdered.find(c => c.check && c.fail && !lockedBy(c).length);
+    if (!ch || !recordDecision("timeout:" + sceneKey)) return;
+    setTimeLeft(null);
+    setPickShare(null);
+    setLastResult(null);
+    setPending(null);
+    setScarNote(null);
+    SFX.bad();
+    applyBranch({ ...ch.fail, text: bi(UI.timerHesitate.ko + "\n\n" + ch.fail.text.ko, UI.timerHesitate.en + "\n\n" + ch.fail.text.en) }, null, null);
+  }
+  const hesitateRef = useRef(null);
+  hesitateRef.current = hesitate;
+  const timedNow = timerOn && !!pc && TIMED_SCENES.includes(sceneKey) && !rolling && !pending;
+  useEffect(() => {
+    if (!timedNow) { setTimeLeft(null); return; }
+    // 선택지가 번져 나온 뒤부터 센다. 글을 눌러 다 보이게 했으면 바로.
+    const wait = revealed === sceneKey ? 0 : Math.min((fmt(tx(scene.text), pc).split("\n\n").length - 1) * 0.8 + 0.6, 5) * 1000 + 600;
+    let left = TIMER_SEC;
+    let iv = null;
+    const t0 = setTimeout(() => {
+      setTimeLeft(left);
+      iv = setInterval(() => {
+        left -= 1;
+        setTimeLeft(left);
+        if (left <= 0) { clearInterval(iv); hesitateRef.current && hesitateRef.current(); }
+      }, 1000);
+    }, wait);
+    return () => { clearTimeout(t0); if (iv) clearInterval(iv); };
+  }, [sceneKey, timedNow, revealed === sceneKey]);
 
   // 전투 — 매 턴이 결정: 공격 / 특수기 / 방어 / 숨 고르기
   // 도굴꾼 전투 시제품 — 적 의도를 보고 대응을 고른다. 얻는 것/감수하는 것이 상황따라 갈린다.
@@ -6837,7 +7108,9 @@ function CRPG() {
     lang: lang
   }), /*#__PURE__*/React.createElement("div", null, tx(lastResult.dice.detail))), /*#__PURE__*/React.createElement("div", {
     className: "result " + lastResult.kind
-  }, fmt(lastResult.text, pc)), scarNote && React.createElement("p", {
+  }, fmt(lastResult.text, pc)), pickShare != null && React.createElement("p", {
+    className: "pickShare"
+  }, ui(pickShare < 15 ? "shareRare" : "shareSame", { n: pickShare })), scarNote && React.createElement("p", {
     className: "scarNote"
   }, ui(scarNote.maxed ? "scarMaxed" : "scarNew", { s: tx(SKILL_NAMES[scarNote.skill]), d: scarDots(scarNote.n) })), /*#__PURE__*/React.createElement("div", {
     className: "divider",
@@ -6889,7 +7162,9 @@ function CRPG() {
   }, SCENE_CAST[sceneKey].map(id => React.createElement("span", {
     key: id,
     className: "castChip"
-  }, PORTRAITS[id] ? React.createElement("img", { className: "portrait", src: PORTRAITS[id], alt: tx(CAST[id].name) }) : CAST[id].mark + " ", React.createElement("b", null, tx(CAST[id].name)), " \u00B7 " + tx(CAST[id].role)))), (ECHOES[sceneKey] || []).filter(e => flags.includes(e.req)).map((e, i) => /*#__PURE__*/React.createElement("div", {
+  }, PORTRAITS[id] ? React.createElement("img", { className: "portrait", src: PORTRAITS[id], alt: tx(CAST[id].name) }) : CAST[id].mark + " ", React.createElement("b", null, tx(CAST[id].name)), " \u00B7 " + tx(CAST[id].role)))), pc && banterFor(sceneKey, flags, runNo) && React.createElement("p", {
+    className: "banter"
+  }, "\u201C" + tx(banterFor(sceneKey, flags, runNo).text) + "\u201D", React.createElement("span", { className: "banterWho" }, " \u2014 " + tx(CAST[banterFor(sceneKey, flags, runNo).who].name))), (ECHOES[sceneKey] || []).filter(e => flags.includes(e.req)).map((e, i) => /*#__PURE__*/React.createElement("div", {
     key: "echo" + i,
     className: "echoBanner"
   }, /*#__PURE__*/React.createElement("span", {
@@ -6909,7 +7184,7 @@ function CRPG() {
   }, React.createElement("p", { className: "bigLine", style: { animation: "inkIn 1.6s ease both", animationDelay: revealed === sceneKey ? "0s" : (fmt(tx(scene.text), pc).split("\n\n").length - 1) * 0.8 + 0.6 + "s" } }, ui("c2Hall", { a: RECORD_FIRST, b: Math.max(RECORD_FIRST, runNo || RECORD_FIRST) })), notes && Object.values(notes).flat().length > 0 && React.createElement("p", null, ui("c2Notes"), Object.values(notes).flat().slice(0, 3).map((n, i) => React.createElement("span", { key: i, className: "redhand small" }, " " + noteText(n, lang))))), collapsed && React.createElement("button", {
     className: "expandBtn",
     onClick: () => setExpanded(sceneKey)
-  }, ui("seenExpand")), sceneKey === "intro" && pc && UNLOCK_LINES[runIndex] && React.createElement("p", {
+  }, ui("seenExpand")), sceneKey === "intro" && pc && runNo && React.createElement(GoalBox, { ids: goalsFor(runNo), flags, ui, tx }), sceneKey === "intro" && pc && UNLOCK_LINES[runIndex] && React.createElement("p", {
     className: "unlockLine"
   }, tx(UNLOCK_LINES[runIndex])), notesShown && (notes[sceneKey] || []).map((n, i) => React.createElement("div", {
     key: "note" + i,
@@ -6940,7 +7215,12 @@ function CRPG() {
     className: "choices",
     "data-stage": revealed === sceneKey ? "instant" : "staged",
     style: { animationDelay: Math.min(((collapsed ? 1 : fmt(tx(scene.text), pc).split("\n\n").length) - 1) * 0.8 + 0.6 + (sceneKey === "c2_hall" && !collapsed ? 1.4 : 0), 5) + "s" }
-  }, pathAll && React.createElement("p", { className: "pathNote" }, ui("pathAllWalked")), pathOrdered.map(ch => /*#__PURE__*/React.createElement("button", {
+  }, pc && TIMED_SCENES.includes(sceneKey) && React.createElement("div", {
+    className: "duelTimer" + (timerOn && timeLeft != null && timeLeft <= 4 ? " urgent" : "")
+  }, timerOn ? [React.createElement("span", { key: "t", className: "timerText" }, ui("timerLeft", { n: timeLeft == null ? TIMER_SEC : Math.max(0, timeLeft) })), React.createElement("span", { key: "b", className: "timerBar" }, React.createElement("i", { style: { width: (timeLeft == null ? 100 : Math.max(0, timeLeft) / TIMER_SEC * 100) + "%" } }))] : React.createElement("span", { className: "timerText" }, ui("timerOffNote")), React.createElement("button", {
+    className: "timerToggle",
+    onClick: () => setTimerOn(v => { store.set("aduventure_timer", !v); return !v; })
+  }, timerOn ? ui("timerOff") : ui("timerOn"))), pathAll && React.createElement("p", { className: "pathNote" }, ui("pathAllWalked")), pathOrdered.map(ch => /*#__PURE__*/React.createElement("button", {
     key: narrativeId(ch),
     className: "choice" + (pathMark(ch) ? " " + pathMark(ch) : ""),
     disabled: lockedBy(ch).length > 0,
@@ -7072,7 +7352,13 @@ function CRPG() {
   }, /*#__PURE__*/React.createElement("p", {
     className: "narr"
   }, fmt(tx(scene.ending === 1 ? buildEnding1(flags) : scene.ending === 2 ? buildEnding2(flags) : scene.ending === 4 ? buildEnding4(flags) : scene.ending === 5 ? buildEnding5(flags) : buildEnding3(flags)), pc)), React.createElement(RecordCard, {
-    record: officialRecord(scene.ending, flags, runNo),
+    record: (() => {
+      const rec = officialRecord(scene.ending, flags, runNo);
+      if (!rec || !REBUTTALS[scene.ending]) return rec;
+      const won = flags.includes("rebut" + scene.ending), lost = flags.includes("rebutX" + scene.ending);
+      // 붉은 반박은 이겨야 적힌다. 이기면 거짓 줄에 붉은 선, 지면 '확정' 도장.
+      return { ...rec, rebut: won ? rec.rebut || bi("거짓말이다.", "This is a lie.") : null, struck: won ? REBUTTALS[scene.ending].line : null, stamp: won ? ui_bi("objStamp") : lost ? ui_bi("objSealed") : rec.stamp };
+    })(),
     pc,
     lang
   }, React.createElement("button", {
@@ -7085,7 +7371,19 @@ function CRPG() {
         setShared("fail");
       }
     }
-  }, shared === sceneKey ? ui("shareDone") : shared === "fail" ? ui("shareFail") : ui("shareRec"))), React.createElement("div", {
+  }, shared === sceneKey ? ui("shareDone") : shared === "fail" ? ui("shareFail") : ui("shareRec"))), REBUTTALS[scene.ending] && React.createElement(ObjectionPanel, {
+    ch: scene.ending, flags, lore, pc, lang, ui, tx, objection, setObjection,
+    record: officialRecord(scene.ending, flags, runNo),
+    decide: (line, evidence) => {
+      const verdict = rebutJudge(scene.ending, line, evidence);
+      if (verdict === "pickEvidence") { setObjection({ ch: scene.ending, step: "evidence" }); return; }
+      const won = verdict === "won";
+      setFlags(f => [...f, (won ? "rebut" : "rebutX") + scene.ending]);
+      setObjection({ ch: scene.ending, step: "done", result: verdict, evidence });
+      try { if (sfxOn) { if (won) { SFX.good(); SFX.cue("pen"); } else SFX.bad(); } } catch (e) {}
+      emitTelemetry("objection", telemetryRun, { scene_id: sceneKey, chapter: scene.ending, result: verdict, line, evidence: evidence || null, lang });
+    }
+  }), runNo && [1, 2, 3, 4].includes(scene.ending) && React.createElement(GoalBox, { ids: goalsFor(runNo), flags, ui, tx }), React.createElement("div", {
     className: "ledger"
   }, React.createElement("h4", null, ui("ledgerH")), chapterLedger(scene.ending, flags).map((r, i) => React.createElement("div", {
     key: "ledger" + i,

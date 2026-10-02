@@ -7,6 +7,7 @@
  *    doPost(기록 저장)와 doGet(쪽지 읽기)이 모두 들어 있다. 둘 중 하나라도 빠지면 게임 기록이 끊긴다.
  * 3. 배포 → 배포 관리 → 연필 → 버전: "새 버전" → 배포. (저장만 하면 반영되지 않는다.)
  * 4. 브라우저에서 <웹 앱 주소>?action=notes 를 열어 {"ok":true,"notes":[...]} 가 나오면 끝.
+ *    <웹 앱 주소>?action=stats 는 {"ok":true,"stats":{...}} (다른 기록관의 선택 비율, pt27).
  *
  * 안전: 쪽지는 게임이 정한 단어 id 조합만 통과시킨다. 자유 문장은 저장돼 있어도 내보내지 않는다.
  */
@@ -20,12 +21,17 @@ var NOTE_WORDS = {
 var NOTE_SCAN_ROWS = 3000;   // 최근 행만 훑는다
 var NOTE_PER_SCENE = 3;      // 장면당 최근 쪽지 수(게임은 2개만 보여 준다)
 
+var STATS_SCAN_ROWS = 8000;  // 선택 비율: 최근 행만 센다
+var STATS_CACHE_SEC = 600;   // 10분 캐시(시트를 매번 읽지 않는다)
+
 function doGet(e) {
   var p = (e && e.parameter) || {};
-  if (p.action !== 'notes') return ContentService.createTextOutput('alive');
-  var body = JSON.stringify({ ok: true, notes: readNotes_() });
+  var body;
+  if (p.action === 'notes') body = JSON.stringify({ ok: true, notes: readNotes_() });
+  else if (p.action === 'stats') body = statsBody_();
+  else return ContentService.createTextOutput('alive');
   var cb = String(p.callback || '');
-  if (/^aduNotes\d{1,10}$/.test(cb)) {
+  if (/^adu(Notes|Stats)\d{1,10}$/.test(cb)) {
     return ContentService.createTextOutput(cb + '(' + body + ');').setMimeType(ContentService.MimeType.JAVASCRIPT);
   }
   return ContentService.createTextOutput(body).setMimeType(ContentService.MimeType.JSON);
@@ -50,6 +56,40 @@ function readNotes_() {
     if (perScene[scene] > NOTE_PER_SCENE) continue;
     var no = Number(x.no);
     out.push({ scene: scene, s: x.s, v: x.v, r: x.r || 'none', no: no > 0 && no < 1e7 ? Math.floor(no) : null });
+  }
+  return out;
+}
+
+// ---- 선택 비율: telemetry 'choice' 행의 choice_id("장면:번호")를 판(run_id)마다 한 번씩 센다 ----
+function statsBody_() {
+  var cache = CacheService.getScriptCache();
+  var hit = cache.get('stats_v1');
+  if (hit) return hit;
+  var body = JSON.stringify({ ok: true, stats: readStats_() });
+  if (body.length < 90000) cache.put('stats_v1', body, STATS_CACHE_SEC);
+  return body;
+}
+
+function readStats_() {
+  var sheet = SpreadsheetApp.openById(NOTE_SHEET_ID).getSheetByName(NOTE_SHEET_NAME);
+  var last = sheet.getLastRow();
+  if (last < 2) return {};
+  var start = Math.max(2, last - STATS_SCAN_ROWS + 1);
+  var rows = sheet.getRange(start, 1, last - start + 1, 6).getValues(); // 시각, 유형, 장면, 이름, 내용, extra
+  var seen = {}, out = {};
+  for (var i = 0; i < rows.length; i++) {
+    var row = rows[i];
+    if (String(row[1]) !== 'telemetry' || String(row[4]) !== 'choice') continue;
+    var x;
+    try { x = JSON.parse(String(row[5] || '')); } catch (err) { continue; }
+    var id = x && String(x.choice_id || '');
+    var m = /^([a-zA-Z0-9_]{1,24}):(\d{1,2})$/.exec(id);
+    if (!m) continue; // timeout:·skip: 등은 세지 않는다
+    var key = String(x.run_id || '') + '|' + id;
+    if (seen[key]) continue;
+    seen[key] = true;
+    out[m[1]] = out[m[1]] || {};
+    out[m[1]][m[2]] = (out[m[1]][m[2]] || 0) + 1;
   }
   return out;
 }
