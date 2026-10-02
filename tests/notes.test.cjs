@@ -193,3 +193,26 @@ test('the game and the script share the same word lists', () => {
   const script = vm.runInContext('NOTE_WORDS', ctx);
   for (const k of ['s', 'v', 'r']) assert.deepEqual([...game_[k]], [...script[k]], k);
 });
+
+test('GAS doPost writes what the game sends as one row, and a note written that way is read back', () => {
+  const rows = [];
+  const ctx = vm.createContext({
+    JSON, Math, Number, String, Date,
+    ContentService: {MimeType: {JSON: 'json', JAVASCRIPT: 'js'}, createTextOutput: body => ({body, setMimeType() { return this; }})},
+    SpreadsheetApp: {openById: () => ({getSheetByName: () => ({
+      appendRow: r => rows.push(r),
+      getLastRow: () => rows.length + 1,
+      getRange: (r, c, n) => ({getValues: () => rows.slice(r - 2, r - 2 + n)})
+    })})}
+  });
+  vm.runInContext(gas, ctx);
+  const post = body => ctx.doPost({postData: {contents: JSON.stringify(body)}}).body;
+  assert.equal(post({type: 'telemetry', scene: 'intro', who: 'QA', text: 'start', extra: 'fighter'}), 'ok');
+  assert.deepEqual([...rows[0].slice(1)], ['telemetry', 'intro', 'QA', 'start', 'fighter']);
+  assert.equal(typeof rows[0][0].getTime, 'function');
+  post({type: 'playtest_feedback', scene: '', text: '=SUM(A1)', extra: {a: 1}});
+  assert.deepEqual([...rows[1].slice(4)], ["'=SUM(A1)", '{"a":1}'], 'No formulas, objects stored as JSON');
+  post({type: 'note', scene: 'top', who: '', text: 'seon.doubt.hand', extra: JSON.stringify({s: 'seon', v: 'doubt', r: 'hand', no: 140})});
+  assert.deepEqual(JSON.parse(ctx.doGet({parameter: {action: 'notes'}}).body).notes, [{scene: 'top', s: 'seon', v: 'doubt', r: 'hand', no: 140}]);
+  assert.equal(ctx.doPost({postData: {contents: 'not json'}}).body, 'error');
+});

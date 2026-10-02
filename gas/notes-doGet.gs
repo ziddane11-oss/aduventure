@@ -3,8 +3,8 @@
  *
  * 붙이는 법
  * 1. 피드백 시트의 Apps Script 편집기를 연다.
- * 2. 기존 doGet 함수를 지우고(또는 이름을 바꾸고) 이 파일 전체를 붙여 넣는다.
- *    doPost는 건드리지 않는다. 쪽지 쓰기는 기존 doPost가 '응답' 시트에 type "note"로 이미 적는다.
+ * 2. 편집기의 코드를 전부 지우고 이 파일 전체를 붙여 넣는다.
+ *    doPost(기록 저장)와 doGet(쪽지 읽기)이 모두 들어 있다. 둘 중 하나라도 빠지면 게임 기록이 끊긴다.
  * 3. 배포 → 배포 관리 → 연필 → 버전: "새 버전" → 배포. (저장만 하면 반영되지 않는다.)
  * 4. 브라우저에서 <웹 앱 주소>?action=notes 를 열어 {"ok":true,"notes":[...]} 가 나오면 끝.
  *
@@ -52,4 +52,24 @@ function readNotes_() {
     out.push({ scene: scene, s: x.s, v: x.v, r: x.r || 'none', no: no > 0 && no < 1e7 ? Math.floor(no) : null });
   }
   return out;
+}
+
+// ---- 기록 저장: 게임의 gasPost({type, scene, who, text, extra})를 '응답' 시트 한 줄로 적는다 ----
+function doPost(e) {
+  try {
+    var d = JSON.parse((e && e.postData && e.postData.contents) || '{}');
+    var extra = d.extra;
+    if (extra && typeof extra !== 'string') extra = JSON.stringify(extra);
+    var sheet = SpreadsheetApp.openById(NOTE_SHEET_ID).getSheetByName(NOTE_SHEET_NAME);
+    sheet.appendRow([new Date(), cell_(d.type, 40), cell_(d.scene, 80), cell_(d.who, 80), cell_(d.text, 5000), cell_(extra, 5000)]);
+    return ContentService.createTextOutput('ok');
+  } catch (err) {
+    return ContentService.createTextOutput('error');
+  }
+}
+
+// 시트가 '='·'+'·'-'·'@'로 시작하는 값을 수식으로 읽지 않게 막는다(#ERROR! 방지).
+function cell_(v, max) {
+  var s = v == null ? '' : String(v).slice(0, max);
+  return /^[=+\-@]/.test(s) ? "'" + s : s;
 }
