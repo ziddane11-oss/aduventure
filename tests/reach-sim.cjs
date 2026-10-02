@@ -30,6 +30,8 @@ function makeJourney(seed) {
         const s = SCENES[key];
         if (!s) throw new Error('Unknown scene: ' + key);
         if (s.revive) pc.hp = Math.max(pc.hp, s.revive);
+        if (key === 'duel1') foughtRen = true;
+        if (key === 'signal') lostToRen = true;
         if (s.gameover) return result('death');
         if (s.ending) return result('ending');
         if (s.combat) {
@@ -50,14 +52,14 @@ function makeJourney(seed) {
         const visible = (s.choices || []).filter(ch => (!ch.classOnly || ch.classOnly === cls) && !ch.loreReq && !ch.artifactReq && (!ch.echoReq || flags.includes(ch.echoReq)) && (!ch.flagNot || !flags.includes(ch.flagNot)));
         const ch = pick(key, visible);
         if (!ch || !visible.includes(ch)) throw new Error('Policy cannot select a visible choice at ' + key);
-        if (ch.result) { gains(ch.result).forEach(addFlag); key = ch.result.goto; continue; }
+        if (ch.result) { gains(ch.result).forEach(addFlag); if (ch.result.flags?.includes('wireUsed')) trapPayoff = true; key = ch.result.goto; continue; }
         if (!ch.check) { addFlag(ch.flagDirect); key = ch.goto; continue; }
         let check = rules.check({actor: pc, ...ch.check});
         if (!check.success && fate > 0) { fate--; check = rules.check({actor: pc, ...ch.check}); }
         const branch = check.success ? ch.success : ch.fail;
         // Mirrors applyBranch's narrative damage, not a second combat engine.
         if (branch.damage) pc.hp = Math.max(0, pc.hp - (d(branch.damage[1]) + branch.damage[0] - 1));
-        gains(branch).forEach(addFlag); key = branch.goto;
+        gains(branch).forEach(addFlag); key = branch.ifDown && pc.hp === 0 ? branch.ifDown : branch.goto;
       }
       return result('scene_timeout');
     }
@@ -117,6 +119,7 @@ const report = {
     'reunionEligible is peaceful or caughtRen (the Ch.2 bond choice opens), not an observed Chapter 2 reunion.',
     'sabotageClues counts the sabotage flag; the simulator refuses to run if any branch grants it without the displayed wording.',
     'pt11: losing to Ren continues to the beacon ending (lostToRen/beaconEndings); death follows the gameover scene only.',
+    'pt15: the Ren fight is a two-beat narrative duel (duel1/duel2); the policy takes the first visible duel choice; 0 HP follows ifDown to the beacon.',
     'The repair policy only compares checked choices, so the no-check wire repair is never chosen; wireRepairs stays 0 by design.',
     'No metric is required to reach 100%; optional scenes are expected to differ by path.'
   ], results
