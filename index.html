@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>어두밴처 v0.7.3-pt19</title>
+<title>어두밴처 v0.7.3-pt20</title>
 <style>body{margin:0;background:#0e1420}</style>
 </head>
 <body>
@@ -318,7 +318,7 @@ function(a,b,c){if(!Vd(b))throw Error(n(200));return Wd(null,a,b,!1,c)};Q.unmoun
    GAS 피드백 파이프 — v0.7 재구현 (제안/신호/텔레메트리)
    ============================================================ */
 /* 플레이테스트 빌드 태그 — 테스트 중 버전 구분용. 수정할 때마다 뒤 번호를 올린다. */
-const BUILD = "v0.7.3-pt19";
+const BUILD = "v0.7.3-pt20";
 const GAS_URL = "https://script.google.com/macros/s/AKfycbxFx_m5rhCZmqGoy3JcUUNqEgiObMWNHe9hx-LnZrhzIkfwa9-yJGBWP0lVulptnNQeCQ/exec";
 function gasPost(payload, options = {}) {
   return fetch(GAS_URL, {
@@ -838,6 +838,9 @@ const UI = {
   pathAllWalked: { ko: "이 갈림길의 길은 모두 걸어 봤다.", en: "You have walked every road from here." },
   pathLeft: { ko: "가 보지 않은 갈림길: {n}곳", en: "Crossroads with a road not taken: {n}" },
   scarTag: { ko: "흉터 {d}", en: "scar {d}" },
+  retrialNeed: { ko: "결정적 단서 {n}/{t}", en: "decisive fragments {n}/{t}" },
+  wrongH: { ko: "⚖ 오판 기록", en: "⚖ Wrongful verdict" },
+  wrongHint: { ko: "재심하려면 결정적 단서 두 개(편지의 수신인, 열쇠 꼬리표)가 모두 필요하다.", en: "A retrial needs both decisive fragments (the letters' addressee, the key tag)." },
   scarNew: { ko: "🩹 흉터가 남았다 — {s} {d}. 다음 기록부터 {s}의 장애물이 1 낮아진다.", en: "🩹 A scar remains — {s} {d}. From your next record, {s} checks get 1 easier." },
   scarMaxed: { ko: "🩹 {s}의 흉터는 이미 깊다 {d}.", en: "🩹 Your {s} scars run deep already {d}." },
   scarH: { ko: "흉터 — 실패가 남긴 것", en: "Scars — what failure left behind" },
@@ -2881,6 +2884,7 @@ const SCENES = {
       en: `You're back in Saltmarsh. The lighthouse turns; the docks are quiet.\n\nThe chief's study. Seon pours tea and smiles. "You're back, {name}. You passed the test."\n\nBern stands at the window, head bowed. The name your case board points to — Seon's face says he already knows it.\n\n"Accuse me, then. And this winter, the grain and medicine the smugglers brought in stop too. What the village children eat is your call now."\n\nBern speaks low. "Accuse me. I'm old, and I lied. The village has to live."`
     },
     choices: [{
+      wrongNot: true,
       label: { ko: "[고발] 세온이 S다 — 관헌에 넘긴다", en: "[Accuse] Seon is S — hand him to the law" },
       stake: { ko: "진실이 밝혀진다 · 이번 겨울의 곡식과 약이 끊긴다", en: "The truth comes out · this winter's grain and medicine stop" },
       result: {
@@ -2912,6 +2916,30 @@ const SCENES = {
         },
         flags: ["dealSeon"],
         goto: "ending4"
+      }
+    }, {
+      wrongReq: true,
+      needFrags: ["f_addressee", "f_hand_match"],
+      label: { ko: "[재심] 지난 판결을 뒤집는다 — 세온이 S다", en: "[Retrial] Overturn the last verdict — Seon is S" },
+      stake: { ko: "결정적 단서 둘을 모두 내놓아야 한다 · 베른이 풀려나고, 겨울의 곡식과 약은 끊긴다", en: "You must lay down both decisive fragments · Bern walks free, and the winter grain and medicine stop" },
+      result: {
+        text: {
+          ko: `탁자 위에 두 장을 나란히 놓는다. 편지의 수신인, 그리고 열쇠 꼬리표의 글씨.\n\n세온의 웃음이 처음으로 멈춘다. "…그 판결은 이미 끝난 일일세."\n\n"기록은 고쳐 쓸 수 있습니다. 당신이 가르쳐 줬죠."`,
+          en: `You lay the two pages side by side. The letters' addressee, and the hand on the key tag.\n\nFor the first time, Seon's smile stops. "…That verdict is settled."\n\n"Records can be rewritten. You taught me that."`
+        },
+        flags: ["accuseSeon", "retrial"],
+        goto: "ending4"
+      }
+    }, {
+      wrongReq: true,
+      label: { ko: "[보류] 아직이다 — 증거를 더 모아 다시 오겠다", en: "[Withdraw] Not yet — I'll come back with more evidence" },
+      stake: { ko: "판결은 그대로 남는다 · 다음 기록에서 다시 이 서재에 설 수 있다", en: "The verdict stands for now · you can stand in this study again next record" },
+      result: {
+        text: {
+          ko: `찻잔에 손대지 않고 일어선다. 세온이 어깨를 으쓱한다. "언제든 오게. 판결은 어디 가지 않으니."`,
+          en: `You rise without touching the tea. Seon shrugs. "Come back any time. The verdict isn't going anywhere."`
+        },
+        goto: "ending3"
       }
     }]
   },
@@ -3002,6 +3030,10 @@ function buildEnding3(flags) {
 }
 function buildEnding4(flags) {
   const ko = [], en = [];
+  if (flags.includes("retrial")) {
+    ko.push("철창 문이 열린다. 지난 판결로 끌려갔던 베른 영감이, 다리를 절며 걸어 나온다. 당신을 보고 한참을 말이 없다.");
+    en.push("The cell door opens. Old Bern, taken away by the last verdict, limps out. He looks at you a long while without a word.");
+  }
   if (flags.includes("accuseSeon")) {
     ko.push("겨울이 온다. 밀수선은 오지 않는다. 부두의 빵값이 두 배가 되고, 사람들은 당신을 보면 말을 멈춘다.");
     en.push("Winter comes. The smugglers' boats don't. Bread on the docks costs double, and people stop talking when you pass.");
@@ -3372,6 +3404,24 @@ function caseState(lore) {
 /* ---------- 공식 기록 — 게임의 첫 화면이자 모든 결말의 거울. "기록은 거짓말을 한다" ----------
    한 회차 = 기록 한 호(제113호부터). 촌장 세온이 쓴 공식 기록과, 플레이어가 아는 반박(붉은 손글씨)을 나란히 둔다. */
 const RECORD_FIRST = 113;
+// 판결: 틀린 판결(베른에게 죄 / 거래)은 '오판'으로 남아 다음 기록에서도 지워지지 않는다. 재심으로만 지운다.
+function nextVerdict(prev, flags, name, no) {
+  const kind = ["accuseSeon", "accuseBern", "dealSeon"].find(f => flags.includes(f)) || "dealSeon";
+  const v = { kind, name, no: no || null };
+  if (kind === "accuseSeon") {
+    if (prev && prev.wrong && flags.includes("retrial")) v.overturned = prev.wrong;
+    return v;
+  }
+  v.wrong = (prev && prev.wrong) || { kind, no: no || null, name };
+  return v;
+}
+function wrongLine(wrong) {
+  if (!wrong) return null;
+  const n = wrong.no || "?";
+  return wrong.kind === "accuseBern"
+    ? bi(`판결 제${n}호 — 등대지기 베른, 수감 중.`, `Verdict No. ${n} — lighthouse keeper Bern, imprisoned.`)
+    : bi(`판결 제${n}호 — 사건 종결. 입회인은 침묵 중.`, `Verdict No. ${n} — case closed. The witness keeps silent.`);
+}
 function officialRecord(kind, flags, no, verdict) {
   const has = f => flags.includes(f);
   const n = no || RECORD_FIRST;
@@ -3383,17 +3433,17 @@ function officialRecord(kind, flags, no, verdict) {
       bi("떠돌이 모험가 1명, 사망. 이름은 기록되지 않았다.", "One wandering adventurer: dead. The name was not recorded."),
       bi("어선 3척, 암초에 좌초. 원인: 불운.", "Three fishing boats wrecked on the rocks. Cause: bad luck.")];
     if (verdict.kind === "accuseSeon") return {
-      head, lines: [bi("새 촌장 취임 후 첫 폭풍.", "The first storm under the new chief."), ...base],
+      head, lines: [bi("새 촌장 취임 후 첫 폭풍.", "The first storm under the new chief."), ...base, verdict.overturned && bi(`판결 제${verdict.overturned.no || "?"}호 — 재심으로 파기.`, `Verdict No. ${verdict.overturned.no || "?"} — overturned on retrial.`)].filter(Boolean),
       signer: bi(`기록자: 기록관 ${who}`, `Recorded by: Archivist ${who}`),
       rebut: bi("이것도 거짓말이다.", "This is a lie too.")
     };
     if (verdict.kind === "accuseBern") return {
-      head, lines: [bi("폭풍의 밤. 새 등대지기, 사고로 부상.", "Night of the storm. The new lighthouse keeper, injured in an accident."), base[1], base[2]],
+      head, lines: [bi("폭풍의 밤. 새 등대지기, 사고로 부상.", "Night of the storm. The new lighthouse keeper, injured in an accident."), base[1], base[2], wrongLine(verdict.wrong)].filter(Boolean),
       signer: seon,
       rebut: bi("베른 영감은 아무 짓도 하지 않았다.", "Old Bern never did a thing.")
     };
     return {
-      head, lines: base,
+      head, lines: [...base, wrongLine(verdict.wrong)].filter(Boolean),
       signer: bi(`기록자: 촌장 세온 · 입회: ${who}`, `Recorded by: Chief Seon · Witness: ${who}`),
       rebut: bi("당신도 여기에 서명했다.", "You signed this too.")
     };
@@ -3438,6 +3488,13 @@ function officialRecord(kind, flags, no, verdict) {
       : has("f_hand_match") ? bi("무관하다고? S의 글씨는 열쇠 꼬리표와 같다.", "Unrelated? S's hand matches the key tag.") : null
   };
   if (kind === 4) {
+    if (has("accuseSeon") && has("retrial")) return {
+      head: bi(`소금여울 공식 기록 · 제${n}호 (재심)`, `Saltmarsh Official Record · No. ${n} (retrial)`),
+      lines: [bi("원판결 파기. 등대지기 베른: 석방.", "Original verdict overturned. Keeper Bern: released."), bi("등대 사건의 주모자: 촌장 세온.", "Mastermind of the lighthouse affair: Chief Seon.")],
+      signer: bi("기록자: {이름}", "Recorded by: {name}"),
+      rebut: null,
+      stamp: bi("재심", "Retrial")
+    };
     if (has("accuseSeon")) return {
       head: bi(`소금여울 공식 기록 · 제${n}호 (정정)`, `Saltmarsh Official Record · No. ${n} (corrected)`),
       lines: [bi("등대 사건의 주모자: 촌장 세온.", "Mastermind of the lighthouse affair: Chief Seon."), bi("떠돌이 모험가 {이름}: 생존.", "Wandering adventurer {name}: alive.")],
@@ -3516,12 +3573,13 @@ function recordShareText(record, pc, lang) {
 }
 // 지난 회차 요약 — 새 기록 첫 화면에 "지난 기록의 당신은 …" 한 줄로 돌아온다.
 function runSummary(flags, no, died) {
-  return { no: no || RECORD_FIRST, died: !!died, keys: ["accuseSeon", "accuseBern", "dealSeon", "both3", "saved3", "chase3", "bothRail", "caughtRen", "keptLens", "signal", "peaceful", "believed"].filter(f => flags.includes(f)) };
+  return { no: no || RECORD_FIRST, died: !!died, keys: ["retrial", "accuseSeon", "accuseBern", "dealSeon", "both3", "saved3", "chase3", "bothRail", "caughtRen", "keptLens", "signal", "peaceful", "believed"].filter(f => flags.includes(f)) };
 }
 function lastRunLine(sum) {
   if (!sum) return null;
   const has = f => sum.keys.includes(f);
-  const what = has("accuseSeon") ? bi("세온을 고발했다", "accused Seon")
+  const what = has("retrial") ? bi("재심으로 지난 판결을 뒤집었다", "overturned the last verdict on retrial")
+    : has("accuseSeon") ? bi("세온을 고발했다", "accused Seon")
     : has("accuseBern") ? bi("베른에게 죄를 씌웠다", "let Bern take the blame")
     : has("dealSeon") ? bi("세온과 거래했다", "made a deal with Seon")
     : has("both3") ? bi("배달부도 증거도 놓치지 않았다", "saved both the courier and the evidence")
@@ -4495,6 +4553,8 @@ const css = `
 .crpg .scarNote { margin:6px 0 0; font-size:13px; color:#e8a07f; }
 .crpg .tag .scar { color:#e8a07f; }
 .crpg .scarLine { font-size:13px; margin:2px 0; }
+.crpg .tag.lock { border-color:#b05050; color:#e08a8a; }
+.crpg .wrongBox { border:1px solid #b05050; border-radius:8px; padding:4px 10px; margin:8px 0; }
 .crpg .tag.cls { border-color:#c97a5a; color:#e8a07f; }
 .crpg .card .road { font-size:12.5px; line-height:1.45; color:#e8a07f; margin:6px 0; }
 .crpg .choice.fresh { border-color:#d4a94e; box-shadow:0 0 0 1px rgba(212,169,78,.35) inset; }
@@ -4658,7 +4718,8 @@ function CRPG() {
   const scene = SCENES[sceneKey];
   const chapter = scene?.ch || 1;
   const hasCheckChoices = scene?.choices?.some(c => c.check);
-  const visibleChoices = (scene?.choices || []).filter(ch => (!ch.classOnly || pc && ch.classOnly === pc.classKey) && (!ch.loreReq || lore.includes(ch.loreReq)) && (!ch.artifactReq || artifacts.includes(ch.artifactReq)) && (!ch.echoReq || flags.includes(ch.echoReq)) && (!ch.flagNot || !flags.includes(ch.flagNot)) && (!ch.caseMin || caseState(lore).found.filter(id => id !== ch.frag).length >= ch.caseMin));
+  const visibleChoices = (scene?.choices || []).filter(ch => (!ch.classOnly || pc && ch.classOnly === pc.classKey) && (!ch.loreReq || lore.includes(ch.loreReq)) && (!ch.artifactReq || artifacts.includes(ch.artifactReq)) && (!ch.echoReq || flags.includes(ch.echoReq)) && (!ch.flagNot || !flags.includes(ch.flagNot)) && (!ch.caseMin || caseState(lore).found.filter(id => id !== ch.frag).length >= ch.caseMin) && (!ch.wrongNot || !verdict?.wrong) && (!ch.wrongReq || !!verdict?.wrong));
+  const lockedBy = ch => ch.needFrags ? ch.needFrags.filter(f => !lore.includes(f)) : [];
   const narrativeId = choice => sceneKey + ":" + scene.choices.indexOf(choice);
   // 지난 회차에 와 본 장면에서만 표시한다: 안 간 길은 위로, 간 길은 아래로.
   const pathBeen = seenAtRun.includes(sceneKey) || takenAtRun.some(id => id.startsWith(sceneKey + ":"));
@@ -4801,7 +4862,7 @@ function CRPG() {
   // 회차가 끝나면(엔딩·게임오버) 이어하기 기록을 비운다. 엔딩 도감(badges)은 별도로 영구 보관된다.
   useEffect(() => {
     if (pc && scene && scene.ending === 4) {
-      const v = { kind: ["accuseSeon", "accuseBern", "dealSeon"].find(f => flags.includes(f)) || "dealSeon", name: pc.name, no: runNo || null };
+      const v = nextVerdict(store.get("aduventure_verdict"), flags, pc.name, runNo);
       store.set("aduventure_verdict", v);
       setVerdict(v);
     }
@@ -5449,7 +5510,7 @@ function CRPG() {
     className: "frag " + (cs.found.includes(id) ? "got" : "unseen")
   }, cs.found.includes(id) ? "\u25C6 " + tx(f.text) + (f.decisive ? " " + ui("decisiveTag") : "") : "\u25C7 " + ui("fragHint") + tx(f.where))), React.createElement("p", {
     className: "caseStatus " + (cs.ready ? "ready" : "")
-  }, cs.ready ? ui("caseReady") : ui("caseNeed") + cs.missing.map(k => ui(k)).join(" · ")), React.createElement("p", { className: "pathNote" }, ui("pathLeft", { n: untakenCrossroads(store.get("aduventure_seen") || [], store.get("aduventure_taken") || []) })), React.createElement("h4", null, ui("scarH")), (() => {
+  }, cs.ready ? ui("caseReady") : ui("caseNeed") + cs.missing.map(k => ui(k)).join(" · ")), React.createElement("p", { className: "pathNote" }, ui("pathLeft", { n: untakenCrossroads(store.get("aduventure_seen") || [], store.get("aduventure_taken") || []) })), verdict && verdict.wrong && React.createElement("div", { className: "wrongBox" }, React.createElement("h4", null, ui("wrongH")), React.createElement("p", null, tx(wrongLine(verdict.wrong))), React.createElement("p", { className: "pathNote" }, ui("wrongHint"))), React.createElement("h4", null, ui("scarH")), (() => {
     const scars = store.get("aduventure_scars") || {};
     const keys = Object.keys(scars).filter(k => scarLevel(scars, k) > 0);
     return keys.length ? keys.map(k => React.createElement("p", { key: k, className: "scarLine" }, ui("scarLine", { s: tx(SKILL_NAMES[k]), d: scarDots(scarLevel(scars, k)), n: scarLevel(scars, k), w: tx(SCENE_TITLES[scars[k].at] || { ko: scars[k].at, en: scars[k].at }) }))) : React.createElement("p", { className: "scarLine" }, ui("scarNone"));
@@ -5762,8 +5823,11 @@ function CRPG() {
   }, pathAll && React.createElement("p", { className: "pathNote" }, ui("pathAllWalked")), pathOrdered.map(ch => /*#__PURE__*/React.createElement("button", {
     key: narrativeId(ch),
     className: "choice" + (pathMark(ch) ? " " + pathMark(ch) : ""),
-    onClick: () => doChoice(ch)
-  }, tx(ch.label), ch.classOnly && CLASSES[ch.classOnly] && React.createElement("span", {
+    disabled: lockedBy(ch).length > 0,
+    onClick: () => { if (!lockedBy(ch).length) doChoice(ch); }
+  }, tx(ch.label), ch.needFrags && React.createElement("span", {
+    className: "tag lock"
+  }, ui("retrialNeed", { n: ch.needFrags.length - lockedBy(ch).length, t: ch.needFrags.length })), ch.classOnly && CLASSES[ch.classOnly] && React.createElement("span", {
     className: "tag cls"
   }, CLASSES[ch.classOnly].icon + " " + ui("classRoad", { c: tx(CLASSES[ch.classOnly].name) })), pathMark(ch) && React.createElement("span", {
     className: "tag path"
