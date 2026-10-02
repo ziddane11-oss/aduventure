@@ -24,7 +24,7 @@ const choices = tree => nodes(tree).filter(n => n.type === 'button' && n.props.c
 function game({flags = [], lore = [], lang = 'en', sceneKey = 'intro2'} = {}) {
   const states = [];
   let index = 0;
-  const data = new Map([['aduventure_lang', JSON.stringify(lang)], ['aduventure_lore', JSON.stringify(lore)]]);
+  const data = new Map([['aduventure_lang', JSON.stringify(lang)], ['aduventure_lore', JSON.stringify(lore)], ['aduventure_numbers', 'true']]);
   const ctx = vm.createContext({
     console, Date, Math, setTimeout: () => 0, clearTimeout() {}, setInterval: () => 0, clearInterval() {},
     window: {addEventListener() {}}, document: {documentElement: {}},

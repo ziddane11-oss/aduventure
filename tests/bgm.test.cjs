@@ -115,10 +115,10 @@ function text(node) {
   if (Array.isArray(node)) return node.map(text).join('');
   return typeof node === 'object' ? text(node.children) : String(node);
 }
-function render(sceneKey, lang) {
+function render(sceneKey, lang, numbers = false) {
   const states = [];
   let index = 0;
-  const data = new Map([['aduventure_lang', JSON.stringify(lang)]]);
+  const data = new Map([['aduventure_lang', JSON.stringify(lang)], ['aduventure_numbers', JSON.stringify(numbers)]]);
   const ctx = vm.createContext({
     console, Date, Math, setTimeout: () => 0, clearTimeout() {}, setInterval: () => 0, clearInterval() {},
     window: {addEventListener() {}}, document: {documentElement: {}},
@@ -149,7 +149,7 @@ function render(sceneKey, lang) {
 for (const lang of ['ko', 'en']) {
   for (const sceneKey of ['railing', 'rescue']) {
     test(`${lang}: ${sceneKey} shows what each choice puts at stake before it is made`, () => {
-      const {tree, run} = render(sceneKey, lang);
+      const {tree, run} = render(sceneKey, lang, true);
       const buttons = nodes(tree).filter(n => n.type === 'button' && n.props.className === 'choice');
       // 파이터에게는 '둘 다' 길이 하나 더 있다(pt18).
       const expected = run(`SCENES.${sceneKey}.choices.filter(c => !c.classOnly || c.classOnly === 'fighter').map(c => c.stake.${lang})`);

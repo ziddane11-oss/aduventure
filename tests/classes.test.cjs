@@ -23,7 +23,7 @@ const byClass = (tree, c) => nodes(tree).filter(n => n.props.className === c);
 function game({sceneKey = null, cls = 'fighter', lang = 'en'} = {}) {
   const states = [];
   let index = 0;
-  const data = new Map([['aduventure_lang', JSON.stringify(lang)]]);
+  const data = new Map([['aduventure_lang', JSON.stringify(lang)], ['aduventure_numbers', 'true']]);
   const ctx = vm.createContext({
     console, Date, Math, setTimeout: () => 0, clearTimeout() {}, setInterval: () => 0, clearInterval() {},
     window: {addEventListener() {}}, document: {documentElement: {}},

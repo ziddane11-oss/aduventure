@@ -23,7 +23,7 @@ const byClass = (tree, c) => nodes(tree).filter(n => n.props.className === c);
 function fresh(store = {}) {
   const states = [];
   let index = 0;
-  const data = new Map([['aduventure_lang', JSON.stringify('en')], ...Object.entries(store).map(([k, v]) => [k, JSON.stringify(v)])]);
+  const data = new Map([['aduventure_lang', JSON.stringify('en')], ['aduventure_numbers', 'true'], ['aduventure_record_no', '114'], ...Object.entries(store).map(([k, v]) => [k, JSON.stringify(v)])]);
   const ctx = vm.createContext({
     console, Date, Math, setTimeout: () => 0, clearTimeout() {}, setInterval: () => 0, clearInterval() {},
     window: {addEventListener() {}}, document: {documentElement: {}},
