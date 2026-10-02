@@ -1,4 +1,4 @@
-// pt27 — 결투의 마지막 수에 시간 제한(끌 수 있음). 시간이 다 되면 망설임 → 첫 판정 선택지의 실패.
+// pt28 — 소리는 기본으로 켜져 있다. 끈 사람만 꺼진 채로 기억한다.
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
@@ -21,10 +21,11 @@ function text(node) {
 const byClass = (tree, c) => nodes(tree).filter(n => n.props.className === c);
 const expand = (tree, name) => { const el = nodes(tree).find(n => typeof n.type === 'function' && n.type.name === name); return el ? el.type({...el.props, children: el.children}) : null; };
 
-function game({sceneKey = 'ending', flags = [], lore = [], lang = 'en'} = {}) {
+function game({sceneKey = 'ending', flags = [], lore = [], lang = 'en', sfx} = {}) {
   const states = [];
   let index = 0;
   const data = new Map([['aduventure_lang', JSON.stringify(lang)], ['aduventure_lore', JSON.stringify(lore)]]);
+  if (sfx !== undefined) data.set('aduventure_sfx', JSON.stringify(sfx));
   const ctx = vm.createContext({
     console, Date, Math, setTimeout: () => 0, clearTimeout() {}, setInterval: () => 0, clearInterval() {},
     window: {addEventListener() {}}, document: {documentElement: {}},
@@ -58,39 +59,21 @@ function game({sceneKey = 'ending', flags = [], lore = [], lang = 'en'} = {}) {
   return {data, render, goals, panel, card, press, run: c => vm.runInContext(c, ctx), state: () => { render(); return ctx.api; }};
 }
 
-const timerBox = tree => nodes(tree).find(n => typeof n.props.className === 'string' && n.props.className.startsWith('duelTimer'));
+const soundBtn = tree => nodes(tree).find(n => n.type === 'button' && ['🔊', '🔇'].includes(text(n)));
 
-test('the last move of a duel shows a clock that can be turned off and stays off', () => {
-  const g = game({sceneKey: 'duel2'});
-  const box = timerBox(g.render());
-  assert.ok(box, 'timer on duel2');
-  assert.match(text(box), /16s before you falter/);
-  nodes(box).find(n => n.props.className === 'timerToggle').props.onClick();
-  assert.equal(g.data.get('aduventure_timer'), 'false');
-  assert.match(text(timerBox(g.render())), /Clock off/);
-  assert.equal(g.state().timerOn, false);
+test('sound starts on for a new player and wakes on the first touch', () => {
+  const g = game({sceneKey: 'intro'});
+  assert.equal(text(soundBtn(g.render())), '🔊');
+  assert.equal(g.run('SFX.enabled'), true);
+  assert.match(g.run('BGM.wake.toString()'), /SFX\.enabled/);
 });
 
-test('running out of time falls into the first check choice\'s failure, once', () => {
-  const g = game({sceneKey: 'duel2'});
-  const hp = g.state().pc.hp;
-  g.state().hesitate();
-  const s = g.state();
-  assert.equal(s.sceneKey, 'railing');
-  assert.match(s.lastResult.text, /You hesitated, and they moved first/);
-  assert.ok(hp === 12 && s.pc.hp < hp, 'the counter lands');
-  g.state().hesitate();
-  assert.equal(g.state().sceneKey, 'railing', 'no second timeout off-scene');
-});
-
-test('only the three last-move scenes are timed, and the clock speaks both languages', () => {
-  for (const k of ['scully2', 'monk2']) assert.ok(timerBox(game({sceneKey: k}).render()), k);
-  for (const k of ['duel1', 'intro', 'scully1']) assert.equal(timerBox(game({sceneKey: k}).render()), undefined, k);
-  const ko = game({sceneKey: 'scully2', lang: 'ko'});
-  assert.match(text(timerBox(ko.render())), /망설일 시간 16초/);
-  const g = game();
-  for (const k of ['timerLeft', 'timerOff', 'timerOffNote', 'timerOn', 'timerHesitate']) {
-    const t = JSON.parse(g.run(`JSON.stringify(UI.${k})`));
-    assert.ok(HANGUL.test(t.ko) && t.en && !HANGUL.test(t.en), k);
-  }
+test('muting is remembered, and only then does it start muted', () => {
+  const g = game({sceneKey: 'intro'});
+  soundBtn(g.render()).props.onClick();
+  assert.equal(g.data.get('aduventure_sfx'), 'false');
+  assert.equal(text(soundBtn(g.render())), '🔇');
+  const again = game({sceneKey: 'intro', sfx: false});
+  assert.equal(text(soundBtn(again.render())), '🔇');
+  assert.equal(again.run('SFX.enabled'), false);
 });

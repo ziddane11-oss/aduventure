@@ -91,14 +91,38 @@ test('the right line and the right evidence strike the lie in red, and the next 
   assert.equal(g.state().fate, 2);
 });
 
-test('the wrong evidence seals it too', () => {
+test('a wrong piece of evidence gets one more try; the second miss seals it', () => {
+  const g = game({flags: ['sabotage', 'trail', 'keeper']});
+  g.press('choice objStart');
+  g.press('choice objLine', 1);
+  const panel = text(g.panel());
+  assert.match(panel, /“Cause: bad luck\.”/, 'the lie being rebutted is quoted');
+  assert.match(panel, /Not a breakdown — someone tampered with it/, 'each piece says what it shows');
+  const pick = name => { const ev = nodes(g.panel()).filter(n => n.props.className === 'choice objEvidence').map(text); g.press('choice objEvidence', ev.findIndex(t => t.includes(name))); };
+  pick('Footprints');
+  assert.equal(g.state().flags.includes('rebutX1'), false, 'not sealed on the first miss');
+  assert.match(text(g.panel()), /try once more/);
+  assert.ok(!text(g.panel()).includes('Footprints'), 'the tried piece is set aside');
+  pick('bell-keeper');
+  assert.ok(g.state().flags.includes('rebutX1'));
+  assert.match(text(g.panel()), /doesn't overturn this line/);
+});
+
+test('after one miss, the right piece still wins', () => {
   const g = game({flags: ['sabotage', 'trail']});
   g.press('choice objStart');
   g.press('choice objLine', 1);
-  const ev = nodes(g.panel()).filter(n => n.props.className === 'choice objEvidence').map(text);
-  g.press('choice objEvidence', ev.findIndex(t => t.includes('Footprints')));
-  assert.ok(g.state().flags.includes('rebutX1'));
-  assert.match(text(g.panel()), /doesn't overturn this line/);
+  const ev = () => nodes(g.panel()).filter(n => n.props.className === 'choice objEvidence').map(text);
+  g.press('choice objEvidence', ev().findIndex(t => t.includes('Footprints')));
+  g.press('choice objEvidence', ev().findIndex(t => t.includes('gear')));
+  assert.ok(g.state().flags.includes('rebut1'));
+});
+
+test('every piece of evidence says what it shows, in both languages', () => {
+  const g = game();
+  for (const e of JSON.parse(g.run('JSON.stringify(Object.values(EVIDENCE).map(e => e.shows))'))) {
+    assert.ok(HANGUL.test(e.ko) && e.en && !HANGUL.test(e.en));
+  }
 });
 
 test('fragments from earlier records count as evidence; with nothing in hand you can only back down', () => {
