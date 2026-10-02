@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>어두밴처 v0.7.3-pt18</title>
+<title>어두밴처 v0.7.3-pt19</title>
 <style>body{margin:0;background:#0e1420}</style>
 </head>
 <body>
@@ -318,7 +318,7 @@ function(a,b,c){if(!Vd(b))throw Error(n(200));return Wd(null,a,b,!1,c)};Q.unmoun
    GAS 피드백 파이프 — v0.7 재구현 (제안/신호/텔레메트리)
    ============================================================ */
 /* 플레이테스트 빌드 태그 — 테스트 중 버전 구분용. 수정할 때마다 뒤 번호를 올린다. */
-const BUILD = "v0.7.3-pt18";
+const BUILD = "v0.7.3-pt19";
 const GAS_URL = "https://script.google.com/macros/s/AKfycbxFx_m5rhCZmqGoy3JcUUNqEgiObMWNHe9hx-LnZrhzIkfwa9-yJGBWP0lVulptnNQeCQ/exec";
 function gasPost(payload, options = {}) {
   return fetch(GAS_URL, {
@@ -831,6 +831,8 @@ const UI = {
   forkStairs: { ko: "⤳ 갈림길로: 렌과 마주치는 계단부터", en: "⤳ Jump to the fork: the stairs where you meet Ren" },
   forkRescue: { ko: "⤳ 갈림길로: 3장 수문 앞부터", en: "⤳ Jump to the fork: Ch.3, at the sluice" },
   forkTag: { ko: "다른 쪽을 골라 볼 곳", en: "where you can choose differently" },
+  classRoad: { ko: "{c}의 길", en: "{c}'s road" },
+  classRoadH: { ko: "직업의 길", en: "Class road" },
   pathFresh: { ko: "◇ 안 가 본 길", en: "◇ road not taken" },
   pathWalked: { ko: "↺ 지난 기록에서 간 길", en: "↺ taken in a past record" },
   pathAllWalked: { ko: "이 갈림길의 길은 모두 걸어 봤다.", en: "You have walked every road from here." },
@@ -1417,7 +1419,42 @@ const SCENES = {
       },
       stake: { ko: "이기면 렌과 렌즈 중 하나만 지킬 수 있다", en: "Win, and you can save only Ren or the lens" },
       goto: "duel1"
-    }]
+    }, {
+      "classOnly": "rogue",
+      "label": {
+        "ko": "싸우는 척 다가가, 렌의 자루에서 종이만 슬쩍한다",
+        "en": "Close in as if to bargain — and lift just the paper from Ren's sack"
+      },
+      "check": {
+        "ability": "DEX",
+        "skill": "stealth",
+        "dc": 12,
+        "label": "은신"
+      },
+      "stake": {
+        "ko": "실패하면 손목을 잡힌 채 싸움이 시작된다",
+        "en": "Fail, and the fight starts with your wrist in his grip"
+      },
+      "success": {
+        "text": {
+          "ko": "\"알았어, 알았어. 렌즈만 두고 가.\" 손을 들고 다가간다. 시선은 렌의 얼굴에, 손가락은 자루 끈에.\n\n렌이 렌즈를 꺼내 바닥에 내려놓는 사이 — 자루 속 젖은 종이 한 장이 당신 소매로 사라진다. 촌장실 비품 반출 확인 — 서명, 세온.\n\n렌은 끝내 모른 채 창밖 어둠으로 사라진다.",
+          "en": "\"All right, all right. Just leave the lens.\" You step closer, hands up — eyes on Ren's face, fingers on the sack's cord.\n\nWhile he sets the lens on the floor, a wet slip from the sack vanishes up your sleeve: removal approved by the chief's office — signed, Seon.\n\nRen slips out the window into the dark, never the wiser."
+        },
+        "goto": "top",
+        "flags": [
+          "peaceful",
+          "f_receipt"
+        ]
+      },
+      "fail": {
+        "text": {
+          "ko": "소매가 자루 끈에 걸렸다. 렌의 손이 당신 손목을 낚아챈다.\n\n\"좀도둑 주제에.\" 갈고리가 올라간다.",
+          "en": "Your sleeve catches on the cord. Ren's hand clamps onto your wrist.\n\n\"A petty thief, are we?\" The hook rises."
+        },
+        "goto": "duel1"
+      }
+    }
+    ]
   },
   combat: {
     ch: 1,
@@ -1589,7 +1626,53 @@ const SCENES = {
         flags: ["keptLens", "f_receipt"],
         goto: "top"
       }
-    }]
+    }, {
+      "classOnly": "fighter",
+      "label": {
+        "ko": "한 손엔 렌의 손목, 한 손엔 자루 — 둘 다 붙든다",
+        "en": "Ren's wrist in one hand, the sack in the other — hold on to both"
+      },
+      "check": {
+        "ability": "STR",
+        "skill": "athletics",
+        "dc": 14,
+        "label": "운동"
+      },
+      "stake": {
+        "ko": "실패하면 둘 다 놓친다",
+        "en": "Fail, and you lose both"
+      },
+      "success": {
+        "text": {
+          "ko": "어깨가 빠질 것 같다. 그래도 놓지 않는다.\n\n왼손엔 렌의 손목, 오른손엔 렌즈 자루. 이를 악물고 둘 다 난간 안으로 끌어 올린다.\n\n렌이 숨을 몰아쉬며 중얼거린다. \"…미친놈. 베른 영감이 이 렌즈를 사려 했었어. 그 영감한테 물어봐.\"\n\n자루에서 젖은 종이 한 장이 삐져나와 있다. 촌장실 비품 반출 확인 — 서명, 세온.",
+          "en": "Your shoulder feels ready to tear. You don't let go.\n\nRen's wrist in your left hand, the lens sack in your right. Teeth clenched, you haul both back over the railing.\n\nRen gasps for breath. \"…Madman. Old Bern wanted to buy this lens. Ask him.\"\n\nA wet slip pokes out of the sack: removal approved by the chief's office — signed, Seon."
+        },
+        "goto": "top",
+        "flags": [
+          "caughtRen",
+          "bothRail",
+          "f_ren_keeper",
+          "f_receipt"
+        ]
+      },
+      "fail": {
+        "text": {
+          "ko": "욕심이었다. 자루의 무게가 손목을 비튼다 —\n\n자루가 먼저 빠져 계단통 벽에 부딪히고, 렌의 손목도 손가락 사이로 미끄러진다. 아래에서 둔탁한 소리, 그리고 유리에 금 가는 소리.\n\n둘 다 놓쳤다. 금 간 렌즈를 주워 왔을 때, 렌은 절뚝이며 어둠 속으로 사라진 뒤였다.",
+          "en": "It was greed. The sack's weight twists your wrist —\n\nthe sack slips first and slams the stairwell wall, and Ren's wrist slides through your fingers. A dull thud below, then the sound of glass cracking.\n\nYou lost both. By the time you fetch the cracked lens, Ren has limped off into the dark."
+        },
+        "damage": [
+          2,
+          4
+        ],
+        "ifDown": "signal",
+        "goto": "top",
+        "flags": [
+          "keptLens",
+          "lensCracked"
+        ]
+      }
+    }
+    ]
   },
   // 패배 후 경로 — 렌즈는 잃었지만 어선은 아직 구할 수 있다. 핵심 단서(빼낸 톱니)도 판정 없이 본다.
   signal: {
@@ -1698,7 +1781,51 @@ const SCENES = {
         flags: ["jury", "wired", "sabotage"],
         goto: "ending"
       }
-    }]
+    }, {
+      "classOnly": "wizard",
+      "label": {
+        "ko": "렌즈에 남은 마지막 빛의 궤적을 되짚는다 — 어젯밤, 이 빛은 누구와 말했나",
+        "en": "Trace the last path of light left in the lens — last night, who was it talking to?"
+      },
+      "check": {
+        "ability": "INT",
+        "skill": "arcana",
+        "dc": 12,
+        "label": "비전학"
+      },
+      "stake": {
+        "ko": "실패하면 기관은 임시방편으로만 돈다",
+        "en": "Fail, and the mechanism only runs on a makeshift fix"
+      },
+      "success": {
+        "text": {
+          "ko": "렌즈 표면에 손바닥을 댄다. 빛은 지나간 길을 기억한다 — 세계의 방정식에서 시간 항만 뒤집으면.\n\n어젯밤의 빛줄기가 유령처럼 되살아난다. 바다의 밀수선으로 한 번, 그리고 그 배의 답신이 꽂힌 곳 — 언덕 위, 촌장 집의 창문.\n\n주문의 여열로 톱니가 제자리를 찾아 돈다. 줄 자국이 선명하다 — 누군가 일부러 갈아서 빼낸 것이다.",
+          "en": "You lay your palm on the lens. Light remembers the paths it took — flip the time term in the world's equation, and it shows you.\n\nLast night's beam rises like a ghost. Once toward the smugglers' ship at sea, and then where that ship's reply struck — up the hill, the window of the chief's house.\n\nIn the spell's afterglow, the gear finds its place and turns. The file marks are plain — someone filed it down and pulled out the gear on purpose."
+        },
+        "goto": "ending",
+        "flags": [
+          "fixed",
+          "sabotage",
+          "f_window"
+        ]
+      },
+      "fail": {
+        "text": {
+          "ko": "방정식이 맞지 않는다. 빛의 궤적은 안개처럼 흩어지고 손바닥만 화끈거린다.\n\n남은 건 임시방편뿐. 톱니를 끼워 넣자 기관이 덜컹거리며 돈다. 톱니의 줄 자국 — 누군가 일부러 빼낸 것이다.",
+          "en": "The equation won't balance. The trail of light scatters like mist, leaving only a burning palm.\n\nAll that's left is a makeshift fix. You wedge the gear in and the mechanism clanks into motion. File marks on the gear — someone pulled out the gear on purpose."
+        },
+        "damage": [
+          1,
+          2
+        ],
+        "goto": "ending",
+        "flags": [
+          "jury",
+          "sabotage"
+        ]
+      }
+    }
+    ]
   },
   ending: {
     ch: 1,
@@ -1828,7 +1955,41 @@ const SCENES = {
       },
       flagDirect: "lensBack",
       goto: "wharfLens"
-    }]
+    }, {
+      "classOnly": "rogue",
+      "label": {
+        "ko": "밀수꾼 행세로 끼어들어, 어젯밤 '불빛 신호'를 떠본다",
+        "en": "Pass as a smuggler and fish for last night's light signal"
+      },
+      "check": {
+        "ability": "CHA",
+        "skill": "deception",
+        "dc": 12,
+        "label": "기만"
+      },
+      "stake": {
+        "ko": "실패하면 정체가 들통나 매복 쪽으로 몰린다",
+        "en": "Fail, and you're made — and herded toward the ambush"
+      },
+      "success": {
+        "text": {
+          "ko": "낡은 모자를 눌러쓰고 밀수꾼들 탁자에 끼어 앉는다. \"어젯밤 신호, 누가 받았수? 우리 배는 못 봤는데.\"\n\n한 놈이 비웃는다. \"촌장 집 2층 창문이지. 답은 늘 거기서 와. 신참이구먼.\"\n\n잔을 비우고 일어선다. 3번 창고 위치는 덤으로 들었다.",
+          "en": "Hat pulled low, you squeeze in at the smugglers' table. \"Who answered the signal last night? Our boat never saw it.\"\n\nOne of them snorts. \"The chief's upstairs window. The answer always comes from there. You're new, huh.\"\n\nYou drain your cup and stand. Warehouse 3's location came thrown in for free."
+        },
+        "goto": "warehouseA",
+        "flags": [
+          "f_window"
+        ]
+      },
+      "fail": {
+        "text": {
+          "ko": "\"…너, 어느 배 소속이라고?\" 탁자 밑에서 칼집 소리가 난다.\n\n웃으며 일어서지만 등 뒤로 발소리가 셋 따라붙는다. 그들이 모는 대로 3번 창고 정면까지 밀려간다.",
+          "en": "\"…Which boat did you say you're with?\" A scabbard rasps under the table.\n\nYou laugh and stand, but three sets of footsteps follow. They herd you right up to the front of Warehouse 3."
+        },
+        "goto": "warehouseB"
+      }
+    }
+    ]
   },
   wharfRen: {
     ch: 2,
@@ -1898,7 +2059,48 @@ const SCENES = {
         en: "[Fight] Kick the door in"
       },
       goto: "scully1"
-    }]
+    }, {
+      "classOnly": "fighter",
+      "label": {
+        "ko": "경첩째 문을 뜯어내고, 놀란 틈에 장부부터 낚아챈다",
+        "en": "Tear the door off its hinges and snatch the ledger while they gape"
+      },
+      "check": {
+        "ability": "STR",
+        "skill": "athletics",
+        "dc": 13,
+        "label": "운동"
+      },
+      "stake": {
+        "ko": "실패하면 장부 없이 싸움이 시작된다",
+        "en": "Fail, and the fight starts without the ledger"
+      },
+      "success": {
+        "text": {
+          "ko": "녹슨 경첩이 비명을 지르며 뜯겨 나간다. 문짝째 밀고 들어가자 안에 있던 셋이 얼어붙는다.\n\n그 한 박자면 충분하다. 탁자 위 장부를 낚아챈다. 맨 끝 줄 — S의 몫은 '소금여울 공동 기금'으로.\n\n스컬리가 칼을 뽑기도 전에, 당신은 이미 그의 멱살을 쥐고 있다.",
+          "en": "The rusted hinges shriek and give. You shove the whole door in, and the three inside freeze.\n\nThat one beat is enough. You snatch the ledger off the table. Its last line: S's share — to the Saltmarsh Common Fund.\n\nBefore Scully can draw, you already have him by the collar."
+        },
+        "goto": "confront",
+        "flags": [
+          "ledger",
+          "grip",
+          "f_fund"
+        ]
+      },
+      "fail": {
+        "text": {
+          "ko": "문은 뜯겼지만, 안의 놈들이 더 빨랐다. 장부는 화로 속으로 던져지고 —\n\n스컬리의 단검이 이미 당신을 향한다.",
+          "en": "The door gives, but the men inside are faster. The ledger goes into the brazier —\n\nand Scully's dagger is already pointed at you."
+        },
+        "damage": [
+          1,
+          4
+        ],
+        "ifDown": "gameover",
+        "goto": "scully1"
+      }
+    }
+    ]
   },
   warehouseB: {
     ch: 2,
@@ -1960,7 +2162,48 @@ const SCENES = {
         damage: [1, 4],
         goto: "scully1"
       }
-    }]
+    }, {
+      "classOnly": "wizard",
+      "label": {
+        "ko": "매복꾼들의 등불 기름에 불씨를 옮겨 붙인다",
+        "en": "Jump a spark into the ambushers' lamp oil"
+      },
+      "check": {
+        "ability": "INT",
+        "skill": "arcana",
+        "dc": 12,
+        "label": "비전학"
+      },
+      "stake": {
+        "ko": "실패하면 연기 속에서 기습당한다",
+        "en": "Fail, and you're jumped in the smoke"
+      },
+      "success": {
+        "text": {
+          "ko": "손가락을 튕긴다. 등불마다 불길이 한 뼘씩 치솟고, 매복꾼들이 비명을 지르며 흩어진다.\n\n불빛에 드러난 탁자 위 장부. 연기를 헤치고 집어 든다 — S의 몫은 '소금여울 공동 기금'으로.\n\n불붙은 소매를 털던 스컬리가 당신을 보고 굳는다.",
+          "en": "You snap your fingers. Every lamp flares a hand's width higher, and the ambushers scatter, shrieking.\n\nIn the glare, a ledger on the table. You pluck it out of the smoke — S's share, to the Saltmarsh Common Fund.\n\nScully, slapping at his burning sleeve, freezes when he sees you."
+        },
+        "goto": "confront",
+        "flags": [
+          "ledger",
+          "grip",
+          "f_fund"
+        ]
+      },
+      "fail": {
+        "text": {
+          "ko": "불씨가 엉뚱한 곳에 붙었다. 창고가 연기로 가득 차고 —\n\n연기 속에서 단검이 날아든다.",
+          "en": "The spark catches the wrong thing. Smoke floods the warehouse —\n\nand a dagger comes at you out of the smoke."
+        },
+        "damage": [
+          1,
+          4
+        ],
+        "ifDown": "gameover",
+        "goto": "scully1"
+      }
+    }
+    ]
   },
   confront: {
     ch: 2,
@@ -2378,7 +2621,76 @@ const SCENES = {
         en: "[Fight] Kick the torch and rush him"
       },
       goto: "monk1"
-    }]
+    }, {
+      "classOnly": "rogue",
+      "label": {
+        "ko": "그림자에 붙어 철창 너머 배달부에게 속삭인다 — 편지는 누구 앞이었나",
+        "en": "Hug the shadows and whisper through the bars — who were the courier's letters for?"
+      },
+      "check": {
+        "ability": "DEX",
+        "skill": "stealth",
+        "dc": 12,
+        "label": "은신"
+      },
+      "stake": {
+        "ko": "실패하면 사내에게 들켜 싸움이 시작된다",
+        "en": "Fail, and the man spots you — the fight begins"
+      },
+      "success": {
+        "text": {
+          "ko": "횃불이 등을 돌리는 박자에 맞춰 철창까지 미끄러진다. 배달부의 눈이 커진다.\n\n\"쉿. 편지, 누구 앞이었지?\"\n\"…늘 같았소. 소금여울의 세온.\"\n\n그사이 사내 허리춤의 열쇠 꾸러미가 소리 없이 당신 손으로 옮겨 온다.",
+          "en": "Timing yourself to the torch's turn, you slide up to the bars. The courier's eyes go wide.\n\n\"Shh. The letters — who were they for?\"\n\"…Always the same. Seon, of Saltmarsh.\"\n\nMeanwhile the key ring on the man's belt moves into your hand without a sound."
+        },
+        "goto": "rescue",
+        "flags": [
+          "quiet3",
+          "f_addressee"
+        ]
+      },
+      "fail": {
+        "text": {
+          "ko": "발밑에서 쥐 한 마리가 찍 소리를 낸다. 횃불이 홱 돌아선다.\n\n\"거기 누구냐!\"",
+          "en": "A rat squeaks underfoot. The torch whips around.\n\n\"Who's there!\""
+        },
+        "goto": "monk1"
+      }
+    }, {
+      "classOnly": "wizard",
+      "label": {
+        "ko": "사내 허리춤의 열쇠 꾸러미를 소리 없이 끌어당겨, 꼬리표 글씨를 읽는다",
+        "en": "Silently draw the key ring off the man's belt and read the writing on its tag"
+      },
+      "check": {
+        "ability": "INT",
+        "skill": "arcana",
+        "dc": 12,
+        "label": "비전학"
+      },
+      "stake": {
+        "ko": "실패하면 열쇠가 쩔렁여 싸움이 시작된다",
+        "en": "Fail, and the keys jingle — the fight begins"
+      },
+      "success": {
+        "text": {
+          "ko": "보이지 않는 실을 열쇠 고리에 건다. 꾸러미가 허공을 미끄러져 당신 손에 떨어진다.\n\n꼬리표의 글씨. S의 서명과 같은 손이다 — 획을 꺾는 버릇까지.\n\n사내는 아직 모른다. 철창 자물쇠가 조용히 돌아간다.",
+          "en": "You hook an invisible thread through the key ring. It glides through the air and drops into your hand.\n\nThe writing on the tag: the same hand as S's signature — down to the way it breaks each stroke.\n\nThe man still hasn't noticed. The cell lock turns quietly."
+        },
+        "goto": "rescue",
+        "flags": [
+          "quiet3",
+          "f_hand_match"
+        ]
+      },
+      "fail": {
+        "text": {
+          "ko": "열쇠 하나가 다른 열쇠에 부딪혀 쩔렁 — 사내가 허리춤을 움켜쥐며 돌아선다.\n\n\"마법사 나부랭이가.\"",
+          "en": "One key knocks against another — clink. The man clutches his belt and spins around.\n\n\"A hedge-wizard, is it.\""
+        },
+        "goto": "monk1"
+      }
+    }
+    ]
   },
   /* ---------- 가짜 수도사와의 결투(3장) — 느리고 무거운 촛대. 2박: 물이 차오른다, 열쇠냐 승부냐 ---------- */
   monk1: {
@@ -2503,7 +2815,53 @@ const SCENES = {
         flags: ["chase3", "f_hand_match"],
         goto: "ending3"
       }
-    }]
+    }, {
+      "classOnly": "fighter",
+      "label": {
+        "ko": "둘 다 — 배달부를 둘러업고, 그대로 물살 속 편지를 쫓는다",
+        "en": "Both — sling the courier over your shoulder and chase the letters into the current"
+      },
+      "check": {
+        "ability": "STR",
+        "skill": "athletics",
+        "dc": 15,
+        "label": "운동"
+      },
+      "stake": {
+        "ko": "실패하면 배달부만 건지고 편지는 잃는다",
+        "en": "Fail, and you save only the courier — the letters are lost"
+      },
+      "success": {
+        "text": {
+          "ko": "배달부를 어깨에 둘러업는다. 무릎까지, 허리까지 물이 찬다.\n\n떠내려가는 편지 뭉치를 한 팔로 끌어안는다. 수문이 무너지기 직전, 둘 다 안고 계단을 기어오른다.\n\n배달부가 콜록이며 말한다. \"편지… 수신인은 늘 같았소. 소금여울의, 세온.\"\n\n젖은 편지 끝의 서명. 지하 저장고 열쇠 꼬리표의 글씨와 같은 손이다.",
+          "en": "You sling the courier over your shoulder. The water rises to your knees, your waist.\n\nOne arm hooks the drifting bundle of letters. Just before the sluice gives, you crawl up the stairs holding both.\n\nThe courier coughs. \"The letters… always the same addressee. Seon, of Saltmarsh.\"\n\nThe signature at the end of a soaked letter: the same hand as the writing on the undercroft key tag."
+        },
+        "goto": "ending3",
+        "flags": [
+          "saved3",
+          "chase3",
+          "both3",
+          "f_addressee",
+          "f_hand_match"
+        ]
+      },
+      "fail": {
+        "text": {
+          "ko": "물이 생각보다 빨랐다. 편지에 손을 뻗는 순간, 어깨 위의 배달부가 미끄러진다.\n\n편지를 버리고 배달부를 붙든다. 계단 위로 끌어 올리자 그는 거친 숨만 몰아쉰다. 물 위로 편지 조각만 흩어진다.",
+          "en": "The water is faster than you thought. As you reach for the letters, the courier slips off your shoulder.\n\nYou let the letters go and grab him. When you drag him up the stairs, he can only gasp for breath. Scraps of letters drift on the water."
+        },
+        "damage": [
+          2,
+          4
+        ],
+        "ifDown": "gameover",
+        "goto": "ending3",
+        "flags": [
+          "saved3"
+        ]
+      }
+    }
+    ]
   },
   ending3: {
     ch: 3,
@@ -2608,7 +2966,12 @@ function buildEnding2(flags) {
 function buildEnding3(flags) {
   const ko = [];
   const en = [];
-  if (flags.includes("saved3")) {
+  if (flags.includes("both3")) {
+    ko.push("배달부를 업고, 편지 뭉치를 끌어안고 물을 헤쳐 나왔다. 아무것도 버리지 않았다.");
+    en.push("You came out of the water with the courier on your back and the letters in your arms. You gave up nothing.");
+    ko.push("어깨에서 내려선 배달부가 품에서 마지막 편지를 꺼낸다. \"이것까지 가져가시오. 당신이라면 끝까지 배달하겠지.\"");
+    en.push("Set down at last, the courier draws one more letter from his coat. \"Take this too. You'd see it delivered.\"");
+  } else if (flags.includes("saved3")) {
     ko.push("배달부를 업고 물을 헤쳐 나왔다. 증거는 대부분 물에 녹았다 — 한 장만 빼고.");
     en.push("You hauled the courier out through the water. Most of the evidence dissolved — all but one page.");
     ko.push("배달부가 떨리는 손으로 품에서 꺼낸 마지막 편지. \"이건… 내가 배달할 뻔한 거요.\"");
@@ -2897,16 +3260,22 @@ function chapterLedger(ch, flags) {
 /* ---------- 사건 기록장 — S는 누구인가. 조각은 회차를 넘어 쌓이고(lore), 한 판으로는 결론에 닿지 않는다 ----------
    각 조각은 서로 배타적인 갈림길 한쪽에서만 나온다. points: 용의자별 의심 변화. decisive: 결정적 증거. */
 const FRAGMENTS = {
-  f_ren_keeper: { text: bi("렌: \"베른 영감이 렌즈를 사려 했다\"", "Ren: \"Old Bern wanted to buy the lens\""), where: bi("1장 난간 — 렌을 붙잡는다", "Ch.1 railing — catch Ren"), points: { bern: 2, ren: -1 } },
-  f_receipt: { text: bi("자루 속 종이: 촌장실 비품 반출 확인 — 세온", "Slip in the sack: removal approved by the chief's office — Seon"), where: bi("1장 난간 — 렌즈를 붙잡는다", "Ch.1 railing — grab the lens"), points: { seon: 1, ren: -1 } },
-  f_window: { text: bi("밀수선에 답한 불빛: 세온의 집 창문", "The light that answered the smugglers: Seon's window"), where: bi("1장 — 렌에게 지고 봉화를 올린다", "Ch.1 — lose to Ren and light the beacon"), points: { seon: 2 } },
-  f_fund: { text: bi("장부: S의 돈은 '소금여울 공동 기금'으로", "Ledger: S's money went to the Saltmarsh Common Fund"), where: bi("2장 창고 — 들키지 않고 장부를 챙긴다", "Ch.2 warehouse — take the ledger unseen"), points: { seon: 1 } },
+  f_ren_keeper: { text: bi("렌: \"베른 영감이 렌즈를 사려 했다\"", "Ren: \"Old Bern wanted to buy the lens\""), where: bi("1장 난간 — 렌을 붙잡는다 · 파이터: 둘 다 붙든다", "Ch.1 railing — catch Ren · Fighter: hold on to both"), points: { bern: 2, ren: -1 } },
+  f_receipt: { text: bi("자루 속 종이: 촌장실 비품 반출 확인 — 세온", "Slip in the sack: removal approved by the chief's office — Seon"), where: bi("1장 난간 — 렌즈를 붙잡는다 · 로그: 계단에서 자루를 턴다", "Ch.1 railing — grab the lens · Rogue: lift it on the stairs"), points: { seon: 1, ren: -1 } },
+  f_window: { text: bi("밀수선에 답한 불빛: 세온의 집 창문", "The light that answered the smugglers: Seon's window"), where: bi("1장 — 렌에게 지고 봉화를 올린다 · 위저드: 등실에서 빛을 되짚는다 · 로그: 부두에서 밀수꾼 행세", "Ch.1 — lose to Ren and light the beacon · Wizard: trace the light · Rogue: pose as a smuggler"), points: { seon: 2 } },
+  f_fund: { text: bi("장부: S의 돈은 '소금여울 공동 기금'으로", "Ledger: S's money went to the Saltmarsh Common Fund"), where: bi("2장 창고 — 들키지 않고 장부를 챙긴다 · 파이터·위저드: 각자의 방식으로", "Ch.2 warehouse — take the ledger unseen · Fighter, Wizard: each their own way"), points: { seon: 1 } },
   f_hands: { text: bi("스컬리: 줄질한 손은 펜 쥐는 마을 사람", "Scully: the filer was a villager with a pen-holder's hands"), where: bi("2장 — 등대의 톱니로 스컬리를 추궁한다", "Ch.2 — press Scully about the filed gear"), points: { seon: 1, bern: -1 } },
-  f_addressee: { text: bi("핍: 편지 수신인은 늘 소금여울의 세온", "Pip: the letters were always addressed to Seon of Saltmarsh"), where: bi("3장 수문 — 사람을 택한다", "Ch.3 sluice — choose the person"), points: { seon: 3 }, decisive: true },
-  f_hand_match: { text: bi("S의 서명 = 열쇠 꼬리표의 글씨", "S's signature matches the hand on the key tag"), where: bi("3장 수문 — 증거를 택한다", "Ch.3 sluice — choose the evidence"), points: { seon: 3 }, decisive: true },
+  f_addressee: { text: bi("핍: 편지 수신인은 늘 소금여울의 세온", "Pip: the letters were always addressed to Seon of Saltmarsh"), where: bi("3장 수문 — 사람을 택한다 · 로그: 철창 너머 속삭임 · 파이터: 둘 다", "Ch.3 sluice — choose the person · Rogue: a whisper through the bars · Fighter: both"), points: { seon: 3 }, decisive: true },
+  f_hand_match: { text: bi("S의 서명 = 열쇠 꼬리표의 글씨", "S's signature matches the hand on the key tag"), where: bi("3장 수문 — 증거를 택한다 · 위저드: 열쇠 꼬리표 · 파이터: 둘 다", "Ch.3 sluice — choose the evidence · Wizard: the key tag · Fighter: both"), points: { seon: 3 }, decisive: true },
   f_bern_lied: { text: bi("베른의 고백: 검은 코트는 없었다, 누군가 시켰다", "Bern's confession: there was no black coat; someone ordered it"), where: bi("2장 아침 — 조각 3개 이상을 알고 베른에게 묻는다", "Ch.2 morning — ask Bern once you know 3+ fragments"), points: { bern: -2, seon: 1 } }
 };
 const CASE_NEED = 4;
+// 직업의 길: 장마다 그 직업만 갈 수 있는 길이 하나씩 있고, 그 길에서 단서 조각을 얻는다.
+const CLASS_ROADS = {
+  fighter: bi("둘 다 잡는다 — 남들이 하나를 버릴 때 힘으로 둘 다 노린다. 실패하면 둘 다 잃는다.", "Take both — where others must give one up, force your way to both. Fail, and you lose both."),
+  rogue: bi("먼저 안다 — 싸움이 시작되기 전에 엿듣고, 훔쳐보고, 슬쩍한다.", "Know first — overhear, peek and pocket before any fight begins."),
+  wizard: bi("꿰뚫어 본다 — 빛과 글씨에 남은 흔적을 읽는다. 몸은 약하다.", "See through — read what light and handwriting leave behind. A fragile body.")
+};
 // 위치 카드: 지금 어디서 무엇을 하는지 한 줄로.
 const SCENE_DOING = {
   intro: bi("촌장에게 등대 열쇠를 받는다", "Taking the lighthouse key from the chief"),
@@ -3131,7 +3500,7 @@ function recordShareText(record, pc, lang) {
 }
 // 지난 회차 요약 — 새 기록 첫 화면에 "지난 기록의 당신은 …" 한 줄로 돌아온다.
 function runSummary(flags, no, died) {
-  return { no: no || RECORD_FIRST, died: !!died, keys: ["accuseSeon", "accuseBern", "dealSeon", "saved3", "chase3", "caughtRen", "keptLens", "signal", "peaceful", "believed"].filter(f => flags.includes(f)) };
+  return { no: no || RECORD_FIRST, died: !!died, keys: ["accuseSeon", "accuseBern", "dealSeon", "both3", "saved3", "chase3", "bothRail", "caughtRen", "keptLens", "signal", "peaceful", "believed"].filter(f => flags.includes(f)) };
 }
 function lastRunLine(sum) {
   if (!sum) return null;
@@ -3139,9 +3508,11 @@ function lastRunLine(sum) {
   const what = has("accuseSeon") ? bi("세온을 고발했다", "accused Seon")
     : has("accuseBern") ? bi("베른에게 죄를 씌웠다", "let Bern take the blame")
     : has("dealSeon") ? bi("세온과 거래했다", "made a deal with Seon")
+    : has("both3") ? bi("배달부도 증거도 놓치지 않았다", "saved both the courier and the evidence")
     : has("saved3") ? bi("증거 대신 배달부를 구했다", "saved the courier over the evidence")
     : has("chase3") ? bi("배달부 대신 증거를 쫓았다", "chased the evidence over the courier")
     : sum.died ? bi("기록대로 죽었다", "died, just as recorded")
+    : has("bothRail") ? bi("렌도 렌즈도 놓치지 않았다", "held on to both Ren and the lens")
     : has("caughtRen") ? bi("렌을 붙잡고 렌즈를 잃었다", "caught Ren and lost the lens")
     : has("keptLens") ? bi("렌즈를 붙잡고 렌을 떨어뜨렸다", "grabbed the lens and let Ren fall")
     : has("signal") ? bi("쓰러졌다가 봉화를 올렸다", "fell, then lit a beacon")
@@ -4105,6 +4476,8 @@ const css = `
 .crpg .expandBtn { display:block; margin:-4px 0 12px; padding:4px 0; border:0; background:transparent; color:#8fc3e6; font-size:13px; cursor:pointer; }
 .crpg .choice.fork { border-style:dashed; }
 .crpg .choice.walked { opacity:.55; }
+.crpg .tag.cls { border-color:#c97a5a; color:#e8a07f; }
+.crpg .card .road { font-size:12.5px; line-height:1.45; color:#e8a07f; margin:6px 0; }
 .crpg .choice.fresh { border-color:#d4a94e; box-shadow:0 0 0 1px rgba(212,169,78,.35) inset; }
 .crpg .tag.path { border-color:#d4a94e; color:#d4a94e; }
 .crpg .choice.walked .tag.path { border-color:var(--line); color:inherit; }
@@ -5171,7 +5544,7 @@ function CRPG() {
     onClick: () => pickClass(k)
   }, /*#__PURE__*/React.createElement("div", {
     className: "ci"
-  }, c.icon), /*#__PURE__*/React.createElement("h2", null, tx(c.name)), /*#__PURE__*/React.createElement("p", null, tx(c.blurb)), /*#__PURE__*/React.createElement("div", {
+  }, c.icon), /*#__PURE__*/React.createElement("h2", null, tx(c.name)), /*#__PURE__*/React.createElement("p", null, tx(c.blurb)), CLASS_ROADS[k] && React.createElement("p", { className: "road" }, React.createElement("b", null, ui("classRoadH"), " · "), tx(CLASS_ROADS[k])), /*#__PURE__*/React.createElement("div", {
     className: "st"
   }, "HP ", c.maxHp, " \xB7 AC ", c.ac, " \xB7 ", tx(c.weapon.name), " \xB7 ", ui("special"), " ", tx(SPECIALS[k].name), /*#__PURE__*/React.createElement("br", null), ui("proficient"), " ", c.proficiencies.map(s => tx(SKILL_NAMES[s])).join(" · "))))), React.createElement(StatsHelp, { ui }), React.createElement("details", {
     className: "archive"
@@ -5345,7 +5718,9 @@ function CRPG() {
     key: narrativeId(ch),
     className: "choice" + (pathMark(ch) ? " " + pathMark(ch) : ""),
     onClick: () => doChoice(ch)
-  }, tx(ch.label), pathMark(ch) && React.createElement("span", {
+  }, tx(ch.label), ch.classOnly && CLASSES[ch.classOnly] && React.createElement("span", {
+    className: "tag cls"
+  }, CLASSES[ch.classOnly].icon + " " + ui("classRoad", { c: tx(CLASSES[ch.classOnly].name) })), pathMark(ch) && React.createElement("span", {
     className: "tag path"
   }, ui(pathMark(ch) === "fresh" ? "pathFresh" : "pathWalked")), ch.check && /*#__PURE__*/React.createElement("span", {
     className: "tag"

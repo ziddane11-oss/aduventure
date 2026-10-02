@@ -116,7 +116,7 @@ for (const [label, gained, artifact] of [
   test(`railing: "${label}" trades one thing for another`, () => {
     const g = game({sceneKey: 'railing'});
     assert.equal(g.run('SCENES.combat.victory.goto'), 'railing');
-    assert.equal(choices(g.render()).length, 2);
+    assert.equal(choices(g.render()).length, 3, 'Two roads, plus the fighter\'s road to take both');
     g.click(label);
     const s = g.state();
     assert.equal(s.sceneKey, 'top');

@@ -69,7 +69,7 @@ function game({sceneKey = 'stairs', flags = [], classKey = 'fighter', hp = 12, s
 
 test('the stairs fight and failed talks now lead to the narrative duel, not the number combat', () => {
   const g = game();
-  assert.deepEqual([...g.run(`SCENES.stairs.choices.flatMap(c => [c.goto, c.fail?.goto]).filter(Boolean)`)].sort(), ['duel1', 'duel1', 'duel1']);
+  assert.deepEqual([...g.run(`SCENES.stairs.choices.flatMap(c => [c.goto, c.fail?.goto]).filter(Boolean)`)].sort(), ['duel1', 'duel1', 'duel1', 'duel1'], 'Including the rogue\'s failed lift');
   g.click('[Fight]');
   assert.equal(g.state().sceneKey, 'duel1');
 });
