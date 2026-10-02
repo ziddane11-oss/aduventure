@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>어두밴처 v0.7.3-pt23</title>
+<title>어두밴처 v0.7.3-pt24</title>
 <style>body{margin:0;background:#0e1420}</style>
 </head>
 <body>
@@ -318,7 +318,7 @@ function(a,b,c){if(!Vd(b))throw Error(n(200));return Wd(null,a,b,!1,c)};Q.unmoun
    GAS 피드백 파이프 — v0.7 재구현 (제안/신호/텔레메트리)
    ============================================================ */
 /* 플레이테스트 빌드 태그 — 테스트 중 버전 구분용. 수정할 때마다 뒤 번호를 올린다. */
-const BUILD = "v0.7.3-pt23";
+const BUILD = "v0.7.3-pt24";
 const GAS_URL = "https://script.google.com/macros/s/AKfycbxFx_m5rhCZmqGoy3JcUUNqEgiObMWNHe9hx-LnZrhzIkfwa9-yJGBWP0lVulptnNQeCQ/exec";
 function gasPost(payload, options = {}) {
   return fetch(GAS_URL, {
@@ -4407,6 +4407,8 @@ const CAST = {
   ire: { name: bi("이레", "Ire"), role: bi("먹울의 눈먼 낭독가", "The blind reader of Inkfold"), mark: "\uD83D\uDC50" }
 };
 const SUSPECTS = ["seon", "bern", "ren"];
+// 인물 초상: 그림 파일이 준비되면 경로만 채운다(예: seon: "art/seon.png"). 비어 있으면 표식(mark)만 보인다. → docs/art-brief.md
+const PORTRAITS = {};
 const SCENE_CAST = {
   c2_reader: ["ire"],
   intro: ["seon"], stairs: ["ren"], duel1: ["ren"], duel2: ["ren"], railing: ["ren"], top: ["bern"], signal: ["bern"],
@@ -5367,12 +5369,12 @@ function SuggestBox({
    LAYER 3 — UI
    ============================================================ */
 const css = `
-@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600;900&family=IBM+Plex+Mono:wght@400;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600;900&family=IBM+Plex+Mono:wght@400;600&family=Black+Han+Sans&family=Oswald:wght@500;700&display=swap');
 .crpg * { box-sizing:border-box; margin:0; }
 .crpg {
-  --ink:#0e1420; --panel:#151d2e; --panel2:#1b2538; --line:#2a3650;
-  --text:#d8d2c4; --dim:#878270; --gold:#d4a94e;
-  --good:#7fbf7f; --bad:#d96a5f; --accent:#5e8fb8;
+  --ink:#121110; --panel:#1b1917; --panel2:#23201d; --line:#3d3731;
+  --text:#e6dfd1; --dim:#8e867a; --gold:#cdb68b; --red:#c0392b;
+  --good:#7fbf7f; --bad:#d96a5f; --accent:#b3aa9c;
   min-height:100vh; background:var(--ink); color:var(--text);
   font-family:'Noto Serif KR',serif; display:flex; flex-direction:column; align-items:center; padding:0 16px 48px;
 }
@@ -5384,7 +5386,7 @@ const css = `
 .crpg .hctrl { display:flex; gap:8px; align-items:center; font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--dim); }
 .crpg .hctrl select, .crpg .hctrl button { background:var(--panel); color:var(--gold); border:1px solid var(--line);
   border-radius:4px; padding:4px 9px; font-family:inherit; font-size:11px; cursor:pointer; }
-.crpg .lhscene { display:block; width:100%; border:1px solid var(--line); border-radius:10px; margin-bottom:16px; background:#0b101c; }
+.crpg .lhscene { display:block; width:100%; border:1px solid var(--line); border-radius:10px; margin-bottom:16px; background:#0f0e0d; }
 .crpg .artimg { display:block; width:100%; border:1px solid var(--gold); border-radius:10px; margin-bottom:4px; }
 .crpg .artcredit { font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:var(--dim); text-align:right; margin-bottom:12px; }
 .crpg .sheet { display:flex; gap:14px; flex-wrap:wrap; align-items:center; background:var(--panel);
@@ -5393,7 +5395,7 @@ const css = `
 .crpg .sheet .cls { font-style:normal; font-size:11px; color:var(--dim); margin-left:4px; }
 .crpg .health { flex:1 1 160px; min-width:110px; }
 .crpg .healthLabel { display:flex; justify-content:space-between; gap:12px; margin-bottom:5px; font-size:12px; }
-.crpg .hpbar { height:8px; background:#0a0f18; border-radius:4px; overflow:hidden; }
+.crpg .hpbar { height:8px; background:#0d0c0b; border-radius:4px; overflow:hidden; }
 .crpg .hpbar i { display:block; height:100%; background:linear-gradient(90deg,#a33,#d96a5f); transition:width .4s; }
 .crpg .statsHelp { width:100%; margin:8px 0; color:var(--dim); font-size:12px; line-height:1.65; }
 .crpg .statsHelp summary { color:var(--gold); cursor:pointer; }
@@ -5408,7 +5410,7 @@ const css = `
 .crpg .tut { border:1px solid var(--gold); border-radius:10px; background:var(--panel); padding:16px 18px; margin:16px 0; animation:fadeIn .4s ease; }
 .crpg .tut h4 { color:var(--gold); font-size:14px; letter-spacing:.08em; margin-bottom:10px; }
 .crpg .tut p { font-size:13.5px; line-height:1.9; }
-.crpg .tut button { margin-top:12px; background:var(--gold); color:#0e1420; border:none; border-radius:6px;
+.crpg .tut button { margin-top:12px; background:var(--gold); color:#121110; border:none; border-radius:6px;
   padding:8px 16px; font-family:inherit; font-size:13px; font-weight:600; cursor:pointer; }
 .crpg .result { border-left:3px solid var(--accent); padding:12px 16px; margin:12px 0; background:var(--panel);
   border-radius:0 8px 8px 0; font-size:15px; line-height:1.95; white-space:pre-wrap; animation:fadeIn .5s ease; }
@@ -5434,7 +5436,7 @@ const css = `
 .crpg .calcToggle { background:none; border:none; color:var(--accent); font-family:inherit; font-size:11px;
   cursor:pointer; padding:2px 0; text-decoration:underline dotted; }
 .crpg .jump { margin-top:8px; min-width:180px; }
-.crpg .track { position:relative; height:10px; background:#0a0f18; border-radius:5px; }
+.crpg .track { position:relative; height:10px; background:#0d0c0b; border-radius:5px; }
 .crpg .track .fill { position:absolute; left:0; top:0; bottom:0; border-radius:5px; transition:width .5s ease; }
 .crpg .track .fill.good { background:linear-gradient(90deg,#3e6e3e,var(--good)); }
 .crpg .track .fill.bad { background:linear-gradient(90deg,#7a3a34,var(--bad)); }
@@ -5450,7 +5452,7 @@ const css = `
 .crpg .stats { font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--dim); margin-top:18px; line-height:2; }
 .crpg .restart { margin-top:18px; margin-right:10px; background:none; border:1px solid var(--gold); color:var(--gold);
   border-radius:8px; padding:10px 20px; font-family:inherit; font-size:14px; cursor:pointer; }
-.crpg .restart.primary { background:var(--gold); color:#0e1420; font-weight:600; }
+.crpg .restart.primary { background:var(--gold); color:#121110; font-weight:600; }
 .crpg .pick { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:14px; margin-top:20px; }
 .crpg .card { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:18px;
   cursor:pointer; transition:all .15s; text-align:left; color:var(--text); font-family:inherit; }
@@ -5466,7 +5468,7 @@ const css = `
 .crpg .badge { font-family:'IBM Plex Mono',monospace; font-size:11px; border:1px solid var(--line);
   border-radius:20px; padding:5px 12px; color:var(--dim); }
 .crpg .badge.on { border-color:var(--gold); color:var(--gold); }
-.crpg .badge.new { animation:popIn .4s ease; box-shadow:0 0 12px rgba(212,169,78,.45); }
+.crpg .badge.new { animation:popIn .4s ease; box-shadow:0 0 12px rgba(205,182,139,.45); }
 .crpg .bcount { font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--accent); margin-top:16px; }
 .crpg .sgToggle { margin-top:26px; background:none; border:1px dashed var(--line); color:var(--dim);
   border-radius:8px; padding:9px 14px; font-family:inherit; font-size:13px; cursor:pointer; }
@@ -5477,7 +5479,7 @@ const css = `
   border-radius:8px; padding:10px 12px; font-family:inherit; font-size:14px; resize:vertical; }
 .crpg .sgBox textarea:focus { outline:none; border-color:var(--gold); }
 .crpg .sgRow { display:flex; gap:8px; margin-top:10px; }
-.crpg .sgRow button { background:var(--gold); color:#0e1420; border:none; border-radius:6px; padding:8px 14px;
+.crpg .sgRow button { background:var(--gold); color:#121110; border:none; border-radius:6px; padding:8px 14px;
   font-family:inherit; font-size:13px; font-weight:600; cursor:pointer; }
 .crpg .sgRow button:disabled { opacity:.4; cursor:default; }
 .crpg .sgRow button.ghost { background:none; border:1px solid var(--line); color:var(--dim); font-weight:400; }
@@ -5503,7 +5505,7 @@ const css = `
 .crpg .divider { text-align:center; color:var(--line); font-size:10px; margin:18px 0; letter-spacing:.5em; }
 .crpg .sheet .clueLine { width:100%; color:var(--gold); opacity:.85; }
 .crpg .teaser { margin-top:16px; border:1px solid var(--gold); border-radius:10px; padding:14px;
-  background:linear-gradient(180deg, rgba(212,169,78,.07), transparent); animation:fadeIn .6s ease; }
+  background:linear-gradient(180deg, rgba(205,182,139,.07), transparent); animation:fadeIn .6s ease; }
 .crpg .teaser p { font-size:13.5px; line-height:1.9; color:var(--text); margin-top:10px; font-style:italic; }
 .crpg footer { margin-top:34px; padding-top:14px; border-top:1px solid var(--line);
   font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:var(--dim); line-height:1.9; }
@@ -5534,10 +5536,10 @@ const css = `
 }
 .crpg .continueBtn { display:flex; flex-direction:column; align-items:center; gap:3px; width:100%; margin:2px 0 20px;
   padding:14px 16px; border:1px solid var(--gold); border-radius:10px;
-  background:linear-gradient(180deg, rgba(212,169,78,.16), rgba(212,169,78,.04));
+  background:linear-gradient(180deg, rgba(205,182,139,.16), rgba(205,182,139,.04));
   color:var(--gold); font-family:inherit; font-size:16px; font-weight:600; cursor:pointer; transition:all .15s;
-  box-shadow:0 0 0 rgba(212,169,78,0); animation:fadeIn .5s ease; }
-.crpg .continueBtn:hover { background:rgba(212,169,78,.24); transform:translateY(-1px); box-shadow:0 4px 14px rgba(212,169,78,.18); }
+  box-shadow:0 0 0 rgba(205,182,139,0); animation:fadeIn .5s ease; }
+.crpg .continueBtn:hover { background:rgba(205,182,139,.24); transform:translateY(-1px); box-shadow:0 4px 14px rgba(205,182,139,.18); }
 .crpg .continueBtn .cont-meta { font-size:12px; font-weight:400; color:var(--dim); letter-spacing:.02em; }
 .crpg .daily { display:flex; flex-direction:column; gap:4px; margin:18px 0 6px; padding:12px 14px;
   border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:8px; background:var(--panel); }
@@ -5548,26 +5550,26 @@ const css = `
 .crpg .daily .daily-s { font-size:12px; color:var(--dim); }
 .crpg .daily.done .daily-s { color:var(--good); font-weight:600; }
 .crpg .record.new { margin:12px 0 4px; padding:10px 14px; border-radius:8px; text-align:center; font-weight:600;
-  color:var(--gold); border:1px solid var(--gold); background:rgba(212,169,78,.1); animation:popIn .4s ease; }
+  color:var(--gold); border:1px solid var(--gold); background:rgba(205,182,139,.1); animation:popIn .4s ease; }
 .crpg .daily-res { margin:8px 0 4px; padding:9px 14px; border-radius:8px; font-size:13px; color:var(--dim);
   border:1px solid var(--line); background:var(--panel); }
 .crpg .daily-res.done { color:var(--good); border-color:var(--good); }
 .crpg .lorebook { display:flex; flex-wrap:wrap; gap:6px; margin:4px 0 2px; }
 .crpg .loreitem { font-size:12px; padding:5px 9px; border-radius:6px; border:1px solid var(--line); color:var(--dim); background:var(--panel); }
-.crpg .loreitem.on { border-color:var(--accent); color:var(--accent); background:rgba(94,143,184,.1); }
+.crpg .loreitem.on { border-color:var(--accent); color:var(--accent); background:rgba(179,170,156,.1); }
 .crpg .lore-hint { font-size:12px; color:var(--dim); font-style:italic; margin:2px 0 6px; }
-.crpg .choice .tag.lore { border:1px solid var(--accent); color:var(--accent); background:rgba(94,143,184,.14); }
+.crpg .choice .tag.lore { border:1px solid var(--accent); color:var(--accent); background:rgba(179,170,156,.14); }
 .crpg .artifactbook { display:flex; flex-wrap:wrap; gap:6px; margin:4px 0 2px; }
 .crpg .artifactitem { font-size:12px; padding:5px 9px; border-radius:6px; border:1px solid var(--line); color:var(--dim); background:var(--panel); }
-.crpg .artifactitem.on { border-color:var(--gold); color:var(--gold); background:rgba(212,169,78,.1); }
-.crpg .choice .tag.artifact { border:1px solid var(--gold); color:var(--gold); background:rgba(212,169,78,.16); }
-.crpg .artifact-get { margin:10px 0 4px; padding:11px 14px; border-radius:8px; text-align:center; font-weight:600; color:var(--gold); border:1px solid var(--gold); background:linear-gradient(180deg, rgba(212,169,78,.16), rgba(212,169,78,.04)); animation:popIn .4s ease; }
+.crpg .artifactitem.on { border-color:var(--gold); color:var(--gold); background:rgba(205,182,139,.1); }
+.crpg .choice .tag.artifact { border:1px solid var(--gold); color:var(--gold); background:rgba(205,182,139,.16); }
+.crpg .artifact-get { margin:10px 0 4px; padding:11px 14px; border-radius:8px; text-align:center; font-weight:600; color:var(--gold); border:1px solid var(--gold); background:linear-gradient(180deg, rgba(205,182,139,.16), rgba(205,182,139,.04)); animation:popIn .4s ease; }
 .crpg .intent { display:flex; flex-direction:column; gap:3px; margin:10px 0; padding:10px 12px; border-radius:8px; border:1px solid var(--line); background:var(--panel2); animation:fadeIn .3s ease; }
 .crpg .intent-h { font-size:11px; letter-spacing:.15em; color:var(--dim); font-weight:600; }
 .crpg .intent-t { font-size:14px; color:var(--text); }
 .crpg .intent.hook { border-color:var(--bad); background:rgba(217,106,95,.12); }
 .crpg .intent.hook .intent-h { color:var(--bad); }
-.crpg .intent.feint { border-color:var(--accent); background:rgba(94,143,184,.1); }
+.crpg .intent.feint { border-color:var(--accent); background:rgba(179,170,156,.1); }
 .crpg .titleArt.compact { max-height:17vh; width:100%; object-fit:cover; object-position:center 64%; }
 .crpg .stageWrap { position:relative; }
 .crpg .stageWrap::after { content:""; position:absolute; inset:0; pointer-events:none; border-radius:10px; transition:background .8s ease; z-index:21; }
@@ -5579,7 +5581,7 @@ const css = `
 .crpg .locCh { font-size:11px; color:#c9b88a; opacity:.85; }
 .crpg .locDoing { font-size:12px; color:#fff; text-shadow:0 1px 3px #000; overflow-wrap:anywhere; }
 .crpg .stageWrap.mood-danger .locPlace { color:#ff9c8a; }
-.crpg .expandBtn { display:block; margin:-4px 0 12px; padding:4px 0; border:0; background:transparent; color:#8fc3e6; font-size:13px; cursor:pointer; }
+.crpg .expandBtn { display:block; margin:-4px 0 12px; padding:4px 0; border:0; background:transparent; color:#c7bfb1; font-size:13px; cursor:pointer; }
 .crpg .choice.fork { border-style:dashed; }
 .crpg .choice.walked { opacity:.55; }
 .crpg .scarNote { margin:6px 0 0; font-size:13px; color:#e8a07f; }
@@ -5589,7 +5591,7 @@ const css = `
 .crpg .tag.one.diffEasy { color:#9fd39a; }
 .crpg .tag.one.diffHard { color:#e08a8a; }
 .crpg .hctrl button.on { border-color:var(--gold); color:var(--gold); }
-.crpg .unlockLine { margin:6px 0 12px; padding:8px 12px; border-left:3px solid var(--gold); background:rgba(212,169,78,.10); font-size:14px; }
+.crpg .unlockLine { margin:6px 0 12px; padding:8px 12px; border-left:3px solid var(--gold); background:rgba(205,182,139,.10); font-size:14px; }
 .crpg .bigLine { font-size:21px; line-height:1.5; color:#b0281c; font-weight:700; margin:14px 0 18px; animation:fadeIn 1.6s ease both; }
 .crpg .hallExtra { font-size:14px; opacity:.9; margin:4px 0 10px; }
 .crpg .redhand.small { font-size:14px; display:inline-block; margin:2px 6px 0 0; }
@@ -5597,8 +5599,8 @@ const css = `
 .crpg .wrongBox { border:1px solid #b05050; border-radius:8px; padding:4px 10px; margin:8px 0; }
 .crpg .tag.cls { border-color:#c97a5a; color:#e8a07f; }
 .crpg .card .road { font-size:12.5px; line-height:1.45; color:#e8a07f; margin:6px 0; }
-.crpg .choice.fresh { border-color:#d4a94e; box-shadow:0 0 0 1px rgba(212,169,78,.35) inset; }
-.crpg .tag.path { border-color:#d4a94e; color:#d4a94e; }
+.crpg .choice.fresh { border-color:#cdb68b; box-shadow:0 0 0 1px rgba(205,182,139,.35) inset; }
+.crpg .tag.path { border-color:#cdb68b; color:#cdb68b; }
 .crpg .choice.walked .tag.path { border-color:var(--line); color:inherit; }
 .crpg .pathNote { font-size:13px; opacity:.75; margin:4px 0 8px; }
 .crpg .noteCard { display:flex; flex-direction:column; gap:2px; margin:0 0 8px; padding:7px 11px; border-left:3px solid #b0281c; background:rgba(176,40,28,.10); border-radius:4px; font-size:13.5px; overflow-wrap:anywhere; }
@@ -5624,7 +5626,7 @@ const css = `
 .crpg details.archive > summary { cursor:pointer; font-size:13px; color:var(--gold); padding:6px 0; }
 .crpg .castRow { display:flex; flex-wrap:wrap; gap:6px; margin:0 0 12px; }
 .crpg .castChip { font-size:12px; padding:3px 9px; border:1px solid var(--line); border-radius:999px; background:rgba(255,255,255,.04); overflow-wrap:anywhere; }
-.crpg .tag.frag { border-color:#6aa3c9; color:#8fc3e6; }
+.crpg .tag.frag { border-color:#a89f92; color:#c7bfb1; }
 .crpg .tag.frag.seen { opacity:.6; }
 .crpg .caseBoard h4 { margin:14px 0 6px; font-size:13px; color:var(--gold); }
 .crpg .suspect { display:flex; align-items:center; gap:8px; margin:4px 0; font-size:13px; }
@@ -5645,10 +5647,10 @@ const css = `
 .crpg .ledgerMark { flex:0 0 1.2em; text-align:center; font-weight:700; }
 .crpg .ledgerRow.kept .ledgerMark { color:#7fbf7f; }
 .crpg .ledgerRow.lost .ledgerMark { color:#d47a6a; }
-.crpg .echoBanner { display:flex; flex-direction:column; gap:3px; margin:2px 0 14px; padding:10px 13px; border-radius:8px; border:1px solid #6f6aa8; border-left:3px solid #9b8fd6; background:rgba(123,111,176,.12); animation:fadeIn .4s ease; }
-.crpg .echo-h { font-size:11px; letter-spacing:.15em; color:#b9aef0; font-weight:600; }
+.crpg .echoBanner { display:flex; flex-direction:column; gap:3px; margin:2px 0 14px; padding:10px 13px; border-radius:8px; border:1px solid #8a2e22; border-left:3px solid #c0392b; background:rgba(192,57,43,.12); animation:fadeIn .4s ease; }
+.crpg .echo-h { font-size:11px; letter-spacing:.15em; color:#e08a7c; font-weight:600; }
 .crpg .echo-t { font-size:14px; color:var(--text); font-style:italic; }
-.crpg .choice .tag.echo { border:1px solid #9b8fd6; color:#b9aef0; background:rgba(123,111,176,.16); }
+.crpg .choice .tag.echo { border:1px solid #c0392b; color:#e08a7c; background:rgba(192,57,43,.16); }
 .crpg .fbModal { position:fixed; inset:0; z-index:100; background:rgba(8,12,20,.82); display:flex; align-items:flex-start; justify-content:center; overflow-y:auto; padding:24px 12px; }
 .crpg .fbCard { width:100%; max-width:560px; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:18px; margin:auto; }
 .crpg .fbCard h3 { color:var(--gold); font-size:17px; margin-bottom:4px; }
@@ -5671,6 +5673,18 @@ const css = `
 .crpg .fbBtns .fbPrimary { border-color:var(--gold); color:var(--gold); font-weight:600; }
 .crpg .fbBtns button:hover { border-color:var(--accent); }
 @media (prefers-reduced-motion: reduce) { .crpg * { animation:none !important; transition:none !important; } }
+
+/* pt24 몰입: 종이 질감·흑백 무대·붉은 잉크·문단이 차례로 번진다 */
+.crpg { background-color:var(--ink); background-image:radial-gradient(ellipse at 50% 0%, rgba(230,223,209,.05), transparent 60%), url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .9  0 0 0 0 .87  0 0 0 0 .8  0 0 0 .06 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"); }
+.crpg .stageWrap svg, .crpg .stageWrap .artimg { filter:grayscale(.85) contrast(1.12) brightness(1.35); }
+.crpg .locCard .locPlace { font-family:'Black Han Sans','Oswald','Noto Serif KR',sans-serif; font-size:24px; letter-spacing:.04em; text-transform:uppercase; color:#f1eadb; text-shadow:0 2px 10px rgba(0,0,0,.6); }
+.crpg .narr .para { animation:inkIn .9s ease both; }
+.crpg .narr[data-stage=instant] .para, .crpg .choices[data-stage=instant] { animation:none !important; }
+.crpg .choices[data-stage=staged] { animation:inkIn .6s ease both; }
+@keyframes inkIn { from { opacity:0; visibility:hidden; filter:blur(2px); } to { opacity:1; visibility:visible; filter:none; } }
+@media (prefers-reduced-motion: reduce) { .crpg .narr .para, .crpg .choices[data-stage] { animation:none; } }
+.crpg .redhand { color:var(--red); }
+.crpg .portrait { width:96px; height:96px; object-fit:cover; border-radius:6px; filter:grayscale(1) contrast(1.1); border:1px solid var(--line); margin-right:10px; vertical-align:middle; }
 `;
 function CRPG() {
   const [nameInput, setNameInput] = useState("");
@@ -5709,6 +5723,8 @@ function CRPG() {
   const [scarsAtRun, setScarsAtRun] = useState(() => store.get("aduventure_scars") || {});
   // 회차 순서(0 = 첫 기록). 기록 번호가 없는 옛 저장은 이미 여러 판 한 사람으로 본다.
   const [numbersOn, setNumbersOn] = useState(() => store.get("aduventure_numbers") === true);
+  // 문단이 차례로 번진다. 글을 한 번 누르면 이 장면은 바로 전부 보인다.
+  const [revealed, setRevealed] = useState(null);
   const [scarredThisRun, setScarredThisRun] = useState([]);
   const [scarNote, setScarNote] = useState(null);
   // 지난 에필로그 판결 — 첫 화면의 공식 기록을 영구히 바꾼다.
@@ -6848,7 +6864,7 @@ function CRPG() {
   }, SCENE_CAST[sceneKey].map(id => React.createElement("span", {
     key: id,
     className: "castChip"
-  }, CAST[id].mark + " ", React.createElement("b", null, tx(CAST[id].name)), " \u00B7 " + tx(CAST[id].role)))), (ECHOES[sceneKey] || []).filter(e => flags.includes(e.req)).map((e, i) => /*#__PURE__*/React.createElement("div", {
+  }, PORTRAITS[id] ? React.createElement("img", { className: "portrait", src: PORTRAITS[id], alt: tx(CAST[id].name) }) : CAST[id].mark + " ", React.createElement("b", null, tx(CAST[id].name)), " \u00B7 " + tx(CAST[id].role)))), (ECHOES[sceneKey] || []).filter(e => flags.includes(e.req)).map((e, i) => /*#__PURE__*/React.createElement("div", {
     key: "echo" + i,
     className: "echoBanner"
   }, /*#__PURE__*/React.createElement("span", {
@@ -6856,10 +6872,16 @@ function CRPG() {
   }, lang === "en" ? "\uD83E\uDD8B Ripples of a past choice" : "\uD83E\uDD8B \uC9C0\uB09C \uC120\uD0DD\uC758 \uC5EC\uD30C"), /*#__PURE__*/React.createElement("span", {
     className: "echo-t"
   }, tx(e.text)))), /*#__PURE__*/React.createElement("p", {
-    className: "narr"
-  }, collapsed ? fmt(tx(scene.text), pc).split("\n\n")[0] + " …" : fmt(tx(scene.text), pc)), sceneKey === "c2_hall" && React.createElement("div", {
+    className: "narr",
+    "data-stage": revealed === sceneKey ? "instant" : "staged",
+    onClick: () => setRevealed(sceneKey)
+  }, (collapsed ? [fmt(tx(scene.text), pc).split("\n\n")[0] + " …"] : fmt(tx(scene.text), pc).split("\n\n")).flatMap((para, i) => [i > 0 ? "\n\n" : null, React.createElement("span", {
+    key: sceneKey + "p" + i,
+    className: "para",
+    style: { animationDelay: Math.min(i * 0.8, 3.2) + "s" }
+  }, para)]).filter(x => x !== null)), sceneKey === "c2_hall" && React.createElement("div", {
     className: "hallExtra"
-  }, React.createElement("p", { className: "bigLine" }, ui("c2Hall", { a: RECORD_FIRST, b: Math.max(RECORD_FIRST, runNo || RECORD_FIRST) })), notes && Object.values(notes).flat().length > 0 && React.createElement("p", null, ui("c2Notes"), Object.values(notes).flat().slice(0, 3).map((n, i) => React.createElement("span", { key: i, className: "redhand small" }, " " + noteText(n, lang))))), collapsed && React.createElement("button", {
+  }, React.createElement("p", { className: "bigLine", style: { animation: "inkIn 1.6s ease both", animationDelay: revealed === sceneKey ? "0s" : (fmt(tx(scene.text), pc).split("\n\n").length - 1) * 0.8 + 0.6 + "s" } }, ui("c2Hall", { a: RECORD_FIRST, b: Math.max(RECORD_FIRST, runNo || RECORD_FIRST) })), notes && Object.values(notes).flat().length > 0 && React.createElement("p", null, ui("c2Notes"), Object.values(notes).flat().slice(0, 3).map((n, i) => React.createElement("span", { key: i, className: "redhand small" }, " " + noteText(n, lang))))), collapsed && React.createElement("button", {
     className: "expandBtn",
     onClick: () => setExpanded(sceneKey)
   }, ui("seenExpand")), sceneKey === "intro" && pc && UNLOCK_LINES[runIndex] && React.createElement("p", {
@@ -6889,7 +6911,10 @@ function CRPG() {
     className: "noteBtn",
     onClick: () => setNoteOpen(true)
   }, ui("noteLeave"))), notesShown && notedScenes.includes(sceneKey) && React.createElement("p", { className: "noteSent" }, ui("noteSent")), /*#__PURE__*/React.createElement("div", {
-    className: "choices"
+    key: "choices" + sceneKey,
+    className: "choices",
+    "data-stage": revealed === sceneKey ? "instant" : "staged",
+    style: { animationDelay: Math.min(((collapsed ? 1 : fmt(tx(scene.text), pc).split("\n\n").length) - 1) * 0.8 + 0.6 + (sceneKey === "c2_hall" && !collapsed ? 1.4 : 0), 5) + "s" }
   }, pathAll && React.createElement("p", { className: "pathNote" }, ui("pathAllWalked")), pathOrdered.map(ch => /*#__PURE__*/React.createElement("button", {
     key: narrativeId(ch),
     className: "choice" + (pathMark(ch) ? " " + pathMark(ch) : ""),
