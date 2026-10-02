@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>어두밴처 v0.7.3-pt24</title>
+<title>어두밴처 v0.7.3-pt25</title>
 <style>body{margin:0;background:#0e1420}</style>
 </head>
 <body>
@@ -318,7 +318,7 @@ function(a,b,c){if(!Vd(b))throw Error(n(200));return Wd(null,a,b,!1,c)};Q.unmoun
    GAS 피드백 파이프 — v0.7 재구현 (제안/신호/텔레메트리)
    ============================================================ */
 /* 플레이테스트 빌드 태그 — 테스트 중 버전 구분용. 수정할 때마다 뒤 번호를 올린다. */
-const BUILD = "v0.7.3-pt24";
+const BUILD = "v0.7.3-pt25";
 const GAS_URL = "https://script.google.com/macros/s/AKfycbxFx_m5rhCZmqGoy3JcUUNqEgiObMWNHe9hx-LnZrhzIkfwa9-yJGBWP0lVulptnNQeCQ/exec";
 function gasPost(payload, options = {}) {
   return fetch(GAS_URL, {
@@ -5530,8 +5530,12 @@ const css = `
   .crpg .hctrl { width:100%; flex-wrap:wrap; }
   .crpg .hctrl select, .crpg .hctrl button { min-height:44px; }
   .crpg .diceMeta, .crpg .jump { min-width:0; overflow-wrap:anywhere; }
-  .crpg div.stageWrap { position:sticky; top:6px; z-index:20; }
-  .crpg .lhscene { height:120px; box-shadow:0 6px 18px rgba(0,0,0,.55); }
+  .crpg div.stageWrap { position:relative; }
+  .crpg .lhscene { height:104px; box-shadow:0 6px 18px rgba(0,0,0,.55); }
+  .crpg div.miniBar { display:flex; }
+  .crpg div.sheet { padding:6px 12px; gap:8px; margin-bottom:10px; }
+  .crpg .sheet .clueLine { display:none; }
+  .crpg .health .healthLabel span { display:none; }
   .crpg .artimg { max-height:130px; object-fit:cover; }
 }
 .crpg .continueBtn { display:flex; flex-direction:column; align-items:center; gap:3px; width:100%; margin:2px 0 20px;
@@ -5587,6 +5591,11 @@ const css = `
 .crpg .scarNote { margin:6px 0 0; font-size:13px; color:#e8a07f; }
 .crpg .tag .scar { color:#e8a07f; }
 .crpg .scarLine { font-size:13px; margin:2px 0; }
+/* pt25 휴대폰 한 손 플레이: 큰 그림 대신 한 줄 막대만 따라온다 */
+.crpg .miniBar { display:none; position:sticky; top:0; z-index:30; align-items:center; gap:8px; margin:0 -16px 8px; padding:8px 16px; background:rgba(18,17,16,.94); border-bottom:1px solid var(--line); font-size:13px; backdrop-filter:blur(4px); }
+.crpg .miniBar .mbPlace { flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-family:'Black Han Sans','Noto Serif KR',sans-serif; letter-spacing:.03em; color:#f1eadb; }
+.crpg .miniBar .mbHp { font-family:'IBM Plex Mono',monospace; color:var(--dim); }
+.crpg .miniBar .mbHp i { display:inline-block; width:48px; height:6px; margin-right:6px; border-radius:3px; background:linear-gradient(90deg, var(--bad) var(--hp), rgba(255,255,255,.08) var(--hp)); vertical-align:middle; }
 .crpg .tag.one { border-color:var(--line); }
 .crpg .tag.one.diffEasy { color:#9fd39a; }
 .crpg .tag.one.diffHard { color:#e08a8a; }
@@ -5880,6 +5889,15 @@ function CRPG() {
   }
   useEffect(() => {
     if (pc && hasCheckChoices && !tutSeen) setTutOpen(true);
+    // 고른 뒤에는 결과(또는 새 장면의 첫 줄)를 화면 위로 — 휴대폰에서 위아래로 오가지 않게.
+    try {
+      if (pc && typeof window.scrollTo === "function" && window.scrollY > 0) {
+        const el = document.querySelector(".crpg .resWrap") || document.querySelector(".crpg .chBanner");
+        const bar = document.querySelector(".crpg .miniBar");
+        const offset = bar && bar.offsetHeight ? bar.offsetHeight + 6 : 8;
+        if (el) window.scrollTo({ top: Math.max(0, el.getBoundingClientRect().top + window.scrollY - offset), behavior: "smooth" });
+      }
+    } catch (e) {}
   }, [sceneKey, pc]);
   useEffect(() => {
     if (sceneKey === "ending3" && flags.includes("keeper")) SFX.bell();
@@ -6645,7 +6663,10 @@ function CRPG() {
     value: "srd20"
   }, "SRD d20"), /*#__PURE__*/React.createElement("option", {
     value: "simple2d6"
-  }, "Simple 2d6")))), React.createElement("div", {
+  }, "Simple 2d6")))), pc && SCENE_TITLES[sceneKey] && React.createElement("div", {
+    className: "miniBar",
+    "aria-hidden": "true"
+  }, React.createElement("span", { className: "mbPlace" }, "\uD83D\uDCCD " + tx(SCENE_TITLES[sceneKey])), React.createElement("span", { className: "mbHp" }, React.createElement("i", { style: { "--hp": Math.max(0, Math.min(100, pc.hp / pc.maxHp * 100)) + "%" } }), pc.hp, "/", pc.maxHp)), React.createElement("div", {
     className: "stageWrap" + (pc ? " mood-" + stageMood(sceneKey, scene) : "")
   }, art ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("img", {
     className: "artimg",

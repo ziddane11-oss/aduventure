@@ -78,3 +78,13 @@ test('a portrait appears beside the name once its picture exists; otherwise the 
   assert.equal(img.props.src, 'art/ire.png');
   assert.equal(img.props.alt, 'Ire');
 });
+
+test('on phones a slim bar follows instead of the big picture: place and health in one line', () => {
+  const g = game('dawn2');
+  const bar = byClass(g.render(), 'miniBar')[0];
+  assert.ok(bar);
+  assert.equal(text(byClass(bar, 'mbPlace')[0]), '📍 Before Sundown');
+  assert.match(text(byClass(bar, 'mbHp')[0]), /^\d+\/\d+$/);
+  assert.match(html, /\.crpg div\.miniBar \{ display:flex; \}/, 'Shown on phones');
+  assert.doesNotMatch(html, /div\.stageWrap \{ position:sticky/, 'The big picture no longer covers the choices');
+});
