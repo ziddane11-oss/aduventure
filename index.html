@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>어두밴처 v0.7.3-pt27</title>
+<title>어두밴처 v0.7.3-pt28</title>
 <style>body{margin:0;background:#0e1420}</style>
 </head>
 <body>
@@ -318,7 +318,7 @@ function(a,b,c){if(!Vd(b))throw Error(n(200));return Wd(null,a,b,!1,c)};Q.unmoun
    GAS 피드백 파이프 — v0.7 재구현 (제안/신호/텔레메트리)
    ============================================================ */
 /* 플레이테스트 빌드 태그 — 테스트 중 버전 구분용. 수정할 때마다 뒤 번호를 올린다. */
-const BUILD = "v0.7.3-pt27";
+const BUILD = "v0.7.3-pt28";
 const GAS_URL = "https://script.google.com/macros/s/AKfycbxFx_m5rhCZmqGoy3JcUUNqEgiObMWNHe9hx-LnZrhzIkfwa9-yJGBWP0lVulptnNQeCQ/exec";
 function gasPost(payload, options = {}) {
   return fetch(GAS_URL, {
@@ -408,6 +408,9 @@ function reportClientError(msg, extra) {
   } catch (e) {}
 }
 if (typeof window !== "undefined") {
+  const wakeSound = () => BGM.wake();
+  window.addEventListener("pointerdown", wakeSound);
+  window.addEventListener("keydown", wakeSound);
   window.addEventListener("error", function (e) {
     reportClientError(e.message, (e.filename || "") + ":" + (e.lineno || ""));
   });
@@ -670,7 +673,13 @@ const BGM = {
     thump();
     this._beat = setInterval(thump, Math.round(60000 / bpm));
   },
+  // 소리는 기본으로 켜져 있다. 브라우저는 첫 터치 전엔 소리를 막으므로, 첫 터치에 배경음을 깨우고 마지막 분위기를 다시 건다.
+  wake() {
+    if (!SFX.enabled || this._nodes) return;
+    try { this.start(); if (this._lastMood) this.apply(this._lastMood); } catch (e) {}
+  },
   apply(mood) {
+    if (mood) this._lastMood = mood;
     const n = this._nodes;
     if (!n || !mood) return;
     try {
@@ -850,7 +859,8 @@ const UI = {
   goalsDone: { ko: "의뢰 {n}/3 완수", en: "Commission {n}/3 done" },
   objStart: { ko: "✒ 이의 있음 — 거짓 문장을 짚는다", en: "✒ Objection — point at the lie" },
   objPickLine: { ko: "어느 줄이 거짓인가? (기회는 한 번)", en: "Which line is the lie? (One chance)" },
-  objPickEvidence: { ko: "무엇으로 뒤집을 것인가?", en: "What will you overturn it with?" },
+  objPickEvidence: { ko: "무엇으로 뒤집을 것인가? 이 줄과 맞부딪치는 것을 고른다.", en: "What will you overturn it with? Pick what contradicts this line." },
+  objMiss: { ko: "세온이 고개를 젓는다. \"그게 이 줄과 무슨 상관인가?\" — 한 번 더 내밀 수 있다.", en: "Seon shakes his head. \"What has that to do with this line?\" — You may try once more." },
   objNoEvidence: { ko: "내밀 증거가 없다. 다음 기록에서 더 모아 오자.", en: "You have nothing to lay down. Gather more next record." },
   objWithdraw: { ko: "물러선다", en: "Back down" },
   objWon: { ko: "붉은 잉크가 그 줄을 긋는다 — '{e}'. 이 한 장이면 충분하다. (다음 장 운명 주사위 +1)", en: "Red ink strikes the line — '{e}'. One page is enough. (+1 fate die next chapter)" },
@@ -4403,7 +4413,7 @@ const DUEL_SCENES = ["duel1", "duel2", "scully1", "scully2", "monk1", "monk2", "
 // 서사 결투의 긴장 저음: 첫 박 0.8, 마지막 박 1
 // 결투의 마지막 수에만 시간 제한(끌 수 있음). 시간이 다 되면 첫 판정 선택지의 실패로 흘러간다.
 const TIMED_SCENES = ["duel2", "scully2", "monk2"];
-const TIMER_SEC = 12;
+const TIMER_SEC = 16;
 const DUEL_TENSION = { duel1: 0.8, duel2: 1, scully1: 0.8, scully2: 1, monk1: 0.8, monk2: 1 };
 function stageMood(sceneKey, scene) {
   if (DUEL_SCENES.includes(sceneKey)) return "danger";
@@ -4661,18 +4671,18 @@ function officialRecord(kind, flags, no, verdict) {
 /* ---------- 기록 반박 — "이의 있음": 장이 끝나면 세온의 공식 기록에서 거짓 문장을 짚고, 그것을 뒤집을 증거를 내민다 ----------
    한 장에 한 번. 줄을 잘못 짚거나 증거가 틀리면 기록은 그대로 확정된다. 이기면 붉은 줄이 그어지고 다음 장 운명 주사위가 둘. */
 const EVIDENCE = {
-  gear: { name: bi("일부러 빼낸 톱니", "The gear pulled out on purpose"), has: f => f.includes("sabotage") },
-  testimony: { name: bi("렌의 증언", "Ren's testimony"), has: f => f.includes("peaceful") || f.includes("f_ren_keeper") },
-  receipt: { name: bi("촌장실 반출 확인서", "The chief's removal slip"), has: f => f.includes("f_receipt") },
-  window: { name: bi("세온 집 창문의 불빛", "The light in Seon's window"), has: f => f.includes("f_window") },
-  ledger: { name: bi("밀수 장부", "The smuggling ledger"), has: f => f.includes("ledger") || f.includes("f_fund") },
-  letters: { name: bi("스컬리의 편지", "Scully's letters"), has: f => f.includes("peaceful2") },
-  hands: { name: bi("펜 쥐는 손", "A pen-holder's hands"), has: f => f.includes("f_hands") },
-  footprints: { name: bi("지하로 향한 발자국", "Footprints leading underground"), has: f => f.includes("trail") },
-  bell: { name: bi("종지기의 증언", "The bell-keeper's word"), has: f => f.includes("keeper") },
-  addressee: { name: bi("편지의 수신인", "The letters' addressee"), has: f => f.includes("f_addressee") },
-  keytag: { name: bi("열쇠 꼬리표의 글씨", "The writing on the key tag"), has: f => f.includes("f_hand_match") },
-  bundle: { name: bi("증거 편지 뭉치", "The bundle of evidence letters"), has: f => f.includes("chase3") }
+  gear: { name: bi("일부러 빼낸 톱니", "The gear pulled out on purpose"), shows: bi("고장이 아니다 — 누군가 손을 댔다", "Not a breakdown — someone tampered with it"), has: f => f.includes("sabotage") },
+  testimony: { name: bi("렌의 증언", "Ren's testimony"), shows: bi("렌은 누가 시켰는지 털어놓았다", "Ren told you who sent him"), has: f => f.includes("peaceful") || f.includes("f_ren_keeper") },
+  receipt: { name: bi("촌장실 반출 확인서", "The chief's removal slip"), shows: bi("촌장실이 물건을 몰래 빼냈다", "The chief's office quietly took things out"), has: f => f.includes("f_receipt") },
+  window: { name: bi("세온 집 창문의 불빛", "The light in Seon's window"), shows: bi("그 밤, 세온의 집 창이 신호를 보냈다", "That night, Seon's window was signalling"), has: f => f.includes("f_window") },
+  ledger: { name: bi("밀수 장부", "The smuggling ledger"), shows: bi("돈이 누군가에게 흘러갔다", "The money flowed to someone"), has: f => f.includes("ledger") || f.includes("f_fund") },
+  letters: { name: bi("스컬리의 편지", "Scully's letters"), shows: bi("스컬리는 누군가의 명령을 받았다", "Scully was taking orders from someone"), has: f => f.includes("peaceful2") },
+  hands: { name: bi("펜 쥐는 손", "A pen-holder's hands"), shows: bi("뒤에 글 쓰는 손이 있다", "There is a writing hand behind it"), has: f => f.includes("f_hands") },
+  footprints: { name: bi("지하로 향한 발자국", "Footprints leading underground"), shows: bi("누군가 지하로 내려갔다", "Someone went down below"), has: f => f.includes("trail") },
+  bell: { name: bi("종지기의 증언", "The bell-keeper's word"), shows: bi("종줄이 끊긴 시각", "When the bell rope was cut"), has: f => f.includes("keeper") },
+  addressee: { name: bi("편지의 수신인", "The letters' addressee"), shows: bi("편지는 소금여울로 가는 것이었다", "The letters were bound for Saltmarsh"), has: f => f.includes("f_addressee") },
+  keytag: { name: bi("열쇠 꼬리표의 글씨", "The writing on the key tag"), shows: bi("열쇠 꼬리표와 같은 글씨 — 세온의 손", "Same hand as the key tag — Seon's"), has: f => f.includes("f_hand_match") },
+  bundle: { name: bi("증거 편지 뭉치", "The bundle of evidence letters"), shows: bi("편지 뭉치에 촌장의 봉인", "The chief's seal on the bundle"), has: f => f.includes("chase3") }
 };
 // 장마다 거짓 문장(공식 기록 lines의 번호)과 그것을 뒤집는 증거.
 const REBUTTALS = {
@@ -5265,9 +5275,11 @@ function ObjectionPanel({ ch, flags, lore, pc, lang, ui, tx, objection, setObjec
   if (mine.step === "line") return box(React.createElement("p", { className: "objAsk" }, ui("objPickLine")),
     record.lines.map((l, i) => React.createElement("button", { key: i, className: "choice objLine", onClick: () => decide(i, null) }, t(l))),
     React.createElement("button", { className: "restart", onClick: () => setObjection(null) }, ui("objWithdraw")));
-  const held = heldEvidence(flags, lore);
-  return box(React.createElement("p", { className: "objAsk" }, ui("objPickEvidence")),
-    held.length ? held.map(id => React.createElement("button", { key: id, className: "choice objEvidence", onClick: () => decide(REBUTTALS[ch].line, id) }, "\uD83D\uDCC4 " + tx(EVIDENCE[id].name)))
+  const held = heldEvidence(flags, lore).filter(id => !(mine.tried || []).includes(id));
+  return box(React.createElement("p", { className: "objLie" }, "\u201C" + t(record.lines[REBUTTALS[ch].line]) + "\u201D"),
+    mine.tried && mine.tried.length > 0 && React.createElement("p", { className: "objMiss" }, ui("objMiss")),
+    React.createElement("p", { className: "objAsk" }, ui("objPickEvidence")),
+    held.length ? held.map(id => React.createElement("button", { key: id, className: "choice objEvidence", onClick: () => decide(REBUTTALS[ch].line, id) }, "\uD83D\uDCC4 " + tx(EVIDENCE[id].name), React.createElement("span", { className: "stake" }, tx(EVIDENCE[id].shows))))
       : React.createElement("p", { className: "objAsk" }, ui("objNoEvidence")),
     React.createElement("button", { className: "restart", onClick: () => setObjection(null) }, ui("objWithdraw")));
 }
@@ -5806,6 +5818,8 @@ const css = `
 .crpg .scarLine { font-size:13px; margin:2px 0; }
 .crpg .banter { font-style:italic; color:var(--gold); margin:4px 0 10px; font-size:14px; line-height:1.5; }
 .crpg .banter .banterWho { font-style:normal; color:var(--dim); font-size:12px; }
+.crpg .objection .objLie { font-family:inherit; font-style:italic; color:var(--text); border-left:3px solid var(--red); padding-left:10px; margin:6px 0; }
+.crpg .objection .objMiss { color:var(--bad); font-size:14px; }
 .crpg .pickShare { font-size:13px; color:var(--dim); font-style:italic; margin:6px 0 0; }
 .crpg .goals { margin:8px 0 12px; padding:8px 12px; border:1px dashed var(--line); border-radius:8px; font-size:14px; }
 .crpg .goals h4 { margin:0 0 4px; font-size:13px; color:var(--gold); letter-spacing:.05em; }
@@ -5817,6 +5831,9 @@ const css = `
 .crpg .objection .objAsk { font-size:14px; margin:4px 0 8px; }
 .crpg .objection .objResult { font-size:15px; line-height:1.6; }
 .crpg .objection.won .objResult { color:#e8b4aa; }
+.crpg .objection button.choice { display:block; width:100%; margin:6px 0; text-align:left; box-sizing:border-box; }
+.crpg .objection button.choice .stake { display:block; }
+.crpg .objection button.restart { display:block; margin:8px 0 0; }
 .crpg .recLine.struck { text-decoration:line-through; text-decoration-color:var(--red); text-decoration-thickness:3px; animation:inkIn .8s ease both; }
 /* pt25 휴대폰 한 손 플레이: 큰 그림 대신 한 줄 막대만 따라온다 */
 .crpg .miniBar { display:none; position:sticky; top:0; z-index:30; align-items:center; gap:8px; margin:0 -16px 8px; padding:8px 16px; background:rgba(18,17,16,.94); border-bottom:1px solid var(--line); font-size:13px; backdrop-filter:blur(4px); }
@@ -5949,7 +5966,7 @@ function CRPG() {
   const [breathLeft, setBreathLeft] = useState(1);
   const [tutOpen, setTutOpen] = useState(false);
   const [tutSeen, setTutSeen] = useState(false);
-  const [sfxOn, setSfxOn] = useState(false);
+  const [sfxOn, setSfxOn] = useState(() => (SFX.enabled = store.get("aduventure_sfx") !== false));
   const [lang, setLang] = useState(() => store.get("aduventure_lang") || "ko");
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [caseOpen, setCaseOpen] = useState(false);
@@ -6920,7 +6937,7 @@ function CRPG() {
     title: ui("caseBtn"),
     "aria-label": "case board"
   }, "🔎"), /*#__PURE__*/React.createElement("button", {
-    onClick: () => setSfxOn(SFX.toggle()),
+    onClick: () => { const on = SFX.toggle(); store.set("aduventure_sfx", on); setSfxOn(on); },
     title: sfxOn ? ui("sfxOn") : ui("sfxOff")
   }, sfxOn ? "🔊" : "🔇"), /*#__PURE__*/React.createElement("button", {
     onClick: () => setTutOpen(o => !o),
@@ -7376,7 +7393,13 @@ function CRPG() {
     record: officialRecord(scene.ending, flags, runNo),
     decide: (line, evidence) => {
       const verdict = rebutJudge(scene.ending, line, evidence);
-      if (verdict === "pickEvidence") { setObjection({ ch: scene.ending, step: "evidence" }); return; }
+      if (verdict === "pickEvidence") { setObjection({ ch: scene.ending, step: "evidence", tried: [] }); return; }
+      // 증거를 잘못 내밀면 한 번은 다시 고를 수 있다(두 번째부터 확정).
+      if (verdict === "wrongEvidence" && objection && !(objection.tried || []).length) {
+        try { if (sfxOn) SFX.bad(); } catch (e) {}
+        setObjection({ ch: scene.ending, step: "evidence", tried: [evidence] });
+        return;
+      }
       const won = verdict === "won";
       setFlags(f => [...f, (won ? "rebut" : "rebutX") + scene.ending]);
       setObjection({ ch: scene.ending, step: "done", result: verdict, evidence });
