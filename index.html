@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>어두밴처 v0.7.3-pt16</title>
+<title>어두밴처 v0.7.3-pt17</title>
 <style>body{margin:0;background:#0e1420}</style>
 </head>
 <body>
@@ -318,7 +318,7 @@ function(a,b,c){if(!Vd(b))throw Error(n(200));return Wd(null,a,b,!1,c)};Q.unmoun
    GAS 피드백 파이프 — v0.7 재구현 (제안/신호/텔레메트리)
    ============================================================ */
 /* 플레이테스트 빌드 태그 — 테스트 중 버전 구분용. 수정할 때마다 뒤 번호를 올린다. */
-const BUILD = "v0.7.3-pt16";
+const BUILD = "v0.7.3-pt17";
 const GAS_URL = "https://script.google.com/macros/s/AKfycbxFx_m5rhCZmqGoy3JcUUNqEgiObMWNHe9hx-LnZrhzIkfwa9-yJGBWP0lVulptnNQeCQ/exec";
 function gasPost(payload, options = {}) {
   return fetch(GAS_URL, {
@@ -831,6 +831,14 @@ const UI = {
   forkStairs: { ko: "⤳ 갈림길로: 렌과 마주치는 계단부터", en: "⤳ Jump to the fork: the stairs where you meet Ren" },
   forkRescue: { ko: "⤳ 갈림길로: 3장 수문 앞부터", en: "⤳ Jump to the fork: Ch.3, at the sluice" },
   forkTag: { ko: "다른 쪽을 골라 볼 곳", en: "where you can choose differently" },
+  noteFrom: { ko: "🩸 제{n}호의 누군가:", en: "🩸 Someone in Record No. {n}:" },
+  noteLeave: { ko: "✎ 이 장면에 다음 모험가를 위한 쪽지 남기기", en: "✎ Leave a note here for the next adventurer" },
+  noteSend: { ko: "붉은 쪽지 남기기", en: "Leave the red note" },
+  noteSent: { ko: "쪽지를 남겼다. 다음 모험가가 이 장면에서 보게 된다.", en: "Note left. The next adventurer will find it here." },
+  noteNoClue: { ko: "(단서 없음)", en: "(no clue)" },
+  noteField_s: { ko: "누구·무엇", en: "Who or what" },
+  noteField_v: { ko: "어떻게", en: "What to do" },
+  noteField_r: { ko: "단서", en: "Clue" },
   recordLie: { ko: "거짓말이다 — 이 기록을 다시 쓴다", en: "It's a lie — rewrite this record" },
   recordBelieve: { ko: "기록을 믿는다", en: "I believe the record" },
   nameRecord: { ko: "기록에 남을 이름은?", en: "What name goes on the record?" },
@@ -2966,11 +2974,32 @@ function caseState(lore) {
 /* ---------- 공식 기록 — 게임의 첫 화면이자 모든 결말의 거울. "기록은 거짓말을 한다" ----------
    한 회차 = 기록 한 호(제113호부터). 촌장 세온이 쓴 공식 기록과, 플레이어가 아는 반박(붉은 손글씨)을 나란히 둔다. */
 const RECORD_FIRST = 113;
-function officialRecord(kind, flags, no) {
+function officialRecord(kind, flags, no, verdict) {
   const has = f => flags.includes(f);
   const n = no || RECORD_FIRST;
   const head = bi(`소금여울 공식 기록 · 제${n}호`, `Saltmarsh Official Record · No. ${n}`);
   const seon = bi("기록자: 촌장 세온", "Recorded by: Chief Seon");
+  if (kind === "opening" && verdict && verdict.kind) {
+    const who = String(verdict.name || "").slice(0, 12) || "?";
+    const base = [bi("폭풍의 밤. 등대지기 베른, 사고로 부상.", "Night of the storm. Lighthouse keeper Bern, injured in an accident."),
+      bi("떠돌이 모험가 1명, 사망. 이름은 기록되지 않았다.", "One wandering adventurer: dead. The name was not recorded."),
+      bi("어선 3척, 암초에 좌초. 원인: 불운.", "Three fishing boats wrecked on the rocks. Cause: bad luck.")];
+    if (verdict.kind === "accuseSeon") return {
+      head, lines: [bi("새 촌장 취임 후 첫 폭풍.", "The first storm under the new chief."), ...base],
+      signer: bi(`기록자: 기록관 ${who}`, `Recorded by: Archivist ${who}`),
+      rebut: bi("이것도 거짓말이다.", "This is a lie too.")
+    };
+    if (verdict.kind === "accuseBern") return {
+      head, lines: [bi("폭풍의 밤. 새 등대지기, 사고로 부상.", "Night of the storm. The new lighthouse keeper, injured in an accident."), base[1], base[2]],
+      signer: seon,
+      rebut: bi("베른 영감은 아무 짓도 하지 않았다.", "Old Bern never did a thing.")
+    };
+    return {
+      head, lines: base,
+      signer: bi(`기록자: 촌장 세온 · 입회: ${who}`, `Recorded by: Chief Seon · Witness: ${who}`),
+      rebut: bi("당신도 여기에 서명했다.", "You signed this too.")
+    };
+  }
   if (kind === "opening") return {
     head,
     lines: [bi("폭풍의 밤. 등대지기 베른, 사고로 부상.", "Night of the storm. Lighthouse keeper Bern, injured in an accident."),
@@ -3033,6 +3062,49 @@ function officialRecord(kind, flags, no) {
     };
   }
   return null;
+}
+/* ---------- 붉은 쪽지 — 다른 모험가가 장면에 남긴 단어 조합형 쪽지(자유 문장 없음, 한·영 자동) ----------
+   쓰기는 기존 피드백 파이프(type: "note")로, 읽기는 GAS doGet(?action=notes). 서버가 준비되지 않으면 기능 전체가 숨는다. */
+const NOTE_WORDS = {
+  s: { ren: bi("렌", "Ren"), lens: bi("렌즈", "the lens"), bern: bi("베른", "Bern"), seon: bi("세온", "Seon"), scully: bi("스컬리", "Scully"),
+    ledger: bi("장부", "the ledger"), letters: bi("편지", "the letters"), wire: bi("철사", "the wire"), keys: bi("열쇠", "the keys"), record: bi("공식 기록", "the official record") },
+  v: { trust: bi("믿어라", "Trust"), doubt: bi("의심해라", "Doubt"), keep: bi("지켜라", "Protect"), drop: bi("포기해라", "Let go of"), remember: bi("기억해라", "Remember") },
+  r: { none: bi("", ""), gear: bi("톱니", "the gear"), ledger: bi("장부", "the ledger"), letters: bi("편지", "the letters"), window: bi("창문", "the window"), hand: bi("글씨", "the handwriting"), water: bi("물", "the water") }
+};
+function validNote(n) {
+  return !!n && typeof n === "object" && !!SCENES[n.scene] && !!NOTE_WORDS.s[n.s] && !!NOTE_WORDS.v[n.v] && !!NOTE_WORDS.r[n.r || "none"];
+}
+function noteText(n, lang) {
+  const w = (k, id) => NOTE_WORDS[k][id][lang] || NOTE_WORDS[k][id].ko;
+  const r = n.r && n.r !== "none" ? (lang === "en" ? " (clue: " + w("r", n.r) + ")" : " (단서: " + w("r", n.r) + ")") : "";
+  return lang === "en" ? w("v", n.v) + " " + w("s", n.s) + r : w("s", n.s) + " — " + w("v", n.v) + r;
+}
+// 서버 응답을 장면별 최근 2개로 정리(검증 실패 쪽지는 버린다)
+function groupNotes(list) {
+  const out = {};
+  for (const n of Array.isArray(list) ? list : []) {
+    if (!validNote(n)) continue;
+    (out[n.scene] = out[n.scene] || []).push(n);
+  }
+  for (const k of Object.keys(out)) out[k] = out[k].slice(0, 2);
+  return out;
+}
+// 쪽지 읽기: fetch가 막히면 JSONP로 한 번 더. 실패하면 null(기능 숨김).
+function loadNotes() {
+  const url = GAS_URL + "?action=notes";
+  return fetch(url).then(r => r.json()).then(j => j && j.ok ? groupNotes(j.notes) : null).catch(() => new Promise(resolve => {
+    try {
+      if (typeof document === "undefined" || !document.createElement) return resolve(null);
+      const cb = "aduNotes" + Math.floor(Math.random() * 1e9);
+      const el = document.createElement("script");
+      const done = v => { try { delete window[cb]; el.remove(); } catch (e) {} resolve(v); };
+      window[cb] = j => done(j && j.ok ? groupNotes(j.notes) : null);
+      el.onerror = () => done(null);
+      el.src = url + "&callback=" + cb;
+      document.head.appendChild(el);
+      setTimeout(() => done(null), 6000);
+    } catch (e) { resolve(null); }
+  }));
 }
 // 공유용 평문 — 엔딩의 공식 기록과 반박을 그대로 옮긴다(이름 외 개인 정보 없음).
 function recordShareText(record, pc, lang) {
@@ -4019,6 +4091,14 @@ const css = `
 .crpg .stageWrap.mood-danger .locPlace { color:#ff9c8a; }
 .crpg .expandBtn { display:block; margin:-4px 0 12px; padding:4px 0; border:0; background:transparent; color:#8fc3e6; font-size:13px; cursor:pointer; }
 .crpg .choice.fork { border-style:dashed; }
+.crpg .noteCard { display:flex; flex-direction:column; gap:2px; margin:0 0 8px; padding:7px 11px; border-left:3px solid #b0281c; background:rgba(176,40,28,.10); border-radius:4px; font-size:13.5px; overflow-wrap:anywhere; }
+.crpg .noteFrom { font-size:11.5px; color:#d47a6a; }
+.crpg .noteText { color:#f0d9d4; font-style:italic; }
+.crpg .noteBtn { display:block; margin:0 0 10px; padding:4px 0; border:0; background:transparent; color:#d47a6a; font-size:13px; cursor:pointer; }
+.crpg .notePick { display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin:0 0 12px; padding:8px; border:1px dashed #b0281c; border-radius:6px; }
+.crpg .notePick select { min-height:40px; max-width:100%; }
+.crpg .notePreview { width:100%; margin:4px 0; font-style:italic; color:#f0d9d4; }
+.crpg .noteSent { font-size:12.5px; color:#d47a6a; margin:0 0 10px; }
 .crpg .recordCard { position:relative; margin:6px 0 14px; padding:16px 16px 14px; border-radius:4px; background:#e9e1cf; color:#2a2418; font-family:'Noto Serif KR', Georgia, serif; box-shadow:0 6px 18px rgba(0,0,0,.35); overflow-wrap:anywhere; }
 .crpg .recHead { font-size:12px; letter-spacing:.08em; color:#6b5d44; border-bottom:1px solid #b9a988; padding-bottom:6px; margin-bottom:8px; }
 .crpg .recLine { margin:4px 0; font-size:15px; line-height:1.6; }
@@ -4115,6 +4195,13 @@ function CRPG() {
   const [shared, setShared] = useState(null);
   // 이전 회차까지 본 장면(이번 회차 시작 때 고정). 다시 하기 피로를 줄이려고 본문을 접는다.
   const [seenAtRun, setSeenAtRun] = useState([]);
+  // 지난 에필로그 판결 — 첫 화면의 공식 기록을 영구히 바꾼다.
+  const [verdict, setVerdict] = useState(() => store.get("aduventure_verdict"));
+  // 붉은 쪽지: null이면 서버 미준비(숨김)
+  const [notes, setNotes] = useState(null);
+  const [noteOpen, setNoteOpen] = useState(false);
+  const [noteDraft, setNoteDraft] = useState({ s: "ren", v: "doubt", r: "none" });
+  const [notedScenes, setNotedScenes] = useState([]);
   const [expanded, setExpanded] = useState(null);
   const [met, setMet] = useState(() => store.get("aduventure_met") || []);
   const [reached, setReached] = useState([]);
@@ -4255,6 +4342,9 @@ function CRPG() {
     store.set("aduventure_met", next);
     setMet(next);
   }, [sceneKey, pc]);
+  useEffect(() => {
+    loadNotes().then(n => setNotes(n)).catch(() => setNotes(null));
+  }, []);
   // 배경음은 소리를 켠 동안 장면·체력·렌의 예고에 따라 바뀐다.
   useEffect(() => {
     if (!sfxOn || !pc) return;
@@ -4291,6 +4381,11 @@ function CRPG() {
   }, [sceneKey, pc, flags, stats, fate, specialLeft, breathLeft, ruleKey, tutSeen, rolling, pending, telemetryRun]);
   // 회차가 끝나면(엔딩·게임오버) 이어하기 기록을 비운다. 엔딩 도감(badges)은 별도로 영구 보관된다.
   useEffect(() => {
+    if (pc && scene && scene.ending === 4) {
+      const v = { kind: ["accuseSeon", "accuseBern", "dealSeon"].find(f => flags.includes(f)) || "dealSeon", name: pc.name, no: runNo || null };
+      store.set("aduventure_verdict", v);
+      setVerdict(v);
+    }
     if (pc && scene && (scene.ending || scene.gameover)) {
       const sum = runSummary(flags, runNo, !!scene.gameover);
       store.set("aduventure_lastrun", sum);
@@ -5000,7 +5095,7 @@ function CRPG() {
   }, ui("rulesGot"))), !pc && !opening && React.createElement("div", {
     className: "scene opening"
   }, React.createElement(RecordCard, {
-    record: officialRecord("opening", [], recordNo),
+    record: officialRecord("opening", [], recordNo, verdict),
     pc: null,
     lang
   }), lastRunLine(lastRun) && React.createElement("p", {
@@ -5191,7 +5286,31 @@ function CRPG() {
   }, collapsed ? fmt(tx(scene.text), pc).split("\n\n")[0] + " …" : fmt(tx(scene.text), pc)), collapsed && React.createElement("button", {
     className: "expandBtn",
     onClick: () => setExpanded(sceneKey)
-  }, ui("seenExpand")), /*#__PURE__*/React.createElement("div", {
+  }, ui("seenExpand")), notes && (notes[sceneKey] || []).map((n, i) => React.createElement("div", {
+    key: "note" + i,
+    className: "noteCard"
+  }, React.createElement("span", { className: "noteFrom" }, ui("noteFrom", { n: n.no || "?" })), React.createElement("span", { className: "noteText" }, noteText(n, lang)))), notes && !notedScenes.includes(sceneKey) && (noteOpen ? React.createElement("div", {
+    className: "notePick"
+  }, ["s", "v", "r"].map(k => React.createElement("select", {
+    key: k,
+    "aria-label": ui("noteField_" + k),
+    value: noteDraft[k],
+    onChange: e => setNoteDraft(d => ({ ...d, [k]: e.target.value }))
+  }, Object.keys(NOTE_WORDS[k]).map(id => React.createElement("option", { key: id, value: id }, tx(NOTE_WORDS[k][id]) || ui("noteNoClue"))))), React.createElement("p", { className: "notePreview" }, noteText(noteDraft, lang)), React.createElement("button", {
+    className: "restart primary",
+    onClick: () => {
+      const n = { ...noteDraft, scene: sceneKey };
+      if (!validNote(n)) return;
+      try {
+        gasPost({ type: "note", scene: sceneKey, who: "", text: [n.s, n.v, n.r].join("."), extra: JSON.stringify({ s: n.s, v: n.v, r: n.r, no: runNo || 0 }) }).catch(() => {});
+      } catch (e) {}
+      setNotedScenes(x => [...x, sceneKey]);
+      setNoteOpen(false);
+    }
+  }, ui("noteSend"))) : React.createElement("button", {
+    className: "noteBtn",
+    onClick: () => setNoteOpen(true)
+  }, ui("noteLeave"))), notes && notedScenes.includes(sceneKey) && React.createElement("p", { className: "noteSent" }, ui("noteSent")), /*#__PURE__*/React.createElement("div", {
     className: "choices"
   }, visibleChoices.map((ch, i) => /*#__PURE__*/React.createElement("button", {
     key: i,
