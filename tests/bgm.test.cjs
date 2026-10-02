@@ -151,8 +151,10 @@ for (const lang of ['ko', 'en']) {
     test(`${lang}: ${sceneKey} shows what each choice puts at stake before it is made`, () => {
       const {tree, run} = render(sceneKey, lang);
       const buttons = nodes(tree).filter(n => n.type === 'button' && n.props.className === 'choice');
-      assert.equal(buttons.length, 2);
-      const expected = run(`SCENES.${sceneKey}.choices.map(c => c.stake.${lang})`);
+      // 파이터에게는 '둘 다' 길이 하나 더 있다(pt18).
+      const expected = run(`SCENES.${sceneKey}.choices.filter(c => !c.classOnly || c.classOnly === 'fighter').map(c => c.stake.${lang})`);
+      assert.equal(buttons.length, expected.length);
+      assert.equal(buttons.length, 3);
       buttons.forEach((b, i) => {
         const stake = nodes(b).find(n => n.props.className === 'stake');
         assert.ok(stake, 'stake line on choice ' + i);
