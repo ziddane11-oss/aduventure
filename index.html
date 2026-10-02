@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>어두밴처 v0.7.3-pt17</title>
+<title>어두밴처 v0.7.3-pt18</title>
 <style>body{margin:0;background:#0e1420}</style>
 </head>
 <body>
@@ -318,7 +318,7 @@ function(a,b,c){if(!Vd(b))throw Error(n(200));return Wd(null,a,b,!1,c)};Q.unmoun
    GAS 피드백 파이프 — v0.7 재구현 (제안/신호/텔레메트리)
    ============================================================ */
 /* 플레이테스트 빌드 태그 — 테스트 중 버전 구분용. 수정할 때마다 뒤 번호를 올린다. */
-const BUILD = "v0.7.3-pt17";
+const BUILD = "v0.7.3-pt18";
 const GAS_URL = "https://script.google.com/macros/s/AKfycbxFx_m5rhCZmqGoy3JcUUNqEgiObMWNHe9hx-LnZrhzIkfwa9-yJGBWP0lVulptnNQeCQ/exec";
 function gasPost(payload, options = {}) {
   return fetch(GAS_URL, {
@@ -831,6 +831,10 @@ const UI = {
   forkStairs: { ko: "⤳ 갈림길로: 렌과 마주치는 계단부터", en: "⤳ Jump to the fork: the stairs where you meet Ren" },
   forkRescue: { ko: "⤳ 갈림길로: 3장 수문 앞부터", en: "⤳ Jump to the fork: Ch.3, at the sluice" },
   forkTag: { ko: "다른 쪽을 골라 볼 곳", en: "where you can choose differently" },
+  pathFresh: { ko: "◇ 안 가 본 길", en: "◇ road not taken" },
+  pathWalked: { ko: "↺ 지난 기록에서 간 길", en: "↺ taken in a past record" },
+  pathAllWalked: { ko: "이 갈림길의 길은 모두 걸어 봤다.", en: "You have walked every road from here." },
+  pathLeft: { ko: "가 보지 않은 갈림길: {n}곳", en: "Crossroads with a road not taken: {n}" },
   noteFrom: { ko: "🩸 제{n}호의 누군가:", en: "🩸 Someone in Record No. {n}:" },
   noteLeave: { ko: "✎ 이 장면에 다음 모험가를 위한 쪽지 남기기", en: "✎ Leave a note here for the next adventurer" },
   noteSend: { ko: "붉은 쪽지 남기기", en: "Leave the red note" },
@@ -2717,6 +2721,15 @@ const ECHOES = {
 };
 
 /* ---------- 엔딩 도감 ---------- */
+// 발자국: 지난 회차에 고른 선택지 id("장면:번호")를 모아 둔다. 조건부 선택지는 '못 간 길'로 세지 않는다.
+function untakenCrossroads(seen, taken) {
+  return seen.filter(k => {
+    const sc = SCENES[k];
+    if (!sc || !sc.choices || sc.ending || sc.gameover) return false;
+    const open = sc.choices.map((c, i) => ({c, i})).filter(({c}) => !c.classOnly && !c.loreReq && !c.artifactReq && !c.echoReq && !c.flagNot && !c.caseMin);
+    return open.length > 1 && open.some(({i}) => !taken.includes(k + ":" + i));
+  }).length;
+}
 const BADGES = [{
   id: "1pf",
   ch: 1,
@@ -4091,6 +4104,11 @@ const css = `
 .crpg .stageWrap.mood-danger .locPlace { color:#ff9c8a; }
 .crpg .expandBtn { display:block; margin:-4px 0 12px; padding:4px 0; border:0; background:transparent; color:#8fc3e6; font-size:13px; cursor:pointer; }
 .crpg .choice.fork { border-style:dashed; }
+.crpg .choice.walked { opacity:.55; }
+.crpg .choice.fresh { border-color:#d4a94e; box-shadow:0 0 0 1px rgba(212,169,78,.35) inset; }
+.crpg .tag.path { border-color:#d4a94e; color:#d4a94e; }
+.crpg .choice.walked .tag.path { border-color:var(--line); color:inherit; }
+.crpg .pathNote { font-size:13px; opacity:.75; margin:4px 0 8px; }
 .crpg .noteCard { display:flex; flex-direction:column; gap:2px; margin:0 0 8px; padding:7px 11px; border-left:3px solid #b0281c; background:rgba(176,40,28,.10); border-radius:4px; font-size:13.5px; overflow-wrap:anywhere; }
 .crpg .noteFrom { font-size:11.5px; color:#d47a6a; }
 .crpg .noteText { color:#f0d9d4; font-style:italic; }
@@ -4195,6 +4213,7 @@ function CRPG() {
   const [shared, setShared] = useState(null);
   // 이전 회차까지 본 장면(이번 회차 시작 때 고정). 다시 하기 피로를 줄이려고 본문을 접는다.
   const [seenAtRun, setSeenAtRun] = useState([]);
+  const [takenAtRun, setTakenAtRun] = useState(() => store.get("aduventure_taken") || []);
   // 지난 에필로그 판결 — 첫 화면의 공식 기록을 영구히 바꾼다.
   const [verdict, setVerdict] = useState(() => store.get("aduventure_verdict"));
   // 붉은 쪽지: null이면 서버 미준비(숨김)
@@ -4246,6 +4265,11 @@ function CRPG() {
   const hasCheckChoices = scene?.choices?.some(c => c.check);
   const visibleChoices = (scene?.choices || []).filter(ch => (!ch.classOnly || pc && ch.classOnly === pc.classKey) && (!ch.loreReq || lore.includes(ch.loreReq)) && (!ch.artifactReq || artifacts.includes(ch.artifactReq)) && (!ch.echoReq || flags.includes(ch.echoReq)) && (!ch.flagNot || !flags.includes(ch.flagNot)) && (!ch.caseMin || caseState(lore).found.filter(id => id !== ch.frag).length >= ch.caseMin));
   const narrativeId = choice => sceneKey + ":" + scene.choices.indexOf(choice);
+  // 지난 회차에 와 본 장면에서만 표시한다: 안 간 길은 위로, 간 길은 아래로.
+  const pathBeen = seenAtRun.includes(sceneKey) || takenAtRun.some(id => id.startsWith(sceneKey + ":"));
+  const pathMark = ch => !pc || !pathBeen || visibleChoices.length < 2 ? null : takenAtRun.includes(narrativeId(ch)) ? "walked" : "fresh";
+  const pathOrdered = [...visibleChoices.filter(ch => pathMark(ch) !== "walked"), ...visibleChoices.filter(ch => pathMark(ch) === "walked")];
+  const pathAll = visibleChoices.length > 1 && visibleChoices.every(ch => pathMark(ch) === "walked");
   let availableIds = [], decisionKind = null;
   if (pc && scene && !rolling && !scene.ending && !scene.gameover) {
     if (pending) { decisionKind = "fate"; availableIds = ["fate:reroll", "fate:accept"]; }
@@ -4476,6 +4500,7 @@ function CRPG() {
     emitTelemetry("run_start", run, {scene_id: "intro", lang, rule: ruleKey, class: key, reason: restartFrom.current ? "restart" : "new", previous_run_id: restartFrom.current || undefined, opening: opening || undefined, record_no: recordNo});
     setRunNo(recordNo);
     setSeenAtRun(store.get("aduventure_seen") || []);
+    setTakenAtRun(store.get("aduventure_taken") || []);
     store.set("aduventure_record_no", recordNo + 1);
     setRecordNo(recordNo + 1);
     setFlags(opening === "believe" ? ["believed"] : []);
@@ -4621,6 +4646,10 @@ function CRPG() {
   }
   function doChoice(choice) {
     if (!recordDecision(narrativeId(choice))) return;
+    try {
+      const taken = store.get("aduventure_taken") || [];
+      if (!taken.includes(narrativeId(choice))) store.set("aduventure_taken", [...taken, narrativeId(choice)]);
+    } catch (e) {}
     setLastResult(null);
     setPending(null);
     if (choice.result) {
@@ -5008,7 +5037,7 @@ function CRPG() {
     className: "frag " + (cs.found.includes(id) ? "got" : "unseen")
   }, cs.found.includes(id) ? "\u25C6 " + tx(f.text) + (f.decisive ? " " + ui("decisiveTag") : "") : "\u25C7 " + ui("fragHint") + tx(f.where))), React.createElement("p", {
     className: "caseStatus " + (cs.ready ? "ready" : "")
-  }, cs.ready ? ui("caseReady") : ui("caseNeed") + cs.missing.map(k => ui(k)).join(" · ")), React.createElement("h4", null, ui("caseCast")), React.createElement("div", { className: "castList" }, Object.keys(CAST).filter(id => met.includes(id)).map(id => React.createElement("div", {
+  }, cs.ready ? ui("caseReady") : ui("caseNeed") + cs.missing.map(k => ui(k)).join(" · ")), React.createElement("p", { className: "pathNote" }, ui("pathLeft", { n: untakenCrossroads(store.get("aduventure_seen") || [], store.get("aduventure_taken") || []) })), React.createElement("h4", null, ui("caseCast")), React.createElement("div", { className: "castList" }, Object.keys(CAST).filter(id => met.includes(id)).map(id => React.createElement("div", {
     key: id,
     className: "castCard"
   }, React.createElement("b", null, CAST[id].mark + " " + tx(CAST[id].name)), React.createElement("span", null, tx(CAST[id].role))))), React.createElement("button", {
@@ -5312,11 +5341,13 @@ function CRPG() {
     onClick: () => setNoteOpen(true)
   }, ui("noteLeave"))), notes && notedScenes.includes(sceneKey) && React.createElement("p", { className: "noteSent" }, ui("noteSent")), /*#__PURE__*/React.createElement("div", {
     className: "choices"
-  }, visibleChoices.map((ch, i) => /*#__PURE__*/React.createElement("button", {
-    key: i,
-    className: "choice",
+  }, pathAll && React.createElement("p", { className: "pathNote" }, ui("pathAllWalked")), pathOrdered.map(ch => /*#__PURE__*/React.createElement("button", {
+    key: narrativeId(ch),
+    className: "choice" + (pathMark(ch) ? " " + pathMark(ch) : ""),
     onClick: () => doChoice(ch)
-  }, tx(ch.label), ch.check && /*#__PURE__*/React.createElement("span", {
+  }, tx(ch.label), pathMark(ch) && React.createElement("span", {
+    className: "tag path"
+  }, ui(pathMark(ch) === "fresh" ? "pathFresh" : "pathWalked")), ch.check && /*#__PURE__*/React.createElement("span", {
     className: "tag"
   }, tx(SKILL_NAMES[ch.check.skill]), " \xB7 ", /*#__PURE__*/React.createElement("span", {
     className: "pct"
