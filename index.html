@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>어두밴처 v0.7.3-pt21</title>
+<title>어두밴처 v0.7.3-pt22</title>
 <style>body{margin:0;background:#0e1420}</style>
 </head>
 <body>
@@ -318,7 +318,7 @@ function(a,b,c){if(!Vd(b))throw Error(n(200));return Wd(null,a,b,!1,c)};Q.unmoun
    GAS 피드백 파이프 — v0.7 재구현 (제안/신호/텔레메트리)
    ============================================================ */
 /* 플레이테스트 빌드 태그 — 테스트 중 버전 구분용. 수정할 때마다 뒤 번호를 올린다. */
-const BUILD = "v0.7.3-pt21";
+const BUILD = "v0.7.3-pt22";
 const GAS_URL = "https://script.google.com/macros/s/AKfycbxFx_m5rhCZmqGoy3JcUUNqEgiObMWNHe9hx-LnZrhzIkfwa9-yJGBWP0lVulptnNQeCQ/exec";
 function gasPost(payload, options = {}) {
   return fetch(GAS_URL, {
@@ -556,7 +556,8 @@ const SFX = {
 const BGM_THEMES = {
   1: { notes: [55, 82.41], wave: "triangle", noise: 700, noiseGain: 0.05 }, // 폭풍 속 등대 — 빗소리 + 낮은 A
   2: { notes: [73.42, 110], wave: "triangle", noise: 420, noiseGain: 0.035 }, // 안개 부두 — 파도 + D
-  3: { notes: [65.41, 98, 130.81], wave: "sine", noise: 260, noiseGain: 0.015 } // 빈 수도원 — 오르간 같은 C 화음
+  3: { notes: [65.41, 98, 130.81], wave: "sine", noise: 260, noiseGain: 0.015 }, // 빈 수도원 — 오르간 같은 C 화음
+  5: { notes: [61.74, 92.5, 123.47], wave: "sine", noise: 1800, noiseGain: 0.012 } // 먹울 필사소 — 종이 긁는 높은 잡음 + B 화음
 };
 // 숨을 멈추는 장면: 고르기 전에 소리를 비워 선택의 무게를 키운다.
 const BGM_HUSH = ["railing", "rescue", "signal"];
@@ -808,6 +809,12 @@ const UI = {
   ledgerH: { ko: "이번 장에서 지킨 것과 잃은 것", en: "What you kept and lost this chapter" },
   stakeLabel: { ko: "걸린 것 · ", en: "At stake · " },
   ch4: { ko: "에필로그 「S」", en: "Epilogue · S" },
+  c2ch1: { ko: "사건 2 · 제1장 붉은 손글씨", en: "Case 2 · Ch.1 The Red Hand" },
+  c2Go: { ko: "사건 2 「붉은 손글씨」로 →", en: "On to Case 2, \"The Red Hand\" →" },
+  c2Skip: { ko: "(판결 기록 있음) 사건 2 「붉은 손글씨」부터 시작한다 →", en: "(Verdict on record) Start from Case 2, \"The Red Hand\" →" },
+  c2More: { ko: "사건 2의 다음 장은 다음 업데이트에서 이어집니다.", en: "Case 2 continues in a future update." },
+  c2Hall: { ko: "당신이 고쳐 쓴 기록: 제{a}호부터 제{b}호까지.", en: "Records you rewrote: No. {a} through No. {b}." },
+  c2Notes: { ko: "다른 여백의 붉은 글씨:", en: "Red ink in other margins:" },
   caseBtn: { ko: "사건 기록장", en: "Case board" },
   caseTitle: { ko: "🔎 사건 기록장 — S는 누구인가", en: "🔎 Case Board — Who is S?" },
   caseSuspects: { ko: "의심", en: "Suspicion" },
@@ -1225,6 +1232,11 @@ function rollLooterIntent(hp, maxHp) {
   return r <= 52 ? "slash" : r <= 82 ? "hook" : "feint";
 }
 const SCENE_TITLES = {
+  c2_intro: { ko: "문틈의 봉투", en: "An Envelope Under the Door" },
+  c2_gate: { ko: "먹울 필사소 앞", en: "Outside the Inkfold Scriptorium" },
+  c2_duel: { ko: "먹 묻은 경비", en: "The Ink-Stained Guards" },
+  c2_hall: { ko: "끝없는 서가", en: "The Endless Shelves" },
+  c2_reader: { ko: "낭독가의 구석", en: "The Reader's Corner" },
   dawn2: { ko: "해 지기 전", en: "Before Sundown" },
   dawn2b: { ko: "해 지기 전", en: "Before Sundown" },
   dusk3: { ko: "수도원 바깥", en: "Outside the Walls" },
@@ -3414,6 +3426,419 @@ const SCENES = {
     ch: 3,
     ending: 3
   },
+  /* ---------- 사건 2 「붉은 손글씨」 1장 — 먹울의 필사소 ---------- */
+  c2_intro: {
+    "ch": 5,
+    "text": {
+      "ko": "판결이 끝나고 사흘 뒤, 봉투 하나가 문틈으로 밀려 들어왔다.\n\n안에는 종이 두 장. 하나는 소금여울 공식 기록의 사본이다. 여백에 붉은 글씨 — \"거짓말이다.\" 당신이 쓴 반박과 똑같은 말이다. 그런데 당신 글씨가 아니다.\n\n다른 한 장은 지도. 3장에서 본 그 붉은 선이, 산 너머 필사의 마을 '먹울'에서 끝난다.",
+      "en": "Three days after the verdict, an envelope slides under the door.\n\nTwo sheets inside. One is a copy of a Saltmarsh Official Record. In the margin, red ink — \"This is a lie.\" The same words as your rebuttal. But it isn't your handwriting.\n\nThe other is a map. The red line you saw in Chapter 3 ends beyond the mountains, at Inkfold, the village of copyists."
+    },
+    "choices": [
+      {
+        "label": {
+          "ko": "먹울로 간다",
+          "en": "Go to Inkfold"
+        },
+        "goto": "c2_gate"
+      }
+    ]
+  },
+  c2_gate: {
+    "ch": 5,
+    "text": {
+      "ko": "먹울은 집집마다 잉크 냄새가 나는 마을이다. 한가운데 검은 기와의 필사소 — 근방 모든 마을의 기록이 이곳에서 베껴져 보관된다.\n\n해가 지자 문이 닫힌다. 먹물 묻은 앞치마의 문지기가 등불을 들고 막아선다. \"기록 열람은 필사소장님 허락이 있어야 하오.\"",
+      "en": "In Inkfold, every house smells of ink. At its heart stands the black-tiled scriptorium — every village record for miles around is copied and kept here.\n\nAt sundown the doors close. A gatekeeper in an ink-stained apron raises a lantern and blocks your way. \"Reading the records takes the copy-master's leave.\""
+    },
+    "choices": [
+      {
+        "label": {
+          "ko": "[설득] \"제 이름이 적힌 기록이 있다고 들었습니다. 제 기록입니다.\"",
+          "en": "[Persuade] \"I hear there's a record with my name on it. It's mine.\""
+        },
+        "check": {
+          "ability": "CHA",
+          "skill": "persuasion",
+          "dc": 12,
+          "label": "설득"
+        },
+        "success": {
+          "text": {
+            "ko": "문지기가 당신 얼굴과 사본을 번갈아 본다. \"…그 반박, 당신 거였소?\" 그가 한숨을 쉬며 비켜선다. \"요새 그런 사람이 자꾸 찾아와.\"",
+            "en": "The gatekeeper looks from your face to the copy and back. \"…That rebuttal was yours?\" He sighs and steps aside. \"People like you keep turning up lately.\""
+          },
+          "goto": "c2_hall"
+        },
+        "fail": {
+          "text": {
+            "ko": "\"다들 그렇게 말하지.\" 문지기가 호루라기를 분다. 골목에서 먹 묻은 경비 둘이 나온다.",
+            "en": "\"They all say that.\" The gatekeeper blows a whistle. Two ink-stained guards step out of the alley."
+          },
+          "goto": "c2_duel"
+        }
+      },
+      {
+        "label": {
+          "ko": "[은신] 담장의 그림자를 따라 뒤뜰로 돈다",
+          "en": "[Stealth] Follow the wall's shadow round to the back court"
+        },
+        "check": {
+          "ability": "DEX",
+          "skill": "stealth",
+          "dc": 13,
+          "label": "은신"
+        },
+        "success": {
+          "text": {
+            "ko": "잉크 통이 쌓인 뒤뜰, 열린 창 하나. 소리 없이 넘어간다.",
+            "en": "A back court stacked with ink barrels, and one open window. You slip through without a sound."
+          },
+          "goto": "c2_hall",
+          "flags": [
+            "c2_sneak"
+          ]
+        },
+        "fail": {
+          "text": {
+            "ko": "잉크 통이 넘어지며 검은 물이 쏟아진다. \"거기 누구야!\"",
+            "en": "An ink barrel topples and black water floods out. \"Who's there!\""
+          },
+          "goto": "c2_duel"
+        }
+      },
+      {
+        "classOnly": "fighter",
+        "label": {
+          "ko": "담을 넘는 대신, 문지기와 함께 경비를 마주 선다 — 둘 다 내 편으로",
+          "en": "Instead of climbing the wall, face the guards alongside the gatekeeper — win them both over"
+        },
+        "check": {
+          "ability": "STR",
+          "skill": "athletics",
+          "dc": 14,
+          "label": "운동"
+        },
+        "stake": {
+          "ko": "실패하면 셋 모두와 싸운다",
+          "en": "Fail, and you fight all three"
+        },
+        "success": {
+          "text": {
+            "ko": "술 취한 경비가 문지기에게 주먹을 휘두르는 순간, 당신이 그 팔을 잡아 꺾는다. 문지기가 눈을 크게 뜬다.\n\n\"…들어가쇼. 장부 칸 셋째 줄. 필사소장이 밤마다 뭘 지우는지, 나도 궁금하던 참이오.\"",
+            "en": "As a drunken guard swings at the gatekeeper, you catch the arm and twist it. The gatekeeper's eyes go wide.\n\n\"…Go on in. Third row of the ledger shelves. I've been wondering what the copy-master erases every night myself.\""
+          },
+          "goto": "c2_hall",
+          "flags": [
+            "c2_tip"
+          ]
+        },
+        "fail": {
+          "text": {
+            "ko": "팔을 잡았지만 놓쳤다. 이제 문지기까지 당신을 노려본다.",
+            "en": "You caught the arm, but lost it. Now even the gatekeeper glares at you."
+          },
+          "goto": "c2_duel",
+          "damage": [
+            1,
+            4
+          ],
+          "ifDown": "gameover"
+        }
+      },
+      {
+        "classOnly": "rogue",
+        "label": {
+          "ko": "앞치마를 하나 훔쳐 입고 필사공들 틈에 섞인다",
+          "en": "Steal an apron and slip in among the copyists"
+        },
+        "check": {
+          "ability": "CHA",
+          "skill": "deception",
+          "dc": 11,
+          "label": "기만"
+        },
+        "stake": {
+          "ko": "실패하면 정체가 들통난다",
+          "en": "Fail, and you're found out"
+        },
+        "success": {
+          "text": {
+            "ko": "잉크 묻은 앞치마, 귀에 꽂은 깃펜. 퇴근하는 필사공들과 반대로 걸어 들어간다. 아무도 쳐다보지 않는다.\n\n엿들은 한마디. \"오늘 밤도 지우래. 붉은 거 전부.\"",
+            "en": "An ink-stained apron, a quill behind your ear. You walk in against the flow of copyists heading home. No one looks twice.\n\nOne overheard line: \"Erase them again tonight. All the red ones.\""
+          },
+          "goto": "c2_hall",
+          "flags": [
+            "c2_tip"
+          ]
+        },
+        "fail": {
+          "text": {
+            "ko": "\"넌 몇 번 서가 담당이야?\" 대답이 한 박자 늦었다.",
+            "en": "\"Which shelf are you on?\" Your answer comes a beat too late."
+          },
+          "goto": "c2_duel"
+        }
+      },
+      {
+        "classOnly": "wizard",
+        "label": {
+          "ko": "문틀에 새겨진 봉인 문자를 읽는다",
+          "en": "Read the sealing script carved into the door frame"
+        },
+        "check": {
+          "ability": "INT",
+          "skill": "arcana",
+          "dc": 12,
+          "label": "비전학"
+        },
+        "stake": {
+          "ko": "실패하면 봉인이 경보를 울린다",
+          "en": "Fail, and the seal raises the alarm"
+        },
+        "success": {
+          "text": {
+            "ko": "오래된 문자다. '읽지 않은 자만 들라.' 뒤집어 읽으면 — '이미 읽은 자는 지워라.'\n\n봉인이 풀린다. 이 문은 기록을 지키는 문이 아니라, 지우는 문이다.",
+            "en": "An old script. 'Let only the unread enter.' Read it backward — 'Erase those who have read.'\n\nThe seal gives way. This door doesn't guard the records. It erases them."
+          },
+          "goto": "c2_hall",
+          "flags": [
+            "c2_tip"
+          ]
+        },
+        "fail": {
+          "text": {
+            "ko": "문자가 붉게 달아오르고 종이 울린다.",
+            "en": "The script glows red and a bell begins to ring."
+          },
+          "goto": "c2_duel",
+          "damage": [
+            1,
+            4
+          ],
+          "ifDown": "gameover"
+        }
+      }
+    ]
+  },
+  c2_duel: {
+    "ch": 5,
+    "text": {
+      "ko": "먹 묻은 경비 둘이 몽둥이를 든다. 뒤에서 문지기가 등불을 높인다. 셋을 다 상대할 수는 없다.",
+      "en": "Two ink-stained guards raise their clubs. Behind them, the gatekeeper lifts his lantern. You can't take all three."
+    },
+    "choices": [
+      {
+        "label": {
+          "ko": "[운동] 앞의 경비를 밀어 넘어뜨리고 문으로 뛴다",
+          "en": "[Athletics] Shove the first guard down and run for the door"
+        },
+        "check": {
+          "ability": "STR",
+          "skill": "athletics",
+          "dc": 12,
+          "label": "운동"
+        },
+        "stake": {
+          "ko": "성공하면 안으로 · 실패하면 맞고 들어간다",
+          "en": "Success: you're in · Failure: you get in bruised"
+        },
+        "success": {
+          "text": {
+            "ko": "경비가 잉크 웅덩이에 미끄러진다. 당신은 이미 문 안이다.",
+            "en": "The guard skids in a puddle of ink. You're already through the door."
+          },
+          "goto": "c2_hall"
+        },
+        "fail": {
+          "text": {
+            "ko": "몽둥이가 어깨를 친다. 이를 악물고 문틈으로 몸을 던진다.",
+            "en": "A club catches your shoulder. Teeth gritted, you throw yourself through the gap in the door."
+          },
+          "goto": "c2_hall",
+          "damage": [
+            2,
+            4
+          ],
+          "ifDown": "gameover"
+        }
+      },
+      {
+        "label": {
+          "ko": "[설득] \"지우는 쪽이 당신들 편이라고 생각하나?\"",
+          "en": "[Persuade] \"You think the ones doing the erasing are on your side?\""
+        },
+        "check": {
+          "ability": "CHA",
+          "skill": "persuasion",
+          "dc": 13,
+          "label": "설득"
+        },
+        "stake": {
+          "ko": "성공하면 경비가 물러선다 · 실패하면 셋이 달려든다",
+          "en": "Success: the guards back off · Failure: all three rush you"
+        },
+        "success": {
+          "text": {
+            "ko": "문지기의 등불이 흔들린다. \"…우리 아버지 이름도 지워졌소.\" 그가 경비들에게 손짓한다. 길이 열린다.",
+            "en": "The gatekeeper's lantern wavers. \"…My father's name was erased too.\" He waves the guards back. The way opens."
+          },
+          "goto": "c2_hall",
+          "flags": [
+            "c2_tip"
+          ]
+        },
+        "fail": {
+          "text": {
+            "ko": "대답 대신 몽둥이가 날아온다.",
+            "en": "A club answers instead."
+          },
+          "goto": "c2_hall",
+          "damage": [
+            3,
+            4
+          ],
+          "ifDown": "gameover"
+        }
+      }
+    ]
+  },
+  c2_hall: {
+    "ch": 5,
+    "text": {
+      "ko": "서가가 끝없이 이어진다. 손등이 닿는 곳마다 같은 제목 — '소금여울 공식 기록'.\n\n제113호. 제114호. 제115호…. 번호를 따라 걷다가 멈춘다. 이건 당신이 고쳐 쓴 번호들이다.\n\n사본마다 여백에 붉은 반박이 있다. 그런데 글씨가 다 다르다. 둥근 글씨, 날카로운 글씨, 떨리는 글씨.",
+      "en": "The shelves go on and on. Everywhere your hand brushes, the same title — 'Saltmarsh Official Record.'\n\nNo. 113. No. 114. No. 115…. Following the numbers, you stop. These are the numbers you rewrote.\n\nEvery copy has a red rebuttal in the margin. But the handwriting is different each time. Round hands, sharp hands, shaking hands."
+    },
+    "choices": [
+      {
+        "label": {
+          "ko": "서가 사이로 들려오는 낭독 소리를 따라간다",
+          "en": "Follow the sound of someone reading aloud between the shelves"
+        },
+        "goto": "c2_reader"
+      },
+      {
+        "label": {
+          "ko": "[조사] 필사소장의 책상에서 오늘 밤 작업 목록을 찾는다",
+          "en": "[Investigate] Look for tonight's work list on the copy-master's desk"
+        },
+        "check": {
+          "ability": "INT",
+          "skill": "investigation",
+          "dc": 12,
+          "label": "조사"
+        },
+        "stake": {
+          "ko": "성공하면 무엇이 지워지는지 안다 · 실패하면 들킨다",
+          "en": "Success: you learn what's being erased · Failure: you're seen"
+        },
+        "success": {
+          "text": {
+            "ko": "목록 맨 위. '소금여울 공식 기록 사본 — 붉은 반박 삭제 후 재필사. 완료: 제113호~.'\n\n그 아래 서명. 아직 마르지 않은 먹.",
+            "en": "Top of the list: 'Saltmarsh Official Records, copies — re-copy with red rebuttals removed. Done: No. 113 onward.'\n\nBeneath it, a signature. The ink isn't dry yet."
+          },
+          "goto": "c2_reader",
+          "flags": [
+            "c2_erased"
+          ]
+        },
+        "fail": {
+          "text": {
+            "ko": "서랍이 삐걱인다. 어둠 속 어딘가에서 붓을 내려놓는 소리.",
+            "en": "The drawer creaks. Somewhere in the dark, a brush is set down."
+          },
+          "goto": "c2_reader",
+          "flags": [
+            "c2_seen"
+          ]
+        }
+      },
+      {
+        "label": {
+          "ko": "가장 최근 번호의 사본 — 당신이 지난번 남긴 기록 — 을 품에 넣는다",
+          "en": "Pocket the copy with the latest number — the record you left last time"
+        },
+        "stake": {
+          "ko": "내 반박을 지킨다 · 다른 반박은 두고 간다",
+          "en": "You save your own rebuttal · the others stay behind"
+        },
+        "result": {
+          "text": {
+            "ko": "당신의 반박이 아직 지워지지 않은 채 남아 있다. 종이를 접어 품에 넣는다. 서가 저편에서 누군가 웃는다.",
+            "en": "Your rebuttal is still there, not yet erased. You fold the sheet into your coat. From beyond the shelves, someone laughs."
+          },
+          "goto": "c2_reader",
+          "flags": [
+            "c2_ownCopy"
+          ]
+        }
+      }
+    ]
+  },
+  c2_reader: {
+    "ch": 5,
+    "text": {
+      "ko": "등불 하나 없는 구석. 눈을 감은 여자가 사본을 무릎에 펴 놓고, 손끝으로 글씨를 쓸며 소리 내어 읽고 있다.\n\n\"…'이것은 거짓말이다.' 제117호, 여백.\" 그녀가 고개를 든다. 당신 쪽을 정확히 향한다.\n\n\"낭독가 이레예요. 당신 발소리는 처음이네요. 그런데 이 글씨는 알아요. 당신 거죠?\"",
+      "en": "A corner with no lamp. A woman with closed eyes has a copy spread on her knees, tracing the writing with her fingertips as she reads aloud.\n\n\"…'This is a lie.' No. 117, margin.\" She raises her head — turned exactly toward you.\n\n\"I'm Ire, the reader. I don't know your footsteps. But I know this hand. It's yours, isn't it?\""
+    },
+    "choices": [
+      {
+        "label": {
+          "ko": "\"붉은 손글씨는 누구 겁니까?\"",
+          "en": "\"Whose is the red handwriting?\""
+        },
+        "result": {
+          "text": {
+            "ko": "이레가 웃는다. \"한 사람이 아니에요. 공식 기록을 믿지 않은 모든 사람의 손이에요. 백 명도 넘죠. 당신 것도 저 안에 있어요.\"\n\n그녀의 손끝이 멈춘다. \"그런데 누군가 매일 밤, 반박만 골라 지우고 다시 베껴요. 반박이 없는 기록만 남도록.\"",
+            "en": "Ire smiles. \"Not one person. It's the hand of everyone who refused to believe the official record. More than a hundred of them. Yours is in there too.\"\n\nHer fingertips stop. \"But every night, someone picks out only the rebuttals, erases them, and copies again. So that only records without them remain.\""
+          },
+          "goto": "c2_end",
+          "flags": [
+            "c2_many"
+          ]
+        }
+      },
+      {
+        "label": {
+          "ko": "[지각] 그녀의 손끝을 유심히 보며, 앞을 못 보는데 어떻게 '글씨'를 아는지 묻는다",
+          "en": "[Perceive] Watch her fingertips closely and ask how she knows a 'hand' without sight"
+        },
+        "check": {
+          "ability": "WIS",
+          "skill": "perception",
+          "dc": 11,
+          "label": "지각"
+        },
+        "stake": {
+          "ko": "성공하면 그녀가 숨긴 것을 듣는다",
+          "en": "Success: you hear what she was hiding"
+        },
+        "success": {
+          "text": {
+            "ko": "\"붉은 잉크는 마르면 종이가 살짝 오그라들어요. 손끝으로 읽히죠.\" 그녀가 잠시 망설인다.\n\n\"…그리고 지워진 자리도 읽혀요. 긁어낸 자국이요. 오늘 밤 긁힌 건, 제113호부터 전부예요. 지운 사람의 손은 — 아주 반듯해요. 반듯한 사람을 아세요?\"",
+            "en": "\"Red ink puckers the paper slightly as it dries. Fingertips can read it.\" She hesitates.\n\n\"…And I can read where it's been erased. The scraping. Tonight, everything from No. 113 on was scraped. The hand that did it is — very straight. Do you know anyone straight like that?\""
+          },
+          "goto": "c2_end",
+          "flags": [
+            "c2_many",
+            "c2_straight"
+          ]
+        },
+        "fail": {
+          "text": {
+            "ko": "\"비밀이에요.\" 그녀가 사본을 덮는다. \"하지만 붉은 손이 한 사람이 아니라는 건 말해 줄게요.\"",
+            "en": "\"That's a secret.\" She closes the copy. \"But I'll tell you this: the red hand isn't one person.\""
+          },
+          "goto": "c2_end",
+          "flags": [
+            "c2_many"
+          ]
+        }
+      }
+    ]
+  },
+  c2_end: {
+    "ch": 5,
+    "ending": 5
+  },
   /* ---------- 에필로그 「S」 — 사건 기록장이 결론을 허락할 때만 온다 ---------- */
   accuse: {
     ch: 4,
@@ -3566,6 +3991,25 @@ function buildEnding3(flags) {
   en.push("\n— End of Chapter 3, \"The Silenced Bell.\"");
   return bi(ko.join("\n\n"), en.join("\n\n"));
 }
+function buildEnding5(flags) {
+  const has = f => flags.includes(f);
+  const ko = [], en = [];
+  ko.push(has("c2_erased") ? "필사소장의 목록이 머릿속에서 지워지지 않는다. '붉은 반박 삭제 후 재필사.' 누군가 반박의 역사를 통째로 지우고 있다." : "필사소를 나서는 길, 등 뒤에서 종이 긁는 소리가 밤새 이어진다.");
+  en.push(has("c2_erased") ? "The copy-master's list won't leave your head. 'Re-copy with red rebuttals removed.' Someone is erasing the whole history of rebuttals." : "As you leave the scriptorium, the sound of scraped paper follows you all night.");
+  if (has("c2_straight")) {
+    ko.push("이레의 말이 남는다. 지운 손은 아주 반듯했다고. 당신이 아는 가장 반듯한 미소가 떠오른다.");
+    en.push("Ire's words stay with you. The erasing hand was very straight. You think of the straightest smile you know.");
+  }
+  if (has("c2_ownCopy")) {
+    ko.push("품 안의 사본이 따뜻하다. 적어도 당신의 반박 하나는 지워지지 않았다.");
+    en.push("The copy in your coat feels warm. At least one rebuttal — yours — was not erased.");
+  }
+  ko.push("붉은 손은 한 사람이 아니다. 기록을 믿지 않은 모든 사람의 손이다. 그리고 그 손들을 지우는 누군가가 있다.");
+  en.push("The red hand is not one person. It is the hand of everyone who refused to believe the record. And someone is erasing those hands.");
+  ko.push("\n— 사건 2 「붉은 손글씨」 제1장 끝. 다음 장은 다음 기록에서 이어진다.");
+  en.push("\n— End of Case 2, \"The Red Hand,\" Chapter 1. The next chapter continues in a later record.");
+  return bi(ko.join("\n\n"), en.join("\n\n"));
+}
 function buildEnding4(flags) {
   const ko = [], en = [];
   if (flags.includes("retrial")) {
@@ -3624,6 +4068,16 @@ const CLUES = {
 /* ---------- 나비효과 — 과거의 선택이 특정 장면에서 파급으로 되돌아온다(가시적 인과) ----------
    각 장면에서 flags 조건을 만족하면 '지난 선택의 여파' 배너를 서사 위에 띄운다. */
 const ECHOES = {
+  c2_intro: [{
+    req: "accuseSeon",
+    text: { ko: "봉투 안쪽에 한 줄이 더 있다. 감옥의 세온이 보낸 것이다. \"붉은 손을 찾게, 기록관. 나도 그 손에 속았네.\"", en: "There's one more line inside the envelope, from Seon in his cell. \"Find the red hand, archivist. It fooled me too.\"" }
+  }, {
+    req: "accuseBern",
+    text: { ko: "봉투를 가져온 건 베른의 옛 뱃동무다. \"영감을 꺼내고 싶거든, 붉은 손부터 찾게.\"", en: "Bern's old shipmate brought the envelope. \"If you want the old man out, find the red hand first.\"" }
+  }, {
+    req: "dealSeon",
+    text: { ko: "세온의 메모가 함께 있다. \"다음 손님의 기록에 누가 자꾸 붉은 글씨를 적는군. 자네가 처리하게.\"", en: "A note from Seon is enclosed. \"Someone keeps writing in red on our next guest's record. Deal with it.\"" }
+  }],
   intro2: [{
     req: "signal",
     text: { ko: "노인이 덧붙인다. \"렌즈는 없어졌지만, 자네 봉화 덕에 배 셋이 다 들어왔네.\"", en: "The keeper adds, \"The lens is gone, but your beacon brought all three boats home.\"" }
@@ -3670,6 +4124,9 @@ function untakenCrossroads(seen, taken) {
   }).length;
 }
 const BADGES = [{
+  id: "5",
+  name: { ko: "붉은 손의 첫 장", en: "The Red Hand, Chapter One" }
+}, {
   id: "1pf",
   ch: 1,
   name: { ko: "침묵의 교섭가", en: "The Silent Negotiator" },
@@ -3731,7 +4188,7 @@ const BADGES = [{
   name: { ko: "S의 사람", en: "S's Own" },
   how: { ko: "에필로그: 알고도 덮는다", en: "Epilogue: bury what you know" }
 }];
-const badgeId = (ending, flags) => ending === 4 ? "4" + (flags.includes("accuseSeon") ? "t" : flags.includes("accuseBern") ? "b" : "d") : ending === 1 && flags.includes("signal") ? "1s" : ending === 1 ? "1" + (flags.includes("peaceful") ? "p" : "c") + (flags.includes("fixed") ? "f" : "j") : ending === 2 ? "2" + (flags.includes("peaceful2") ? "p" : "c") : "3" + (flags.includes("saved3") ? "s" : "e");
+const badgeId = (ending, flags) => ending === 5 ? "5" : ending === 4 ? "4" + (flags.includes("accuseSeon") ? "t" : flags.includes("accuseBern") ? "b" : "d") : ending === 1 && flags.includes("signal") ? "1s" : ending === 1 ? "1" + (flags.includes("peaceful") ? "p" : "c") + (flags.includes("fixed") ? "f" : "j") : ending === 2 ? "2" + (flags.includes("peaceful2") ? "p" : "c") : "3" + (flags.includes("saved3") ? "s" : "e");
 
 /* ---------- 오늘의 도전 — 날짜 기반으로 매일 하나가 결정된다(재방문 유도) ---------- */
 const DAILY_CHALLENGES = [{
@@ -3802,6 +4259,12 @@ function chapterLedger(ch, flags) {
   const has = f => flags.includes(f);
   const rows = [];
   const row = (kept, ko, en, next) => rows.push({ kept, text: bi(ko, en), next: next || null });
+  if (ch === 5) {
+    row(has("c2_erased") ? true : null, has("c2_erased") ? "필사소장의 작업 목록 — 읽었다" : "필사소장의 작업 목록 — 보지 못했다", has("c2_erased") ? "The copy-master's work list — read" : "The copy-master's work list — not seen");
+    row(has("c2_ownCopy") ? true : false, has("c2_ownCopy") ? "내 반박의 사본 — 챙겼다" : "내 반박의 사본 — 서가에 남겨 두었다", has("c2_ownCopy") ? "Copy of your rebuttal — taken" : "Copy of your rebuttal — left on the shelf");
+    row(has("c2_tip") ? true : null, has("c2_tip") ? "필사소 안쪽 사람 — 내 편이 생겼다" : "필사소 안쪽 사람 — 아직 없다", has("c2_tip") ? "Someone inside the scriptorium — on your side" : "Someone inside the scriptorium — not yet");
+    return rows;
+  }
   if (ch === 1) {
     if (has("signal")) row(false, "렌즈 — 렌이 들고 달아났다", "Lens — Ren ran off with it", bi("부두에서 렌즈를 되찾을 기회가 있다", "A chance to win the lens back at the docks"));
     else if (has("lensCracked")) row(false, "렌즈 — 렌을 붙잡는 사이 금이 갔다", "Lens — cracked while you caught Ren", bi("이번 회차엔 '온전한 황동 렌즈'를 얻을 수 없다", "No Intact Brass Lens this run"));
@@ -3864,6 +4327,11 @@ const CLASS_ROADS = {
 };
 // 위치 카드: 지금 어디서 무엇을 하는지 한 줄로.
 const SCENE_DOING = {
+  c2_intro: bi("붉은 선이 끝나는 곳으로", "Toward where the red line ends"),
+  c2_gate: bi("밤의 필사소에 들어가야 한다", "You need to get into the scriptorium tonight"),
+  c2_duel: bi("셋을 다 상대할 수는 없다", "You can't take all three"),
+  c2_hall: bi("내가 고쳐 쓴 기록들 사이에서", "Among the records you rewrote"),
+  c2_reader: bi("손끝으로 글씨를 읽는 사람", "Someone who reads with her fingertips"),
   dawn2: bi("해 지기 전, 두 곳만 들를 수 있다", "Before sundown — two stops only"),
   dawn2b: bi("한 곳만 더 들를 수 있다", "One more stop"),
   dusk3: bi("해 지기 전, 바깥을 두 곳만 돌아볼 수 있다", "Before sunset — two places outside the walls"),
@@ -3909,6 +4377,7 @@ function stageMood(sceneKey, scene) {
 }
 // 장면에 들어설 때 한 번 울리는 효과음
 const SCENE_SFX = {
+  c2_intro: "pen", c2_gate: "door", c2_duel: "clash", c2_hall: "pen", c2_reader: "pen",
   dawn2: "crowd", dusk3: "wind",
   door: "door", stairs: "wind", duel1: "clash", duel2: "clash", railing: "wind", top: "gear",
   scully1: "clash", scully2: "door", monk1: "clash", monk2: "water",
@@ -3922,10 +4391,12 @@ const CAST = {
   scully: { name: bi("스컬리", "Scully"), role: bi("검은 코트의 심부름꾼", "The black-coated errand man"), mark: "\uD83E\uDDE5" },
   odo: { name: bi("오도", "Odo"), role: bi("잿돌 수도원 종지기", "Bell-keeper of Ashstone"), mark: "\uD83D\uDD14" },
   pip: { name: bi("핍", "Pip"), role: bi("붙잡혀 있던 배달부", "A captive courier"), mark: "\u2709\uFE0F" },
-  grey: { name: bi("회색 형제", "Grey Brother"), role: bi("가짜 수도사", "The false monk"), mark: "\uD83D\uDD6F\uFE0F" }
+  grey: { name: bi("회색 형제", "Grey Brother"), role: bi("가짜 수도사", "The false monk"), mark: "\uD83D\uDD6F\uFE0F" },
+  ire: { name: bi("이레", "Ire"), role: bi("먹울의 눈먼 낭독가", "The blind reader of Inkfold"), mark: "\uD83D\uDC50" }
 };
 const SUSPECTS = ["seon", "bern", "ren"];
 const SCENE_CAST = {
+  c2_reader: ["ire"],
   intro: ["seon"], stairs: ["ren"], duel1: ["ren"], duel2: ["ren"], railing: ["ren"], top: ["bern"], signal: ["bern"],
   intro2: ["bern"], wharfRen: ["ren"], wharfLens: ["ren"], confront: ["scully"], scully1: ["scully"], scully2: ["scully"], monk1: ["grey", "pip"], monk2: ["grey"],
   belltower: ["odo"], undercroft: ["pip", "grey"], rescue: ["pip"], accuse: ["seon", "bern"]
@@ -4029,6 +4500,12 @@ function officialRecord(kind, flags, no, verdict) {
     signer: seon,
     rebut: has("f_addressee") ? bi("무관하다고? 편지의 수신인은 세온이다.", "Unrelated? The letters were addressed to Seon.")
       : has("f_hand_match") ? bi("무관하다고? S의 글씨는 열쇠 꼬리표와 같다.", "Unrelated? S's hand matches the key tag.") : null
+  };
+  if (kind === 5) return {
+    head: bi(`먹울 필사소 사본 · 소금여울 공식 기록 제${n}호`, `Inkfold Scriptorium copy · Saltmarsh Official Record No. ${n}`),
+    lines: [bi("(여백의 붉은 반박: 삭제됨)", "(Red rebuttal in the margin: erased)"), bi("재필사 완료.", "Re-copy complete.")],
+    signer: bi("필사: 먹울 필사소", "Copied by: Inkfold Scriptorium"),
+    rebut: has("c2_ownCopy") ? bi("내 반박은 여기 있다. 지우지 못했다.", "My rebuttal is right here. You couldn't erase it.") : bi("지운 자리에도 자국은 남는다.", "Even an erased line leaves a mark.")
   };
   if (kind === 4) {
     if (has("accuseSeon") && has("retrial")) return {
@@ -5096,6 +5573,8 @@ const css = `
 .crpg .scarNote { margin:6px 0 0; font-size:13px; color:#e8a07f; }
 .crpg .tag .scar { color:#e8a07f; }
 .crpg .scarLine { font-size:13px; margin:2px 0; }
+.crpg .hallExtra { font-size:14px; opacity:.9; margin:4px 0 10px; }
+.crpg .redhand.small { font-size:14px; display:inline-block; margin:2px 6px 0 0; }
 .crpg .tag.lock { border-color:#b05050; color:#e08a8a; }
 .crpg .wrongBox { border:1px solid #b05050; border-radius:8px; padding:4px 10px; margin:8px 0; }
 .crpg .tag.cls { border-color:#c97a5a; color:#e8a07f; }
@@ -5282,6 +5761,7 @@ function CRPG() {
       availableIds = visibleChoices.map(narrativeId);
       if (sceneKey === "intro" && badges.some(b => b.startsWith("1"))) availableIds.push("skip:ch2");
       if (sceneKey === "intro" && badges.some(b => b.startsWith("2"))) availableIds.push("skip:ch3");
+      if (sceneKey === "intro" && verdict && verdict.kind) availableIds.push("skip:case2");
       if (sceneKey === "intro") ["stairs", "rescue"].filter(k => seenAtRun.includes(k)).forEach(k => availableIds.push("jump:" + k));
     }
   }
@@ -6030,7 +6510,7 @@ function CRPG() {
   const combatRange = profile => rules.damageRange(profile).join("–");
   const riposteText = { riposte: rules.scaleEffect(4) };
   const specialTag = pc && tx(SPECIALS[pc.classKey].tag).replace("{damage}", combatRange(pc.classKey === "wizard" ? { die: 8, bonus: 2 } : { die: 6 }));
-  const chapterTitle = chapter === 4 ? ui("ch4") : chapter === 3 ? ui("ch3") : chapter === 2 ? ui("ch2") : ui("ch1");
+  const chapterTitle = chapter === 5 ? ui("c2ch1") : chapter === 4 ? ui("ch4") : chapter === 3 ? ui("ch3") : chapter === 2 ? ui("ch2") : ui("ch1");
   const cs = caseState(lore);
   const collapsed = !!pc && !!scene?.text && seenAtRun.includes(sceneKey) && expanded !== sceneKey;
   const forks = sceneKey === "intro" ? ["stairs", "rescue"].filter(k => seenAtRun.includes(k)) : [];
@@ -6118,7 +6598,7 @@ function CRPG() {
     className: "titleArt" + (opening ? "" : " compact"),
     src: TITLE_ART,
     alt: ui("titleAlt")
-  }) : chapter === 3 ? /*#__PURE__*/React.createElement(MonasteryScene, {
+  }) : chapter === 3 || chapter === 5 ? /*#__PURE__*/React.createElement(MonasteryScene, {
     stage: monasteryStage(sceneKey)
   }) : chapter === 2 ? /*#__PURE__*/React.createElement(HarborScene, {
     stage: harborStage(sceneKey)
@@ -6170,7 +6650,7 @@ function CRPG() {
     title: lang === "en" ? "Resume your saved run" : "\uC800\uC7A5\uB41C \uBAA8\uD5D8\uC744 \uC774\uC5B4\uC11C \uD55C\uB2E4"
   }, lang === "en" ? "\u21BB Continue" : "\u21BB \uC774\uC5B4\uC11C \uD558\uAE30", /*#__PURE__*/React.createElement("span", {
     className: "cont-meta"
-  }, (SCENES[savedGame.sceneKey]?.ch === 3 ? (lang === "en" ? "Ch.3" : "\uC81C3\uC7A5") : SCENES[savedGame.sceneKey]?.ch === 2 ? (lang === "en" ? "Ch.2" : "\uC81C2\uC7A5") : (lang === "en" ? "Ch.1" : "\uC81C1\uC7A5")) + " \xB7 " + savedGame.pc.name + " (" + tx(CLASSES[savedGame.pc.classKey] ? CLASSES[savedGame.pc.classKey].name : "\uC6A9\uC0AC") + ")")), /*#__PURE__*/React.createElement("label", {
+  }, (SCENES[savedGame.sceneKey]?.ch === 5 ? ui("c2ch1") : SCENES[savedGame.sceneKey]?.ch === 3 ? (lang === "en" ? "Ch.3" : "\uC81C3\uC7A5") : SCENES[savedGame.sceneKey]?.ch === 2 ? (lang === "en" ? "Ch.2" : "\uC81C2\uC7A5") : (lang === "en" ? "Ch.1" : "\uC81C1\uC7A5")) + " \xB7 " + savedGame.pc.name + " (" + tx(CLASSES[savedGame.pc.classKey] ? CLASSES[savedGame.pc.classKey].name : "\uC6A9\uC0AC") + ")")), /*#__PURE__*/React.createElement("label", {
     className: "nameLb"
   }, ui("nameRecord")), /*#__PURE__*/React.createElement("input", {
     className: "nameIn",
@@ -6334,7 +6814,9 @@ function CRPG() {
     className: "echo-t"
   }, tx(e.text)))), /*#__PURE__*/React.createElement("p", {
     className: "narr"
-  }, collapsed ? fmt(tx(scene.text), pc).split("\n\n")[0] + " …" : fmt(tx(scene.text), pc)), collapsed && React.createElement("button", {
+  }, collapsed ? fmt(tx(scene.text), pc).split("\n\n")[0] + " …" : fmt(tx(scene.text), pc)), sceneKey === "c2_hall" && React.createElement("div", {
+    className: "hallExtra"
+  }, React.createElement("p", null, ui("c2Hall", { a: RECORD_FIRST, b: Math.max(RECORD_FIRST, runNo || RECORD_FIRST) })), notes && Object.values(notes).flat().length > 0 && React.createElement("p", null, ui("c2Notes"), Object.values(notes).flat().slice(0, 3).map((n, i) => React.createElement("span", { key: i, className: "redhand small" }, " " + noteText(n, lang))))), collapsed && React.createElement("button", {
     className: "expandBtn",
     onClick: () => setExpanded(sceneKey)
   }, ui("seenExpand")), notes && (notes[sceneKey] || []).map((n, i) => React.createElement("div", {
@@ -6402,7 +6884,10 @@ function CRPG() {
   }, lang === "en" ? "(Ch.1 cleared) Start from Ch.2 \u2192" : "(1\uC7A5 \uD074\uB9AC\uC5B4 \uAE30\uB85D \uC788\uC74C) 2\uC7A5\uBD80\uD130 \uC2DC\uC791\uD55C\uB2E4 \u2192"), sceneKey === "intro" && badges.some(b => b.startsWith("2")) && /*#__PURE__*/React.createElement("button", {
     className: "choice",
     onClick: () => { if (recordDecision("skip:ch3")) goto("intro3"); }
-  }, lang === "en" ? "(Ch.2 cleared) Start from Ch.3 \u2192" : "(2\uC7A5 \uD074\uB9AC\uC5B4 \uAE30\uB85D \uC788\uC74C) 3\uC7A5\uBD80\uD130 \uC2DC\uC791\uD55C\uB2E4 \u2192")), /*#__PURE__*/React.createElement(SuggestBox, {
+  }, lang === "en" ? "(Ch.2 cleared) Start from Ch.3 \u2192" : "(2\uC7A5 \uD074\uB9AC\uC5B4 \uAE30\uB85D \uC788\uC74C) 3\uC7A5\uBD80\uD130 \uC2DC\uC791\uD55C\uB2E4 \u2192"), sceneKey === "intro" && verdict && verdict.kind && React.createElement("button", {
+    className: "choice",
+    onClick: () => { if (recordDecision("skip:case2")) { setFlags(f => f.includes(verdict.kind) ? f : [...f, verdict.kind]); goto("c2_intro", verdict.kind); } }
+  }, ui("c2Skip"))), /*#__PURE__*/React.createElement(SuggestBox, {
     sceneKey: sceneKey,
     pc: pc,
     lang: lang,
@@ -6491,7 +6976,7 @@ function CRPG() {
     className: "scene epi"
   }, /*#__PURE__*/React.createElement("p", {
     className: "narr"
-  }, fmt(tx(scene.ending === 1 ? buildEnding1(flags) : scene.ending === 2 ? buildEnding2(flags) : scene.ending === 4 ? buildEnding4(flags) : buildEnding3(flags)), pc)), React.createElement(RecordCard, {
+  }, fmt(tx(scene.ending === 1 ? buildEnding1(flags) : scene.ending === 2 ? buildEnding2(flags) : scene.ending === 4 ? buildEnding4(flags) : scene.ending === 5 ? buildEnding5(flags) : buildEnding3(flags)), pc)), React.createElement(RecordCard, {
     record: officialRecord(scene.ending, flags, runNo),
     pc,
     lang
@@ -6540,8 +7025,14 @@ function CRPG() {
   }, ui("ch3next")), /*#__PURE__*/React.createElement("button", {
     className: "restart",
     onClick: () => restart("intro2")
-  }, ui("ch2again"))) : scene.ending === 4 ? React.createElement(React.Fragment, null, React.createElement("button", {
+  }, ui("ch2again"))) : scene.ending === 5 ? React.createElement(React.Fragment, null, React.createElement("p", { className: "caseStatus" }, ui("c2More")), React.createElement("button", {
     className: "restart primary",
+    onClick: () => restart()
+  }, ui("fromStart"))) : scene.ending === 4 ? React.createElement(React.Fragment, null, React.createElement("button", {
+    className: "restart primary",
+    onClick: () => { if (recordDecision("case2:go")) goto("c2_intro"); }
+  }, ui("c2Go")), React.createElement("button", {
+    className: "restart",
     onClick: () => setCaseOpen(true)
   }, ui("caseBtn")), React.createElement("button", {
     className: "restart",
