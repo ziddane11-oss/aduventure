@@ -162,19 +162,20 @@ for (const lang of ['ko', 'en']) {
   });
   for (const flag of ['ledger', 'grip']) {
     for (const success of [true, false]) {
-      test(`${lang}: ${flag} choice resolves to ${success ? 'peaceful ending' : 'Scully combat'} through the real click handler`, () => {
+      test(`${lang}: ${flag} choice resolves to ${success ? 'peaceful ending' : 'the Scully duel'} through the real click handler`, () => {
         const g = game({lang, flags: [flag], success});
         const label = g.run(`SCENES.confront.choices.find(choice => choice.echoReq === '${flag}').label.${lang}`);
         choices(g.render()).find(node => text(node).startsWith(label)).props.onClick();
         g.finishRoll();
         const tree = g.render();
         assert.equal(nodes(tree).some(node => node.props.className === 'scene epi'), success);
-        assert.equal(nodes(tree).some(node => node.props.className === 'combat'), !success);
+        // pt16: 실패하면 숫자 전투 대신 스컬리와의 서사 결투(scully1)로 간다.
+        assert.equal(text(tree).includes(g.run(`SCENE_DOING.scully1.${lang}`)), !success);
         if (success) {
           assert.ok(text(tree).includes(lang === 'ko' ? '스컬리는 떠났다.' : 'Scully is gone.'));
           if (flag === 'ledger') assert.ok(text(tree).includes(lang === 'ko' ? '품속의 장부' : 'The ledger in your coat'));
         } else {
-          assert.ok(text(tree).includes(g.run(`ENEMIES.smuggler.name.${lang}`)));
+          assert.ok(text(tree).includes(g.run(`SCENES.scully1.choices[0].label.${lang}`)));
         }
       });
     }
