@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>어두밴처 v0.7.3-pt14</title>
+<title>어두밴처 v0.7.3-pt15</title>
 <style>body{margin:0;background:#0e1420}</style>
 </head>
 <body>
@@ -318,7 +318,7 @@ function(a,b,c){if(!Vd(b))throw Error(n(200));return Wd(null,a,b,!1,c)};Q.unmoun
    GAS 피드백 파이프 — v0.7 재구현 (제안/신호/텔레메트리)
    ============================================================ */
 /* 플레이테스트 빌드 태그 — 테스트 중 버전 구분용. 수정할 때마다 뒤 번호를 올린다. */
-const BUILD = "v0.7.3-pt14";
+const BUILD = "v0.7.3-pt15";
 const GAS_URL = "https://script.google.com/macros/s/AKfycbxFx_m5rhCZmqGoy3JcUUNqEgiObMWNHe9hx-LnZrhzIkfwa9-yJGBWP0lVulptnNQeCQ/exec";
 function gasPost(payload, options = {}) {
   return fetch(GAS_URL, {
@@ -483,6 +483,43 @@ const SFX = {
     o.start(c.currentTime + t0);
     o.stop(c.currentTime + t0 + dur + 0.05);
   },
+  // 짧게 걸러진 잡음 한 번(바람·물·군중·긁힘의 재료)
+  _noise(t0, dur, vol, type, freq, freqEnd) {
+    const c = _ctx();
+    const len = Math.max(1, Math.floor(c.sampleRate * dur));
+    const buf = c.createBuffer(1, len, c.sampleRate);
+    const ch = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) ch[i] = Math.random() * 2 - 1;
+    const src = c.createBufferSource();
+    src.buffer = buf;
+    const f = c.createBiquadFilter();
+    f.type = type;
+    f.frequency.setValueAtTime(freq, c.currentTime + t0);
+    if (freqEnd) f.frequency.exponentialRampToValueAtTime(freqEnd, c.currentTime + t0 + dur);
+    const g = c.createGain();
+    g.gain.setValueAtTime(vol, c.currentTime + t0);
+    g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + t0 + dur);
+    src.connect(f);
+    f.connect(g);
+    g.connect(c.destination);
+    src.start(c.currentTime + t0);
+    src.stop(c.currentTime + t0 + dur + 0.05);
+  },
+  // 상황 효과음 — 장면 진입·단서 획득 때 한 번
+  cue(name) {
+    if (!this.enabled || !name) return;
+    try {
+      if (name === "door") { this._tone(95, 0, 0.5, 0.05, "sawtooth"); this._tone(70, 0.18, 0.5, 0.04, "sawtooth"); this._noise(0, 0.35, 0.05, "bandpass", 500); }
+      else if (name === "wind") this._noise(0, 1.6, 0.06, "bandpass", 300, 900);
+      else if (name === "clash") { this._noise(0, 0.12, 0.12, "highpass", 2500); this._tone(1250, 0, 0.35, 0.05, "triangle"); this._tone(1870, 0.02, 0.25, 0.03, "triangle"); }
+      else if (name === "gear") [0, 0.16, 0.32].forEach(t => { this._tone(900, t, 0.06, 0.05, "square"); this._noise(t, 0.05, 0.05, "highpass", 3000); });
+      else if (name === "fire") this._noise(0, 1.2, 0.07, "lowpass", 900, 300);
+      else if (name === "crowd") this._noise(0, 1.4, 0.05, "bandpass", 650);
+      else if (name === "water") this._noise(0, 1.8, 0.09, "lowpass", 250, 1200);
+      else if (name === "thud") this._tone(65, 0, 0.3, 0.12, "sine");
+      else if (name === "pen") [0, 0.09, 0.2].forEach(t => this._noise(t, 0.07, 0.05, "highpass", 4000));
+    } catch (e) {}
+  },
   dice() {
     if (!this.enabled) return;
     try {
@@ -534,7 +571,7 @@ function bgmMood({ sceneKey, chapter, hp, maxHp, combat, enemyIntent, enemyDone,
     drone: hush ? 0 : ending ? 0.6 : 1,
     rain: hush ? 0.35 : 1,
     // 렌의 '강타' 예고에는 저음이 끝까지 차오른다. 그 외 전투는 절반.
-    tension: fighting ? (enemyIntent === "hook" ? 1 : 0.45) : 0,
+    tension: fighting ? (enemyIntent === "hook" ? 1 : 0.45) : sceneKey === "duel1" ? 0.8 : sceneKey === "duel2" ? 1 : 0,
     // 체력이 줄면 심장박동이 빨라진다(분당 박동 수, 0이면 없음).
     pulse: hp > 0 && ratio <= 1 / 3 ? 104 : fighting && ratio <= 1 / 2 ? 76 : 0
   };
@@ -790,6 +827,10 @@ const UI = {
   shareRec: { ko: "📋 이 기록 복사하기 (공유)", en: "📋 Copy this record (share)" },
   shareDone: { ko: "복사됨 — 붙여넣어 공유하세요", en: "Copied — paste it anywhere" },
   shareFail: { ko: "복사 실패 — 화면을 캡처해 주세요", en: "Couldn't copy — take a screenshot instead" },
+  seenExpand: { ko: "▸ 이미 기록한 장면 — 펼쳐 읽기", en: "▸ Already on record — read it again" },
+  forkStairs: { ko: "⤳ 갈림길로: 렌과 마주치는 계단부터", en: "⤳ Jump to the fork: the stairs where you meet Ren" },
+  forkRescue: { ko: "⤳ 갈림길로: 3장 수문 앞부터", en: "⤳ Jump to the fork: Ch.3, at the sluice" },
+  forkTag: { ko: "다른 쪽을 골라 볼 곳", en: "where you can choose differently" },
   recordLie: { ko: "거짓말이다 — 이 기록을 다시 쓴다", en: "It's a lie — rewrite this record" },
   recordBelieve: { ko: "기록을 믿는다", en: "I believe the record" },
   nameRecord: { ko: "기록에 남을 이름은?", en: "What name goes on the record?" },
@@ -1165,6 +1206,8 @@ const SCENE_TITLES = {
   door: { ko: "등대 입구", en: "Lighthouse Door" },
   stairs: { ko: "기계실", en: "The Mechanism Room" },
   combat: { ko: "도굴꾼과 전투", en: "Fight with the Grave-robber" },
+  duel1: { ko: "렌과의 결투", en: "Duel with Ren" },
+  duel2: { ko: "마지막 한 수", en: "The Last Move" },
   railing: { ko: "난간 끝", en: "At the Railing" },
   signal: { ko: "렌즈 없는 불", en: "A Light Without a Lens" },
   top: { ko: "등실", en: "The Lantern Room" },
@@ -1323,7 +1366,7 @@ const SCENES = {
           ko: `"허풍이군." 갈고리칼이 호를 그린다.`,
           en: `"Bluffing." The hook-knife carves an arc.`
         },
-        goto: "combat"
+        goto: "duel1"
       }
     }, {
       label: {
@@ -1349,7 +1392,7 @@ const SCENES = {
           ko: `"말로? 늦었어."\n\n갈고리칼이 호를 그린다.`,
           en: `"Talk? Too late for that."\n\nThe hook-knife carves an arc.`
         },
-        goto: "combat"
+        goto: "duel1"
       }
     }, {
       label: {
@@ -1357,7 +1400,7 @@ const SCENES = {
         en: "[Fight] Draw your weapon"
       },
       stake: { ko: "이기면 렌과 렌즈 중 하나만 지킬 수 있다", en: "Win, and you can save only Ren or the lens" },
-      goto: "combat"
+      goto: "duel1"
     }]
   },
   combat: {
@@ -1379,6 +1422,121 @@ const SCENES = {
       },
       goto: "signal"
     }
+  },
+  /* ---------- 렌과의 결투 — 숫자 전투 대신 2박자 서사 결투(pt15). 매 박자 다른 딜레마, 말로 끝낼 길도 있다 ----------
+     HP가 0이 되면 ifDown으로 봉화 경로에 간다. 기존 combat 장면은 시뮬레이터·호환을 위해 남겨 둔다. */
+  duel1: {
+    ch: 1,
+    text: {
+      ko: `렌이 갈고리를 높이 치켜든다. 어깨에 힘이 들어간다 — 크게 내리칠 기세다.\n\n그의 발치, 렌즈 자루가 계단 끝에 걸려 흔들린다.`,
+      en: `Ren raises the hook high. His shoulder tenses — he's winding up for a big swing.\n\nAt his feet, the lens sack teeters on the edge of the stairs.`
+    },
+    choices: [{
+      label: { ko: "[운동] 갈고리를 정면으로 받아낸다", en: "[Athletics] Catch the hook head-on" },
+      stake: { ko: "성공하면 다음 수가 쉬워진다 · 실패하면 크게 다친다", en: "Success makes the next move easier · failure hurts badly" },
+      check: { ability: "STR", skill: "athletics", dc: 11, label: "운동" },
+      success: {
+        text: { ko: `쇠와 쇠가 부딪친다. 받아낸 갈고리를 비틀자 렌이 휘청인다. 지금이 기회다.`, en: `Steel rings on steel. You twist the caught hook and Ren staggers. This is your opening.` },
+        flags: ["duelEdge"], goto: "duel2"
+      },
+      fail: {
+        text: { ko: `막았지만 힘에서 밀린다. 갈고리 끝이 어깨를 긋는다.`, en: `You block, but he's stronger. The hook's tip rakes your shoulder.` },
+        damage: [2, 4], ifDown: "signal", goto: "duel2"
+      }
+    }, {
+      label: { ko: "[은신] 내리치는 순간 옆으로 빠져 등 뒤를 잡는다", en: "[Stealth] Slip aside as it falls and get behind him" },
+      stake: { ko: "성공하면 렌의 등 뒤 · 실패하면 무방비로 맞는다", en: "Success puts you behind him · failure leaves you wide open" },
+      check: { ability: "DEX", skill: "stealth", dc: 12, label: "은신" },
+      success: {
+        text: { ko: `갈고리가 허공을 가르는 사이, 그림자처럼 등 뒤로 돈다. 렌이 돌아보기도 전에.`, en: `While the hook cuts empty air, you slide behind him like a shadow — before he can even turn.` },
+        flags: ["duelEdge"], goto: "duel2"
+      },
+      fail: {
+        text: { ko: `한 박자 늦었다. 갈고리 등이 옆구리를 후려친다.`, en: `A beat too slow. The back of the hook slams into your side.` },
+        damage: [3, 4], ifDown: "signal", goto: "duel2"
+      }
+    }, {
+      classOnly: "wizard",
+      label: { ko: "[비전학] 갈고리에 서리를 입혀 손에서 미끄러지게 한다", en: "[Arcana] Frost the hook so it slips from his grip" },
+      stake: { ko: "성공하면 렌이 무기를 놓친다 · 실패하면 주문 대신 갈고리를 맞는다", en: "Success makes him lose his grip · failure means the hook lands first" },
+      check: { ability: "INT", skill: "arcana", dc: 11, label: "비전학" },
+      success: {
+        text: { ko: `서리가 쇠를 타고 번진다. 렌이 비명을 지르며 갈고리를 놓칠 뻔한다.`, en: `Frost races along the steel. Ren yelps and nearly drops the hook.` },
+        flags: ["duelEdge"], goto: "duel2"
+      },
+      fail: {
+        text: { ko: `주문이 완성되기 전에 갈고리가 먼저 닿는다.`, en: `The hook lands before the spell is done.` },
+        damage: [2, 4], ifDown: "signal", goto: "duel2"
+      }
+    }, {
+      label: { ko: `[설득] 무기를 내리고 다시 묻는다. "그 렌즈, 누구한테 가져가는 거지?"`, en: `[Persuade] Lower your weapon and ask again. "Who are you taking that lens to?"` },
+      stake: { ko: "성공하면 피 없이 끝난다 · 실패하면 맨몸으로 맞는다", en: "Success ends it without blood · failure means taking the hit unguarded" },
+      check: { ability: "CHA", skill: "persuasion", dc: 13, label: "설득" },
+      success: {
+        text: { ko: `갈고리가 허공에서 멈춘다. "…팔 데도 없어. 가져오라고 시킨 놈이 있었지."\n\n렌은 자루를 내려놓고 빗속으로 사라진다.`, en: `The hook stops mid-air. "…there's nowhere to sell it. Someone told me to bring it."\n\nRen sets the sack down and vanishes into the rain.` },
+        flags: ["peaceful"], goto: "top"
+      },
+      fail: {
+        text: { ko: `"말은 끝났다니까!" 갈고리가 그대로 떨어진다.`, en: `"I said we're done talking!" The hook comes down anyway.` },
+        damage: [3, 4], ifDown: "signal", goto: "duel2"
+      }
+    }]
+  },
+  duel2: {
+    ch: 1,
+    text: {
+      ko: `렌이 숨을 몰아쉰다. 발밑은 쏟아진 기름으로 번들거리고, 자루는 아직 그의 손이 닿는 곳에 있다.\n\n다음 한 수로 끝난다.`,
+      en: `Ren is gasping. The floor gleams with spilled oil, and the sack is still within his reach.\n\nThe next move ends it.`
+    },
+    choices: [{
+      echoReq: "duelEdge",
+      echo: { ko: "앞서 잡은 기회", en: "The opening you won" },
+      label: { ko: "[운동] 흔들린 틈을 놓치지 않고 밀어붙인다", en: "[Athletics] Press the opening before it closes" },
+      stake: { ko: "앞서 잡은 기회로 쉽다 · 실패하면 반격을 맞는다", en: "Easier thanks to your opening · failure means a counter" },
+      check: { ability: "STR", skill: "athletics", dc: 9, label: "운동" },
+      success: {
+        text: { ko: `밀려난 렌이 기름을 밟는다. 자루와 함께 — 난간 너머로 기운다.`, en: `Driven back, Ren steps in the oil. He and the sack tip over the railing together.` },
+        goto: "railing"
+      },
+      fail: {
+        text: { ko: `밀어붙이다 함께 미끄러진다. 갈고리가 팔을 긋고, 렌과 자루가 난간 쪽으로 쏠린다.`, en: `You both slip. The hook slashes your arm, and Ren and the sack lurch toward the railing.` },
+        damage: [2, 4], ifDown: "signal", goto: "railing"
+      }
+    }, {
+      label: { ko: "[운동] 정면으로 끝장을 본다", en: "[Athletics] Finish it head-on" },
+      stake: { ko: "이기면 렌을 몰아낸다 · 지면 크게 다친다", en: "Win and he's driven off · lose and you're badly hurt" },
+      check: { ability: "STR", skill: "athletics", dc: 13, label: "운동" },
+      success: {
+        text: { ko: `정면으로 부딪친 렌이 뒷걸음질 치다 기름을 밟는다. 자루와 함께 난간 너머로 기운다.`, en: `Ren takes the full charge, stumbles back into the oil, and tips over the railing with the sack.` },
+        goto: "railing"
+      },
+      fail: {
+        text: { ko: `렌이 몸을 낮춰 피하고 갈고리로 다리를 건다. 넘어지는 당신 너머로, 렌도 기름에 미끄러진다.`, en: `Ren ducks and hooks your leg. As you fall, he slips on the oil too.` },
+        damage: [3, 4], ifDown: "signal", goto: "railing"
+      }
+    }, {
+      echoReq: "sawTrap",
+      flagNot: "wireUsed",
+      echo: { ko: "입구 계단에서 찾아낸 철사", en: "The wire you found on the entrance stairs" },
+      label: { ko: "[철사] 쏟긴 기름과 철사 쪽으로 몬다", en: "[Wire] Drive him into the spilled oil and the wire" },
+      stake: { ko: "확실히 이긴다 · 철사를 써 버려 수리에 못 쓴다", en: "A sure win · the wire is spent and can't fix the light" },
+      result: {
+        text: { ko: `렌의 발이 철사에 걸린다. 기름 위로 미끄러진 사내와 자루가 함께 난간 너머로 기운다.\n\n팽팽하던 철사는 끊어졌다.`, en: `Ren's foot catches the wire. He skids across the oil and he and the sack tip over the railing together.\n\nThe taut wire has snapped.` },
+        flags: ["wireUsed"], goto: "railing"
+      }
+    }, {
+      label: { ko: `[위협] "누가 보냈는지 말하면 보내 주지."`, en: `[Intimidate] "Tell me who sent you, and you walk."` },
+      stake: { ko: "성공하면 이름 하나를 듣고 끝난다 · 실패하면 옆구리가 열린다", en: "Success gets you a name and ends it · failure opens your side" },
+      check: { ability: "CHA", skill: "intimidation", dc: 12, label: "위협" },
+      success: {
+        text: { ko: `렌의 눈이 흔들린다. "…베른 영감이야. 렌즈를 가져오면 값을 쳐주겠다고."\n\n갈고리를 떨어뜨리고, 자루를 발로 밀어 준다. 그리고 빗속으로.`, en: `Ren's eyes waver. "…Old Bern. Said he'd pay if I brought the lens."\n\nHe drops the hook, nudges the sack over with his foot, and goes out into the rain.` },
+        flags: ["peaceful", "f_ren_keeper"], goto: "top"
+      },
+      fail: {
+        text: { ko: `"협박은 내 쪽이 잘하지." 갈고리가 옆구리를 긋는다. 자루를 잡으려던 렌이 기름에 미끄러진다.`, en: `"I'm better at threats." The hook slices your side. Lunging for the sack, Ren slips on the oil.` },
+        damage: [2, 4], ifDown: "signal", goto: "railing"
+      }
+    }]
   },
   // 사람과 물건 중 하나만 붙잡을 수 있다 — 렌을 붙잡으면 렌즈에 금이 가고, 렌즈를 붙잡으면 렌이 떨어진다.
   railing: {
@@ -2583,6 +2741,47 @@ const FRAGMENTS = {
   f_bern_lied: { text: bi("베른의 고백: 검은 코트는 없었다, 누군가 시켰다", "Bern's confession: there was no black coat; someone ordered it"), where: bi("2장 아침 — 조각 3개 이상을 알고 베른에게 묻는다", "Ch.2 morning — ask Bern once you know 3+ fragments"), points: { bern: -2, seon: 1 } }
 };
 const CASE_NEED = 4;
+// 위치 카드: 지금 어디서 무엇을 하는지 한 줄로.
+const SCENE_DOING = {
+  intro: bi("촌장에게 등대 열쇠를 받는다", "Taking the lighthouse key from the chief"),
+  door: bi("어둠 속 계단 앞", "At the foot of the dark stairs"),
+  stairs: bi("렌즈를 훔치는 사내와 마주쳤다", "Face to face with a lens thief"),
+  duel1: bi("렌과 싸우는 중 — 갈고리가 올라간다", "Fighting Ren — the hook goes up"),
+  duel2: bi("렌과 싸우는 중 — 마지막 한 수", "Fighting Ren — one last move"),
+  combat: bi("렌과 싸우는 중", "Fighting Ren"),
+  railing: bi("손은 하나 — 사람인가, 렌즈인가", "One hand — the man or the lens"),
+  signal: bi("쓰러졌다가 깨어났다", "Back on your feet"),
+  top: bi("멈춘 등대 기관 앞", "Before the stalled mechanism"),
+  intro2: bi("베른 노인이 깨어났다", "Old Bern is awake"),
+  wharf: bi("검은 코트의 흔적을 쫓는다", "Tracking the black coat"),
+  wharfRen: bi("렌과 다시 만났다", "Ren again"),
+  wharfLens: bi("렌즈를 되찾는다", "Winning back the lens"),
+  warehouseA: bi("3번 창고에 숨어든다", "Slipping into Warehouse 3"),
+  warehouseB: bi("매복 냄새가 난다", "It smells like an ambush"),
+  confront: bi("스컬리를 몰아세웠다", "Scully, cornered"),
+  combat2: bi("스컬리와 싸우는 중", "Fighting Scully"),
+  intro3: bi("침묵하는 수도원에 닿았다", "Arriving at the silent monastery"),
+  cloister: bi("흔적을 찾는다", "Searching for traces"),
+  belltower: bi("종지기 오도와 마주했다", "Face to face with Odo"),
+  undercroft: bi("철창 앞의 가짜 수도사", "The false monk at the bars"),
+  combat3: bi("가짜 수도사와 싸우는 중", "Fighting the false monk"),
+  rescue: bi("물이 차오른다 — 하나만 구할 수 있다", "The water rises — only one can be saved"),
+  accuse: bi("세온의 서재 — 결론의 시간", "Seon's study — time for a verdict")
+};
+// 장면 분위기: 싸움(붉게) / 정적(어둡게) / 결말(밝게)
+const DUEL_SCENES = ["duel1", "duel2", "combat", "combat2", "combat3"];
+function stageMood(sceneKey, scene) {
+  if (DUEL_SCENES.includes(sceneKey)) return "danger";
+  if (BGM_HUSH.includes(sceneKey)) return "hush";
+  if (scene?.ending) return "dawn";
+  return "calm";
+}
+// 장면에 들어설 때 한 번 울리는 효과음
+const SCENE_SFX = {
+  door: "door", stairs: "wind", duel1: "clash", duel2: "clash", railing: "wind", top: "gear",
+  signal: "fire", wharf: "crowd", warehouseA: "door", warehouseB: "door", confront: "thud",
+  belltower: "wind", undercroft: "door", rescue: "water", accuse: "door"
+};
 const CAST = {
   seon: { name: bi("세온", "Seon"), role: bi("소금여울 촌장", "Chief of Saltmarsh"), mark: "\u2696" },
   bern: { name: bi("베른", "Bern"), role: bi("등대지기 노인", "The old lighthouse keeper"), mark: "\uD83D\uDD27" },
@@ -2594,7 +2793,7 @@ const CAST = {
 };
 const SUSPECTS = ["seon", "bern", "ren"];
 const SCENE_CAST = {
-  intro: ["seon"], stairs: ["ren"], railing: ["ren"], top: ["bern"], signal: ["bern"],
+  intro: ["seon"], stairs: ["ren"], duel1: ["ren"], duel2: ["ren"], railing: ["ren"], top: ["bern"], signal: ["bern"],
   intro2: ["bern"], wharfRen: ["ren"], wharfLens: ["ren"], confront: ["scully"],
   belltower: ["odo"], undercroft: ["pip", "grey"], rescue: ["pip"], accuse: ["seon", "bern"]
 };
@@ -2727,6 +2926,8 @@ function lightStage(pc, sceneKey, flags) {
     door: 1,
     stairs: 2,
     combat: 2,
+    duel1: 2,
+    duel2: 2,
     railing: 2,
     signal: 2,
     top: 3
@@ -3609,9 +3810,9 @@ const css = `
   .crpg .hctrl { width:100%; flex-wrap:wrap; }
   .crpg .hctrl select, .crpg .hctrl button { min-height:44px; }
   .crpg .diceMeta, .crpg .jump { min-width:0; overflow-wrap:anywhere; }
-  .crpg .lhscene { position:sticky; top:6px; z-index:20; height:110px;
-    box-shadow:0 6px 18px rgba(0,0,0,.55); }
-  .crpg .artimg { position:sticky; top:6px; z-index:20; max-height:130px; object-fit:cover; }
+  .crpg div.stageWrap { position:sticky; top:6px; z-index:20; }
+  .crpg .lhscene { height:120px; box-shadow:0 6px 18px rgba(0,0,0,.55); }
+  .crpg .artimg { max-height:130px; object-fit:cover; }
 }
 .crpg .continueBtn { display:flex; flex-direction:column; align-items:center; gap:3px; width:100%; margin:2px 0 20px;
   padding:14px 16px; border:1px solid var(--gold); border-radius:10px;
@@ -3650,6 +3851,18 @@ const css = `
 .crpg .intent.hook .intent-h { color:var(--bad); }
 .crpg .intent.feint { border-color:var(--accent); background:rgba(94,143,184,.1); }
 .crpg .titleArt.compact { max-height:17vh; width:100%; object-fit:cover; object-position:center 64%; }
+.crpg .stageWrap { position:relative; }
+.crpg .stageWrap::after { content:""; position:absolute; inset:0; pointer-events:none; border-radius:10px; transition:background .8s ease; z-index:21; }
+.crpg .stageWrap.mood-danger::after { background:rgba(170,40,30,.22); }
+.crpg .stageWrap.mood-hush::after { background:rgba(0,0,0,.35); }
+.crpg .stageWrap.mood-dawn::after { background:rgba(255,200,120,.10); }
+.crpg .locCard { position:absolute; left:8px; bottom:6px; max-width:78%; z-index:22; display:flex; flex-direction:column; gap:0; padding:4px 9px; border-radius:6px; background:linear-gradient(90deg, rgba(8,12,20,.78), rgba(8,12,20,.25)); animation:fadeIn .5s ease; pointer-events:none; }
+.crpg .locPlace { font-size:15px; font-weight:700; color:#f0d48a; text-shadow:0 1px 3px #000; }
+.crpg .locCh { font-size:11px; color:#c9b88a; opacity:.85; }
+.crpg .locDoing { font-size:12px; color:#fff; text-shadow:0 1px 3px #000; overflow-wrap:anywhere; }
+.crpg .stageWrap.mood-danger .locPlace { color:#ff9c8a; }
+.crpg .expandBtn { display:block; margin:-4px 0 12px; padding:4px 0; border:0; background:transparent; color:#8fc3e6; font-size:13px; cursor:pointer; }
+.crpg .choice.fork { border-style:dashed; }
 .crpg .recordCard { position:relative; margin:6px 0 14px; padding:16px 16px 14px; border-radius:4px; background:#e9e1cf; color:#2a2418; font-family:'Noto Serif KR', Georgia, serif; box-shadow:0 6px 18px rgba(0,0,0,.35); overflow-wrap:anywhere; }
 .crpg .recHead { font-size:12px; letter-spacing:.08em; color:#6b5d44; border-bottom:1px solid #b9a988; padding-bottom:6px; margin-bottom:8px; }
 .crpg .recLine { margin:4px 0; font-size:15px; line-height:1.6; }
@@ -3744,6 +3957,9 @@ function CRPG() {
   const [runNo, setRunNo] = useState(null);
   const [lastRun, setLastRun] = useState(() => store.get("aduventure_lastrun"));
   const [shared, setShared] = useState(null);
+  // 이전 회차까지 본 장면(이번 회차 시작 때 고정). 다시 하기 피로를 줄이려고 본문을 접는다.
+  const [seenAtRun, setSeenAtRun] = useState([]);
+  const [expanded, setExpanded] = useState(null);
   const [met, setMet] = useState(() => store.get("aduventure_met") || []);
   const [reached, setReached] = useState([]);
   const startedRef = useRef(Date.now());
@@ -3800,6 +4016,7 @@ function CRPG() {
       availableIds = visibleChoices.map(narrativeId);
       if (sceneKey === "intro" && badges.some(b => b.startsWith("1"))) availableIds.push("skip:ch2");
       if (sceneKey === "intro" && badges.some(b => b.startsWith("2"))) availableIds.push("skip:ch3");
+      if (sceneKey === "intro") ["stairs", "rescue"].filter(k => seenAtRun.includes(k)).forEach(k => availableIds.push("jump:" + k));
     }
   }
   const decisionKey = telemetryRun && decisionKind ? telemetryRun.id + ":" + telemetryRun.seq + ":" + sceneKey + ":" + decisionKind : null;
@@ -3868,6 +4085,12 @@ function CRPG() {
     if (sceneKey === "ending3" && flags.includes("keeper")) SFX.bell();
   }, [sceneKey]);
   // 장면에 처음 나온 인물은 사건 기록장의 '만난 인물'에 영구 기록된다.
+  useEffect(() => {
+    if (!pc) return;
+    const seen = store.get("aduventure_seen") || [];
+    if (!seen.includes(sceneKey)) store.set("aduventure_seen", [...seen, sceneKey]);
+    if (sfxOn) SFX.cue(SCENE_SFX[sceneKey]);
+  }, [sceneKey, pc]);
   useEffect(() => {
     if (!pc) return;
     const ids = (SCENE_CAST[sceneKey] || []).filter(id => !met.includes(id));
@@ -4001,6 +4224,7 @@ function CRPG() {
     setTelemetryRun(run);
     emitTelemetry("run_start", run, {scene_id: "intro", lang, rule: ruleKey, class: key, reason: restartFrom.current ? "restart" : "new", previous_run_id: restartFrom.current || undefined, opening: opening || undefined, record_no: recordNo});
     setRunNo(recordNo);
+    setSeenAtRun(store.get("aduventure_seen") || []);
     store.set("aduventure_record_no", recordNo + 1);
     setRecordNo(recordNo + 1);
     setFlags(opening === "believe" ? ["believed"] : []);
@@ -4013,6 +4237,16 @@ function CRPG() {
     });
     setFate(1);
     setSpecialLeft(2);
+  }
+  function jumpTo(key) {
+    if (!recordDecision("jump:" + key)) return;
+    if (SCENES[key]?.ch === 3) {
+      setPc(p => ({ ...p, hp: p.maxHp }));
+      setFate(1);
+      setSpecialLeft(2);
+    }
+    setLastResult(null);
+    goto(key);
   }
   function goto(key, extraFlag) {
     setShowCalc(false);
@@ -4071,9 +4305,12 @@ function CRPG() {
   // res가 null이면 판정 없는 결과 문단(choice.result)이다.
   function applyBranch(branch, res, label) {
     let extra = "";
+    let next = branch.goto;
     const gained = [branch.flag, ...(branch.flags || [])].filter(Boolean);
     if (branch.damage) {
       const dmg = d(branch.damage[1]) + branch.damage[0] - 1;
+      // 서사 결투에서 쓰러지면 회차를 끝내지 않고 지정된 장면(봉화)으로 간다.
+      if (branch.ifDown && pc && pc.hp - dmg <= 0) next = branch.ifDown;
       setPc(p => ({
         ...p,
         hp: Math.max(0, p.hp - dmg)
@@ -4084,6 +4321,7 @@ function CRPG() {
       setFlags(f => [...f, ...gained.filter(x => !f.includes(x))]);
       for (const g of gained) {
         if (CLUES[g]) extra += (lang === "en" ? `\n\n✦ Clue found — ${tx(CLUES[g])}` : `\n\n✦ 단서 획득 — ${tx(CLUES[g])}`);
+        if (FRAGMENTS[g]) SFX.cue("pen");
         if (FRAGMENTS[g]) extra += (lang === "en" ? `\n\n✎ Rebuttal recorded — ${tx(FRAGMENTS[g].text)}` : `\n\n✎ 반박 기록 — ${tx(FRAGMENTS[g].text)}`);
       }
     }
@@ -4093,7 +4331,7 @@ function CRPG() {
       text: fmt(tx(branch.text), pc) + extra,
       kind: !res || res.success ? "good" : "bad"
     });
-    goto(branch.goto, gained);
+    goto(next, gained);
   }
   function resolveCheck(choice, fateAvail) {
     setRolling(true);
@@ -4498,6 +4736,8 @@ function CRPG() {
   const specialTag = pc && tx(SPECIALS[pc.classKey].tag).replace("{damage}", combatRange(pc.classKey === "wizard" ? { die: 8, bonus: 2 } : { die: 6 }));
   const chapterTitle = chapter === 4 ? ui("ch4") : chapter === 3 ? ui("ch3") : chapter === 2 ? ui("ch2") : ui("ch1");
   const cs = caseState(lore);
+  const collapsed = !!pc && !!scene?.text && seenAtRun.includes(sceneKey) && expanded !== sceneKey;
+  const forks = sceneKey === "intro" ? ["stairs", "rescue"].filter(k => seenAtRun.includes(k)) : [];
   const disruptMove = pc && looterDisruptFor(pc.classKey);
   return /*#__PURE__*/React.createElement("div", {
     className: "crpg"
@@ -4566,7 +4806,9 @@ function CRPG() {
     value: "srd20"
   }, "SRD d20"), /*#__PURE__*/React.createElement("option", {
     value: "simple2d6"
-  }, "Simple 2d6")))), art ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("img", {
+  }, "Simple 2d6")))), React.createElement("div", {
+    className: "stageWrap" + (pc ? " mood-" + stageMood(sceneKey, scene) : "")
+  }, art ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("img", {
     className: "artimg",
     src: art,
     alt: ui("artAlt") + (tx(SCENE_TITLES[sceneKey]) || sceneKey)
@@ -4582,7 +4824,10 @@ function CRPG() {
     stage: harborStage(sceneKey)
   }) : /*#__PURE__*/React.createElement(LighthouseScene, {
     stage: lightStage(pc, sceneKey, flags)
-  }), tutOpen && /*#__PURE__*/React.createElement("div", {
+  }), pc && SCENE_TITLES[sceneKey] && React.createElement("div", {
+    key: "loc" + sceneKey,
+    className: "locCard"
+  }, React.createElement("span", { className: "locPlace" }, "\uD83D\uDCCD " + tx(SCENE_TITLES[sceneKey])), React.createElement("span", { className: "locCh" }, chapterTitle), SCENE_DOING[sceneKey] && React.createElement("span", { className: "locDoing" }, tx(SCENE_DOING[sceneKey])))), tutOpen && /*#__PURE__*/React.createElement("div", {
     className: "tut"
   }, /*#__PURE__*/React.createElement("h4", null, ui("rulesTitle"), " \u2014 ", tx(rules.name)), (rules.tutorial[lang] || rules.tutorial.ko).map((line, i) => /*#__PURE__*/React.createElement("p", {
     key: i
@@ -4787,7 +5032,10 @@ function CRPG() {
     className: "echo-t"
   }, tx(e.text)))), /*#__PURE__*/React.createElement("p", {
     className: "narr"
-  }, fmt(tx(scene.text), pc)), /*#__PURE__*/React.createElement("div", {
+  }, collapsed ? fmt(tx(scene.text), pc).split("\n\n")[0] + " …" : fmt(tx(scene.text), pc)), collapsed && React.createElement("button", {
+    className: "expandBtn",
+    onClick: () => setExpanded(sceneKey)
+  }, ui("seenExpand")), /*#__PURE__*/React.createElement("div", {
     className: "choices"
   }, visibleChoices.map((ch, i) => /*#__PURE__*/React.createElement("button", {
     key: i,
@@ -4809,7 +5057,11 @@ function CRPG() {
     className: "tag frag" + (lore.includes(ch.frag) ? " seen" : "")
   }, lore.includes(ch.frag) ? ui("fragSeen") : ui("fragNew")), ch.stake && React.createElement("span", {
     className: "stake"
-  }, ui("stakeLabel"), tx(ch.stake)))), sceneKey === "intro" && ch1Cleared && /*#__PURE__*/React.createElement("button", {
+  }, ui("stakeLabel"), tx(ch.stake)))), forks.map(k => React.createElement("button", {
+    key: "fork" + k,
+    className: "choice fork",
+    onClick: () => jumpTo(k)
+  }, ui(k === "stairs" ? "forkStairs" : "forkRescue"), React.createElement("span", { className: "tag frag" }, ui("forkTag")))), sceneKey === "intro" && ch1Cleared && /*#__PURE__*/React.createElement("button", {
     className: "choice",
     onClick: () => { if (recordDecision("skip:ch2")) goto("intro2"); }
   }, lang === "en" ? "(Ch.1 cleared) Start from Ch.2 \u2192" : "(1\uC7A5 \uD074\uB9AC\uC5B4 \uAE30\uB85D \uC788\uC74C) 2\uC7A5\uBD80\uD130 \uC2DC\uC791\uD55C\uB2E4 \u2192"), sceneKey === "intro" && badges.some(b => b.startsWith("2")) && /*#__PURE__*/React.createElement("button", {

@@ -61,7 +61,10 @@ function game({sceneKey = 'confront', flags = [], data = new Map(), effects = tr
       }
     }
   });
-  vm.runInContext(app, ctx);
+  // pt15: 렌 숫자 전투는 서사 결투로 대체됐다. 남아 있는 전투 화면은 goto로 직접 연다.
+  vm.runInContext(app.replace('  const pct = choice =>', `
+    globalThis.testGoto = goto;
+    const pct = choice =>`), ctx);
   if (sceneKey && !data.has('aduventure_save')) {
     const saved = {v: 1, sceneKey, flags, ruleKey: 'srd20', fate: 0, specialLeft: 2, breathLeft: 1, tutSeen: true,
       pc: {...vm.runInContext('CLASSES.fighter', ctx), classKey: 'fighter', name: 'PRIVATE_TEST_NAME', hp: 11}, stats: {rolls: 0, success: 0}};
@@ -204,7 +207,7 @@ test('combat decisions include the available actions and pre-action resources, a
 test('Ren cooldown rejects a forced second disruption without telemetry, then records cooldown and readiness on subsequent turns', () => {
   const g = game({sceneKey: 'stairs'});
   const action = (tree, id) => choices(tree).find(n => String(n.props.onClick).includes(`looterAction("${id}")`));
-  choices(g.render()).find(n => text(n).includes('[Fight]')).props.onClick();
+  g.render(); g.run('testGoto("combat")');
   g.render(); g.tick(250);
   action(g.render(), 'disrupt').props.onClick();
   let tree = g.render();

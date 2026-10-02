@@ -186,8 +186,8 @@ for (const ruleKey of ['srd20', 'simple2d6']) {
     test(`${ruleKey} ${classKey}: disruption UI uses the trained ability and shares its translated label`, () => {
       for (const lang of ['ko', 'en']) {
         const g = game({ruleKey, classKey, lang, sceneKey: 'stairs'});
-        const fightLabel = g.run(`SCENES.stairs.choices.find(choice => !choice.check).label.${lang}`);
-        choices(g.render()).find(node => text(node).startsWith(fightLabel)).props.onClick();
+        // pt15: 계단의 [전투]는 서사 결투로 간다. 남아 있는 렌 전투 화면은 직접 연다.
+        g.transition('goto', 'combat');
         const label = g.run(`LOOTER_DISRUPTS.${classKey}.label.${lang}`);
         const button = choices(g.render()).find(node => text(node).startsWith(label));
         assert.ok(button, 'The class-specific action is rendered');
