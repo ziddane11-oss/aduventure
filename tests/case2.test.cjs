@@ -91,7 +91,7 @@ test('every Case 2 path ends the chapter; each class has its own road at the gat
 
 test('the endless shelves show the records you rewrote', () => {
   const tree = game({sceneKey: 'c2_hall', runNo: 131}).render();
-  assert.match(text(byClass(tree, 'hallExtra')[0]), /^Records you rewrote: No\. 113 through No\. 131\./);
+  assert.match(text(byClass(tree, 'hallExtra')[0]), /^No\. 113 through No\. 131\. Every one of them, a record you rewrote\./);
 });
 
 test('the chapter ending, record, ledger and badge exist and say the red hand is many', () => {

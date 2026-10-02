@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>어두밴처 v0.7.3-pt22</title>
+<title>어두밴처 v0.7.3-pt23</title>
 <style>body{margin:0;background:#0e1420}</style>
 </head>
 <body>
@@ -318,7 +318,7 @@ function(a,b,c){if(!Vd(b))throw Error(n(200));return Wd(null,a,b,!1,c)};Q.unmoun
    GAS 피드백 파이프 — v0.7 재구현 (제안/신호/텔레메트리)
    ============================================================ */
 /* 플레이테스트 빌드 태그 — 테스트 중 버전 구분용. 수정할 때마다 뒤 번호를 올린다. */
-const BUILD = "v0.7.3-pt22";
+const BUILD = "v0.7.3-pt23";
 const GAS_URL = "https://script.google.com/macros/s/AKfycbxFx_m5rhCZmqGoy3JcUUNqEgiObMWNHe9hx-LnZrhzIkfwa9-yJGBWP0lVulptnNQeCQ/exec";
 function gasPost(payload, options = {}) {
   return fetch(GAS_URL, {
@@ -813,7 +813,7 @@ const UI = {
   c2Go: { ko: "사건 2 「붉은 손글씨」로 →", en: "On to Case 2, \"The Red Hand\" →" },
   c2Skip: { ko: "(판결 기록 있음) 사건 2 「붉은 손글씨」부터 시작한다 →", en: "(Verdict on record) Start from Case 2, \"The Red Hand\" →" },
   c2More: { ko: "사건 2의 다음 장은 다음 업데이트에서 이어집니다.", en: "Case 2 continues in a future update." },
-  c2Hall: { ko: "당신이 고쳐 쓴 기록: 제{a}호부터 제{b}호까지.", en: "Records you rewrote: No. {a} through No. {b}." },
+  c2Hall: { ko: "제{a}호부터 제{b}호까지. 전부 당신이 고쳐 쓴 기록이다.", en: "No. {a} through No. {b}. Every one of them, a record you rewrote." },
   c2Notes: { ko: "다른 여백의 붉은 글씨:", en: "Red ink in other margins:" },
   caseBtn: { ko: "사건 기록장", en: "Case board" },
   caseTitle: { ko: "🔎 사건 기록장 — S는 누구인가", en: "🔎 Case Board — Who is S?" },
@@ -845,6 +845,11 @@ const UI = {
   pathAllWalked: { ko: "이 갈림길의 길은 모두 걸어 봤다.", en: "You have walked every road from here." },
   pathLeft: { ko: "가 보지 않은 갈림길: {n}곳", en: "Crossroads with a road not taken: {n}" },
   scarTag: { ko: "흉터 {d}", en: "scar {d}" },
+  diffEasy: { ko: "쉬움", en: "easy" },
+  diffEven: { ko: "반반", en: "even odds" },
+  diffHard: { ko: "어려움", en: "hard" },
+  numbersOn: { ko: "숫자 보기 (확률·능력치·규칙)", en: "Show numbers (odds, stats, rules)" },
+  numbersOff: { ko: "숫자 숨기기", en: "Hide numbers" },
   retrialNeed: { ko: "결정적 단서 {n}/{t}", en: "decisive fragments {n}/{t}" },
   wrongH: { ko: "⚖ 오판 기록", en: "⚖ Wrongful verdict" },
   wrongHint: { ko: "재심하려면 결정적 단서 두 개(편지의 수신인, 열쇠 꼬리표)가 모두 필요하다.", en: "A retrial needs both decisive fragments (the letters' addressee, the key tag)." },
@@ -4312,6 +4317,13 @@ const CASE_NEED = 4;
 // 흉터: 판정에 실패한 기술은 다음 기록부터 장애물이 1 낮아진다(최대 2). 한 판에 기술당 하나만 새겨진다.
 // 사건이 늘어나도 기록관에게 남는 성장이므로 사건별로 나누지 않고 하나의 저장소(aduventure_scars)에 둔다.
 const SCAR_MAX = 2;
+// 장치는 한 번에 하나씩 드러난다: 2번째 기록 발자국, 3번째 흉터, 4번째 붉은 쪽지.
+const UNLOCK_AT = { paths: 1, scars: 2, notes: 3 };
+const UNLOCK_LINES = {
+  1: bi("이번 기록부터 — 발자국. 지난번에 간 길은 흐리게, 안 가 본 길은 금색으로 보인다.", "From this record on — footprints. Roads you took last time fade; roads not taken glow gold."),
+  2: bi("이번 기록부터 — 흉터. 실패한 판정은 흉터로 남아, 다음 기록에서 그만큼 쉬워진다.", "From this record on — scars. A failed check leaves a scar, and gets easier in your next record."),
+  3: bi("이번 기록부터 — 붉은 쪽지. 다른 기록관이 장면마다 남긴 쪽지가 보이고, 당신도 남길 수 있다.", "From this record on — red notes. You'll see notes other archivists left in each scene, and can leave your own.")
+};
 function scarLevel(scars, skill) { return Math.min(SCAR_MAX, (scars && scars[skill] && scars[skill].n) || 0); }
 function addScar(scars, skill, scene) {
   const cur = (scars && scars[skill]) || { n: 0 };
@@ -5573,6 +5585,12 @@ const css = `
 .crpg .scarNote { margin:6px 0 0; font-size:13px; color:#e8a07f; }
 .crpg .tag .scar { color:#e8a07f; }
 .crpg .scarLine { font-size:13px; margin:2px 0; }
+.crpg .tag.one { border-color:var(--line); }
+.crpg .tag.one.diffEasy { color:#9fd39a; }
+.crpg .tag.one.diffHard { color:#e08a8a; }
+.crpg .hctrl button.on { border-color:var(--gold); color:var(--gold); }
+.crpg .unlockLine { margin:6px 0 12px; padding:8px 12px; border-left:3px solid var(--gold); background:rgba(212,169,78,.10); font-size:14px; }
+.crpg .bigLine { font-size:21px; line-height:1.5; color:#b0281c; font-weight:700; margin:14px 0 18px; animation:fadeIn 1.6s ease both; }
 .crpg .hallExtra { font-size:14px; opacity:.9; margin:4px 0 10px; }
 .crpg .redhand.small { font-size:14px; display:inline-block; margin:2px 6px 0 0; }
 .crpg .tag.lock { border-color:#b05050; color:#e08a8a; }
@@ -5689,6 +5707,8 @@ function CRPG() {
   const [seenAtRun, setSeenAtRun] = useState([]);
   const [takenAtRun, setTakenAtRun] = useState(() => store.get("aduventure_taken") || []);
   const [scarsAtRun, setScarsAtRun] = useState(() => store.get("aduventure_scars") || {});
+  // 회차 순서(0 = 첫 기록). 기록 번호가 없는 옛 저장은 이미 여러 판 한 사람으로 본다.
+  const [numbersOn, setNumbersOn] = useState(() => store.get("aduventure_numbers") === true);
   const [scarredThisRun, setScarredThisRun] = useState([]);
   const [scarNote, setScarNote] = useState(null);
   // 지난 에필로그 판결 — 첫 화면의 공식 기록을 영구히 바꾼다.
@@ -5744,9 +5764,27 @@ function CRPG() {
   const lockedBy = ch => ch.needFrags ? ch.needFrags.filter(f => !lore.includes(f)) : [];
   const narrativeId = choice => sceneKey + ":" + scene.choices.indexOf(choice);
   // 지난 회차에 와 본 장면에서만 표시한다: 안 간 길은 위로, 간 길은 아래로.
+  const runIndex = runNo ? runNo - RECORD_FIRST : 99;
+  const notesShown = !!notes && runIndex >= UNLOCK_AT.notes;
   const pathBeen = seenAtRun.includes(sceneKey) || takenAtRun.some(id => id.startsWith(sceneKey + ":"));
-  const pathMark = ch => !pc || !pathBeen || visibleChoices.length < 2 ? null : takenAtRun.includes(narrativeId(ch)) ? "walked" : "fresh";
+  const pathMark = ch => !pc || runIndex < UNLOCK_AT.paths || !pathBeen || visibleChoices.length < 2 ? null : takenAtRun.includes(narrativeId(ch)) ? "walked" : "fresh";
   const pathOrdered = [...visibleChoices.filter(ch => pathMark(ch) !== "walked"), ...visibleChoices.filter(ch => pathMark(ch) === "walked")];
+  // 덜어내기(pt23): 기본은 꼬리표 하나 + 쉬움/반반/어려움. '숫자 보기'를 켜면 예전처럼 전부 보인다.
+  const difficulty = ch => { const v = pct(ch); return v >= 70 ? "diffEasy" : v >= 40 ? "diffEven" : "diffHard"; };
+  const primaryTag = ch => ch.needFrags ? ui("retrialNeed", { n: ch.needFrags.length - lockedBy(ch).length, t: ch.needFrags.length })
+    : ch.echo ? "\uD83E\uDD8B " + tx(ch.echo)
+    : ch.artifactReq ? "\u25C8 " + tx(ARTIFACTS[ch.artifactReq] ? ARTIFACTS[ch.artifactReq].name : { ko: "유물", en: "Relic" })
+    : ch.loreReq ? ui("loreTag")
+    : ch.classOnly && CLASSES[ch.classOnly] ? CLASSES[ch.classOnly].icon + " " + ui("classRoad", { c: tx(CLASSES[ch.classOnly].name) })
+    : ch.frag && !lore.includes(ch.frag) ? ui("fragNew")
+    : pathMark(ch) ? ui(pathMark(ch) === "fresh" ? "pathFresh" : "pathWalked")
+    : null;
+  // 판정 없는 선택은 '걸린 것' 한 줄이 곧 꼬리표다(🦋 단서 길이면 앞에 나비만 붙인다).
+  const simpleTags = ch => {
+    if (!ch.check && ch.stake) return React.createElement("span", { key: "stake", className: "stake" + (ch.needFrags ? " lock" : "") }, ch.needFrags ? primaryTag(ch) + " \xB7 " : ch.echo ? "\uD83E\uDD8B " : "", ui("stakeLabel"), tx(ch.stake));
+    const parts = [primaryTag(ch), ch.check ? ui(difficulty(ch)) : null].filter(Boolean);
+    return parts.length > 0 && React.createElement("span", { key: "one", className: "tag one" + (ch.check ? " " + difficulty(ch) : "") }, parts.join(" \xB7 "));
+  };
   const pathAll = visibleChoices.length > 1 && visibleChoices.every(ch => pathMark(ch) === "walked");
   let availableIds = [], decisionKind = null;
   if (pc && scene && !rolling && !scene.ending && !scene.gameover) {
@@ -6094,7 +6132,7 @@ function CRPG() {
   // 이야기 판정에만 흉터를 적용한다(숫자 전투 엔진은 그대로).
   const scarCheck = check => ({ ...check, dc: check.dc - scarLevel(scarsAtRun, check.skill) });
   function earnScar(skill) {
-    if (!skill || scarredThisRun.includes(skill)) return;
+    if (!skill || scarredThisRun.includes(skill) || runIndex < UNLOCK_AT.scars) return;
     try {
       const before = store.get("aduventure_scars") || {};
       const after = addScar(before, skill, sceneKey);
@@ -6578,7 +6616,12 @@ function CRPG() {
   }, sfxOn ? "🔊" : "🔇"), /*#__PURE__*/React.createElement("button", {
     onClick: () => setTutOpen(o => !o),
     title: ui("rulesTitle")
-  }, ui("rulesBtn")), /*#__PURE__*/React.createElement("select", {
+  }, ui("rulesBtn")), React.createElement("button", {
+    onClick: () => setNumbersOn(v => { store.set("aduventure_numbers", !v); return !v; }),
+    title: numbersOn ? ui("numbersOff") : ui("numbersOn"),
+    "aria-label": "numbers",
+    className: numbersOn ? "on" : ""
+  }, "\uD83D\uDD22"), numbersOn && /*#__PURE__*/React.createElement("select", {
     value: ruleKey,
     onChange: e => setRuleKey(e.target.value),
     "aria-label": ui("rulesAria")
@@ -6721,11 +6764,11 @@ function CRPG() {
     className: "cls"
   }, tx(CLASSES[pc.classKey].name))), React.createElement(HealthMeter, {
     hp: pc.hp, maxHp: pc.maxHp, ui
-  }), /*#__PURE__*/React.createElement("span", {
+  }), numbersOn && /*#__PURE__*/React.createElement("span", {
     className: "ab"
-  }, "AC ", pc.ac, " \xB7 ", ui("fate"), fate, " \xB7 ", tx(SPECIALS[pc.classKey].name), "\xD7", specialLeft), /*#__PURE__*/React.createElement("span", {
+  }, "AC ", pc.ac, " \xB7 ", ui("fate"), fate, " \xB7 ", tx(SPECIALS[pc.classKey].name), "\xD7", specialLeft), numbersOn && /*#__PURE__*/React.createElement("span", {
     className: "ab"
-  }, Object.entries(pc.abilities).map(([a, v]) => `${tx(ABILITY_NAMES[a])}${v}(${rules.abilityMod(v) >= 0 ? "+" : ""}${rules.abilityMod(v)})`).join(" ")), React.createElement(StatsHelp, { ui }), flags.some(f => CLUES[f]) && /*#__PURE__*/React.createElement("span", {
+  }, Object.entries(pc.abilities).map(([a, v]) => `${tx(ABILITY_NAMES[a])}${v}(${rules.abilityMod(v) >= 0 ? "+" : ""}${rules.abilityMod(v)})`).join(" ")), numbersOn && React.createElement(StatsHelp, { ui }), flags.some(f => CLUES[f]) && /*#__PURE__*/React.createElement("span", {
     className: "ab clueLine"
   }, lang === "en" ? "\u2726 Clues: " : "\u2726 \uB2E8\uC11C: ", flags.filter(f => CLUES[f]).map(f => tx(CLUES[f])).join(" · "))), pc && rolling && /*#__PURE__*/React.createElement("div", {
     className: "diceWrap"
@@ -6816,13 +6859,15 @@ function CRPG() {
     className: "narr"
   }, collapsed ? fmt(tx(scene.text), pc).split("\n\n")[0] + " …" : fmt(tx(scene.text), pc)), sceneKey === "c2_hall" && React.createElement("div", {
     className: "hallExtra"
-  }, React.createElement("p", null, ui("c2Hall", { a: RECORD_FIRST, b: Math.max(RECORD_FIRST, runNo || RECORD_FIRST) })), notes && Object.values(notes).flat().length > 0 && React.createElement("p", null, ui("c2Notes"), Object.values(notes).flat().slice(0, 3).map((n, i) => React.createElement("span", { key: i, className: "redhand small" }, " " + noteText(n, lang))))), collapsed && React.createElement("button", {
+  }, React.createElement("p", { className: "bigLine" }, ui("c2Hall", { a: RECORD_FIRST, b: Math.max(RECORD_FIRST, runNo || RECORD_FIRST) })), notes && Object.values(notes).flat().length > 0 && React.createElement("p", null, ui("c2Notes"), Object.values(notes).flat().slice(0, 3).map((n, i) => React.createElement("span", { key: i, className: "redhand small" }, " " + noteText(n, lang))))), collapsed && React.createElement("button", {
     className: "expandBtn",
     onClick: () => setExpanded(sceneKey)
-  }, ui("seenExpand")), notes && (notes[sceneKey] || []).map((n, i) => React.createElement("div", {
+  }, ui("seenExpand")), sceneKey === "intro" && pc && UNLOCK_LINES[runIndex] && React.createElement("p", {
+    className: "unlockLine"
+  }, tx(UNLOCK_LINES[runIndex])), notesShown && (notes[sceneKey] || []).map((n, i) => React.createElement("div", {
     key: "note" + i,
     className: "noteCard"
-  }, React.createElement("span", { className: "noteFrom" }, ui("noteFrom", { n: n.no || "?" })), React.createElement("span", { className: "noteText" }, noteText(n, lang)))), notes && !notedScenes.includes(sceneKey) && (noteOpen ? React.createElement("div", {
+  }, React.createElement("span", { className: "noteFrom" }, ui("noteFrom", { n: n.no || "?" })), React.createElement("span", { className: "noteText" }, noteText(n, lang)))), notesShown && !notedScenes.includes(sceneKey) && (noteOpen ? React.createElement("div", {
     className: "notePick"
   }, ["s", "v", "r"].map(k => React.createElement("select", {
     key: k,
@@ -6843,14 +6888,14 @@ function CRPG() {
   }, ui("noteSend"))) : React.createElement("button", {
     className: "noteBtn",
     onClick: () => setNoteOpen(true)
-  }, ui("noteLeave"))), notes && notedScenes.includes(sceneKey) && React.createElement("p", { className: "noteSent" }, ui("noteSent")), /*#__PURE__*/React.createElement("div", {
+  }, ui("noteLeave"))), notesShown && notedScenes.includes(sceneKey) && React.createElement("p", { className: "noteSent" }, ui("noteSent")), /*#__PURE__*/React.createElement("div", {
     className: "choices"
   }, pathAll && React.createElement("p", { className: "pathNote" }, ui("pathAllWalked")), pathOrdered.map(ch => /*#__PURE__*/React.createElement("button", {
     key: narrativeId(ch),
     className: "choice" + (pathMark(ch) ? " " + pathMark(ch) : ""),
     disabled: lockedBy(ch).length > 0,
     onClick: () => { if (!lockedBy(ch).length) doChoice(ch); }
-  }, tx(ch.label), ch.needFrags && React.createElement("span", {
+  }, tx(ch.label), numbersOn ? [ch.needFrags && React.createElement("span", {
     className: "tag lock"
   }, ui("retrialNeed", { n: ch.needFrags.length - lockedBy(ch).length, t: ch.needFrags.length })), ch.classOnly && CLASSES[ch.classOnly] && React.createElement("span", {
     className: "tag cls"
@@ -6874,7 +6919,7 @@ function CRPG() {
     className: "tag frag" + (lore.includes(ch.frag) ? " seen" : "")
   }, lore.includes(ch.frag) ? ui("fragSeen") : ui("fragNew")), ch.stake && React.createElement("span", {
     className: "stake"
-  }, ui("stakeLabel"), tx(ch.stake)))), forks.map(k => React.createElement("button", {
+  }, ui("stakeLabel"), tx(ch.stake))] : simpleTags(ch))), forks.map(k => React.createElement("button", {
     key: "fork" + k,
     className: "choice fork",
     onClick: () => jumpTo(k)

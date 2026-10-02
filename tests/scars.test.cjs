@@ -23,7 +23,7 @@ const byClass = (tree, c) => nodes(tree).filter(n => n.props.className === c);
 function game({sceneKey = 'door', scars = null, lang = 'en'} = {}) {
   const states = [], intervals = [];
   let index = 0, luck = 0;
-  const data = new Map([['aduventure_lang', JSON.stringify(lang)]]);
+  const data = new Map([['aduventure_lang', JSON.stringify(lang)], ['aduventure_numbers', 'true']]);
   if (scars) data.set('aduventure_scars', JSON.stringify(scars));
   const ctx = vm.createContext({
     console, Date, Math: Object.assign(Object.create(Math), {random: () => luck}),
