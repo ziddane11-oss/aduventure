@@ -187,9 +187,9 @@ test('pagehide records an unfinished decision using keepalive, but never after i
 });
 
 test('combat decisions include the available actions and pre-action resources, and exclude dice animation time', () => {
+  // pt16: 스컬리 실패 분기는 서사 결투로 간다. 숫자 전투(combat2)는 직접 열어 검증한다.
   const g = game({sceneKey: 'confront', success: false});
-  g.tick(1200); choices(g.render())[0].props.onClick(); g.render();
-  g.tick(20000); g.finishRoll(); g.render();
+  g.render(); g.run('testGoto("combat2")'); g.render();
   g.tick(850);
   const attack = choices(g.render()).find(n => String(n.props.onClick).includes('combatAction("attack")'));
   assert.ok(attack);

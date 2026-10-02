@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>어두밴처 v0.7.3-pt15</title>
+<title>어두밴처 v0.7.3-pt16</title>
 <style>body{margin:0;background:#0e1420}</style>
 </head>
 <body>
@@ -318,7 +318,7 @@ function(a,b,c){if(!Vd(b))throw Error(n(200));return Wd(null,a,b,!1,c)};Q.unmoun
    GAS 피드백 파이프 — v0.7 재구현 (제안/신호/텔레메트리)
    ============================================================ */
 /* 플레이테스트 빌드 태그 — 테스트 중 버전 구분용. 수정할 때마다 뒤 번호를 올린다. */
-const BUILD = "v0.7.3-pt15";
+const BUILD = "v0.7.3-pt16";
 const GAS_URL = "https://script.google.com/macros/s/AKfycbxFx_m5rhCZmqGoy3JcUUNqEgiObMWNHe9hx-LnZrhzIkfwa9-yJGBWP0lVulptnNQeCQ/exec";
 function gasPost(payload, options = {}) {
   return fetch(GAS_URL, {
@@ -571,7 +571,7 @@ function bgmMood({ sceneKey, chapter, hp, maxHp, combat, enemyIntent, enemyDone,
     drone: hush ? 0 : ending ? 0.6 : 1,
     rain: hush ? 0.35 : 1,
     // 렌의 '강타' 예고에는 저음이 끝까지 차오른다. 그 외 전투는 절반.
-    tension: fighting ? (enemyIntent === "hook" ? 1 : 0.45) : sceneKey === "duel1" ? 0.8 : sceneKey === "duel2" ? 1 : 0,
+    tension: fighting ? (enemyIntent === "hook" ? 1 : 0.45) : (typeof DUEL_TENSION !== "undefined" && DUEL_TENSION[sceneKey]) || 0,
     // 체력이 줄면 심장박동이 빨라진다(분당 박동 수, 0이면 없음).
     pulse: hp > 0 && ratio <= 1 / 3 ? 104 : fighting && ratio <= 1 / 2 ? 76 : 0
   };
@@ -1219,12 +1219,16 @@ const SCENE_TITLES = {
   warehouseB: { ko: "3번 창고(정면)", en: "Warehouse 3 (front)" },
   confront: { ko: "검은 코트와 대면", en: "Facing the Black Coat" },
   combat2: { ko: "스컬리와 전투", en: "Fight with Scully" },
+  scully1: { ko: "스컬리와의 결투", en: "Duel with Scully" },
+  scully2: { ko: "뒷문까지 세 걸음", en: "Three Steps to the Door" },
   ending2: { ko: "2장 엔딩", en: "End of Ch.2" },
   intro3: { ko: "침묵하는 수도원", en: "The Silent Monastery" },
   cloister: { ko: "회랑", en: "The Cloister" },
   belltower: { ko: "종탑", en: "The Bell Tower" },
   undercroft: { ko: "지하 저장고", en: "The Undercroft" },
   combat3: { ko: "가짜 수도사와 전투", en: "Fight with the False Monk" },
+  monk1: { ko: "가짜 수도사와의 결투", en: "Duel with the False Monk" },
+  monk2: { ko: "차오르는 물소리", en: "The Rising Water" },
   rescue: { ko: "수문과 딜레마", en: "The Sluice and the Choice" },
   accuse: { ko: "촌장의 서재", en: "The Chief's Study" },
   ending4: { ko: "에필로그 엔딩", en: "End of the Epilogue" },
@@ -1874,14 +1878,14 @@ const SCENES = {
           ko: `발끝에 빈 술병이 걸린다 — 쨍그랑.\n\n"누구냐!"`,
           en: `Your toe catches an empty bottle — crash.\n\n"Who's there!"`
         },
-        goto: "combat2"
+        goto: "scully1"
       }
     }, {
       label: {
         ko: "[전투] 문을 박차고 들어간다",
         en: "[Fight] Kick the door in"
       },
-      goto: "combat2"
+      goto: "scully1"
     }]
   },
   warehouseB: {
@@ -1915,7 +1919,7 @@ const SCENES = {
           en: `A club flies out of the dark.\n\nYou see stars.`
         },
         damage: [1, 4],
-        goto: "combat2"
+        goto: "scully1"
       }
     }, {
       label: {
@@ -1942,7 +1946,7 @@ const SCENES = {
           en: `You miss the breath. The club cracks across your shoulder.`
         },
         damage: [1, 4],
-        goto: "combat2"
+        goto: "scully1"
       }
     }]
   },
@@ -1973,7 +1977,7 @@ const SCENES = {
           ko: `암호 같은 장부를 읽는 사이, 스컬리의 손이 허리로 내려간다.\n\n"남의 장부 함부로 펼치지 마." 칼이 번뜩인다. 장부는 품에 넣었다 — 이제 지켜야 한다.`,
           en: `While you untangle the coded entries, Scully's hand drops to his belt.\n\n"Keep your nose out of my books." A blade flashes. You tuck the ledger away — now you must defend it.`
         },
-        goto: "combat2"
+        goto: "scully1"
       }
     }, {
       echoReq: "grip",
@@ -1996,7 +2000,7 @@ const SCENES = {
           ko: `스컬리가 몸을 비틀어 손아귀를 빠져나간다. "두 번은 안 당해."\n\n벽을 차고 거리를 벌린 사내가 단검을 뽑는다.`,
           en: `Scully twists free of your grip. "Not twice."\n\nHe kicks off the wall, opens a gap, and draws his dagger.`
         },
-        goto: "combat2"
+        goto: "scully1"
       }
     }, {
       echoReq: "ren_tip",
@@ -2027,7 +2031,7 @@ const SCENES = {
           ko: `"렌? …그 배신자 이름 함부로 놀리지 마." 칼이 번뜩인다.`,
           en: `"Ren? …don't you dare throw that traitor's name at me." A blade flashes.`
         },
-        goto: "combat2"
+        goto: "scully1"
       }
     }, {
       label: {
@@ -2053,14 +2057,14 @@ const SCENES = {
           ko: `"…미안하지만, 입이 가벼우면 오래 못 살아."\n\n칼이 번뜩인다.`,
           en: `"…sorry, but loose lips don't live long."\n\nA blade flashes.`
         },
-        goto: "combat2"
+        goto: "scully1"
       }
     }, {
       label: {
         ko: "[전투] 묶어서 관헌에 넘긴다",
         en: "[Fight] Subdue him and hand him to the law"
       },
-      goto: "combat2"
+      goto: "scully1"
     }, {
       echoReq: "sabotage",
       echo: { ko: "등대에서 본 줄로 갈아낸 톱니", en: "The filed gear you saw at the lighthouse" },
@@ -2083,8 +2087,80 @@ const SCENES = {
           ko: `"톱니? 무슨 소리야." 스컬리가 비웃는다. 확신 없는 추궁이 들킨 사이, 칼이 번뜩인다.`,
           en: `"Gears? What are you on about." Scully sneers. Your doubt shows — and a blade flashes.`
         },
-        goto: "combat2"
+        goto: "scully1"
       }
+    }]
+  },
+  /* ---------- 스컬리와의 결투(2장) — 빠른 단검. 2박: 사람을 잡을까, 편지를 잡을까(3장 수문의 예고) ---------- */
+  scully1: {
+    ch: 2,
+    text: {
+      ko: `스컬리의 단검이 등불 빛을 받아 번쩍인다. 몸이 가볍다 — 찌르고 빠지는 놈이다.\n\n탁자 위에는 장부와 편지 뭉치. 스컬리의 눈이 자꾸 그쪽으로 간다.`,
+      en: `Scully's dagger flashes in the lamplight. He's light on his feet — a stab-and-slip fighter.\n\nOn the table, a ledger and a bundle of letters. His eyes keep drifting toward them.`
+    },
+    choices: [{
+      label: { ko: "[지각] 찌르는 박자를 읽고 손목을 잡는다", en: "[Perception] Read the rhythm of his thrusts and catch the wrist" },
+      stake: { ko: "성공하면 다음 수가 쉬워진다 · 실패하면 칼이 들어온다", en: "Success makes the next move easier · failure lets the blade in" },
+      check: { ability: "WIS", skill: "perception", dc: 12, label: "지각" },
+      success: { text: { ko: `세 번째 찌르기 직전, 손목을 낚아챈다. 스컬리의 얼굴이 굳는다.`, en: `Right before the third thrust, you snatch his wrist. Scully's face goes stiff.` }, flags: ["duelEdge2"], goto: "scully2" },
+      fail: { text: { ko: `박자를 놓쳤다. 단검이 팔뚝을 가르고 빠진다.`, en: `You miss the beat. The dagger opens your forearm and slips away.` }, damage: [2, 4], ifDown: "gameover", goto: "scully2" }
+    }, {
+      label: { ko: "[운동] 탁자를 걷어차 사이를 막는다", en: "[Athletics] Kick the table between you" },
+      stake: { ko: "성공하면 거리를 빼앗는다 · 실패하면 넘어진다", en: "Success takes his distance away · failure puts you on the floor" },
+      check: { ability: "STR", skill: "athletics", dc: 11, label: "운동" },
+      success: { text: { ko: `탁자가 미끄러져 스컬리를 벽으로 몬다. 찌를 거리가 사라졌다.`, en: `The table skids and pins Scully against the wall. No room left to thrust.` }, flags: ["duelEdge2"], goto: "scully2" },
+      fail: { text: { ko: `탁자는 꿈쩍도 않고, 스컬리의 단검만 빨랐다.`, en: `The table doesn't budge — only Scully's dagger moves fast.` }, damage: [2, 4], ifDown: "gameover", goto: "scully2" }
+    }, {
+      label: { ko: "[기만] 편지 뭉치를 등불에 던지는 척한다", en: "[Deceive] Pretend to toss the letters into the lamp" },
+      stake: { ko: "성공하면 스컬리가 편지로 몸을 날린다 · 실패하면 속임수가 들통난다", en: "Success makes him dive for the letters · failure exposes the bluff" },
+      check: { ability: "CHA", skill: "deception", dc: 12, label: "기만" },
+      success: { text: { ko: `"안 돼!" 스컬리가 편지로 몸을 날린다. 등이 훤히 비었다.\n\n그에게 편지는 목숨보다 무거운 모양이다.`, en: `"No!" Scully dives for the letters, back wide open.\n\nThose letters weigh more to him than his life, it seems.` }, flags: ["duelEdge2"], goto: "scully2" },
+      fail: { text: { ko: `"그 정도로 속을 줄 알아?" 단검이 옆구리를 스친다.`, en: `"You think I'd fall for that?" The dagger grazes your side.` }, damage: [2, 4], ifDown: "gameover", goto: "scully2" }
+    }, {
+      classOnly: "wizard",
+      label: { ko: "[비전학] 등불을 꺼 어둠을 만든다", en: "[Arcana] Snuff the lamps into darkness" },
+      stake: { ko: "성공하면 그가 당신을 못 본다 · 실패하면 당신만 못 본다", en: "Success blinds him to you · failure blinds only you" },
+      check: { ability: "INT", skill: "arcana", dc: 11, label: "비전학" },
+      success: { text: { ko: `등불이 한꺼번에 꺼진다. 어둠 속에서 스컬리의 숨소리만 들린다 — 위치가 다 보인다.`, en: `Every lamp dies at once. In the dark, only Scully's breathing — and it tells you exactly where he is.` }, flags: ["duelEdge2"], goto: "scully2" },
+      fail: { text: { ko: `불이 꺼지기 전에, 단검이 먼저 왔다.`, en: `Before the light went out, the dagger came.` }, damage: [2, 4], ifDown: "gameover", goto: "scully2" }
+    }, {
+      label: { ko: `[설득] "넌 심부름꾼이지. 너 대신 죽어 줄 사람은 없어."`, en: `[Persuade] "You're just the errand man. Nobody's going to die for you."` },
+      stake: { ko: "성공하면 피 없이 편지를 얻는다 · 실패하면 맨몸으로 맞는다", en: "Success gets the letters without blood · failure means taking the hit" },
+      check: { ability: "CHA", skill: "persuasion", dc: 13, label: "설득" },
+      success: { text: { ko: `단검 끝이 떨린다. 스컬리가 편지 뭉치를 밀어 준다.\n\n"잿돌 수도원. 서명은 S. …나는 여기까지야." 사내는 뒷문으로 사라진다.`, en: `The dagger tip trembles. Scully pushes the letters across.\n\n"Ashstone Monastery. Signed S. …that's as far as I go." He slips out the back.` }, flags: ["peaceful2"], goto: "ending2" },
+      fail: { text: { ko: `"말 많은 놈부터 죽는 법이지." 단검이 들어온다.`, en: `"The talkers always die first." The dagger comes in.` }, damage: [3, 4], ifDown: "gameover", goto: "scully2" }
+    }]
+  },
+  scully2: {
+    ch: 2,
+    text: {
+      ko: `스컬리가 벽에 등을 붙인다. 뒷문까지 세 걸음.\n\n잡으면 끝이다. 놓치면 — 편지도 함께 사라진다.`,
+      en: `Scully has his back to the wall. Three steps to the back door.\n\nCatch him and it's over. Lose him — and the letters go with him.`
+    },
+    choices: [{
+      echoReq: "duelEdge2",
+      echo: { ko: "앞서 잡은 기회", en: "The opening you won" },
+      label: { ko: "[운동] 잡은 틈으로 몰아붙여 제압한다", en: "[Athletics] Press the opening and pin him" },
+      stake: { ko: "앞서 잡은 기회로 쉽다 · 실패하면 놓친다", en: "Easier thanks to your opening · failure lets him slip away" },
+      check: { ability: "STR", skill: "athletics", dc: 9, label: "운동" },
+      success: { text: { ko: `스컬리를 벽에 눌러 단검을 떨어뜨린다. "…돈을 받았을 뿐이야. 발주는 편지로만 왔어. 서명은 S, 발신지는 잿돌 수도원."`, en: `You pin Scully to the wall and the dagger clatters down. "…I just took the money. Orders only came by letter. Signed S, from Ashstone Monastery."` }, goto: "ending2" },
+      fail: { text: { ko: `손끝에서 코트 자락이 빠져나간다. 뒷문이 쾅 닫힌다. 바닥에 떨어진 편지 몇 장만 남았다.`, en: `The coat-tail slips through your fingers. The back door slams. A few letters lie on the floor.` }, damage: [2, 4], ifDown: "gameover", flags: ["scullyFled"], goto: "ending2" }
+    }, {
+      label: { ko: "[운동] 뒷문을 먼저 막아선다", en: "[Athletics] Block the back door first" },
+      stake: { ko: "이기면 스컬리를 잡는다 · 지면 다치고 놓친다", en: "Win and you have him · lose and you're hurt and he's gone" },
+      check: { ability: "STR", skill: "athletics", dc: 13, label: "운동" },
+      success: { text: { ko: `뒷문 앞을 막아서자 스컬리가 단검을 내린다. "…알았어. 편지로만 받았어. 서명은 S, 잿돌 수도원."`, en: `You plant yourself at the back door and Scully lowers the dagger. "…fine. Letters only. Signed S, Ashstone Monastery."` }, goto: "ending2" },
+      fail: { text: { ko: `스컬리가 어깨로 밀치고 빠져나간다. 쓰러진 당신 옆에 편지 몇 장이 흩어져 있다.`, en: `Scully shoulders past you and is gone. A few letters lie scattered beside you.` }, damage: [3, 4], ifDown: "gameover", flags: ["scullyFled"], goto: "ending2" }
+    }, {
+      label: { ko: "편지 뭉치를 먼저 낚아챈다 — 증거를 택한다", en: "Snatch the letters first — choose the evidence" },
+      stake: { ko: "증거는 확실히 · 스컬리는 놓친다", en: "The evidence for sure · Scully gets away" },
+      result: { text: { ko: `편지 뭉치를 움켜쥔다. 그 사이 스컬리는 뒷문으로 사라졌다.\n\n증거는 남았고, 사람은 놓쳤다.`, en: `You grab the bundle of letters. In that moment, Scully is gone through the back door.\n\nThe evidence stays. The man doesn't.` }, flags: ["scullyFled"], goto: "ending2" }
+    }, {
+      label: { ko: `[위협] "S가 누군지 말해. 그럼 보내 주지."`, en: `[Intimidate] "Tell me who S is, and you walk."` },
+      stake: { ko: "성공하면 단서를 듣고 끝난다 · 실패하면 다치고 놓친다", en: "Success gets you a clue and ends it · failure hurts and he's gone" },
+      check: { ability: "CHA", skill: "intimidation", dc: 12, label: "위협" },
+      success: { text: { ko: `스컬리가 이를 간다. "…얼굴은 몰라. 근데 톱니 줄질한 놈은 마을 사람이야. 굳은살 하나 없는, 펜 쥐는 손이었지."\n\n편지 뭉치를 던지고 뒷문으로 사라진다.`, en: `Scully grinds his teeth. "…I never saw a face. But whoever filed that gear was a villager. Soft hands — a pen-holder's hands."\n\nHe tosses the letters and is gone out the back.` }, flags: ["peaceful2", "f_hands"], goto: "ending2" },
+      fail: { text: { ko: `"협박은 내 장사야." 단검이 허벅지를 긋고, 스컬리는 뒷문으로 빠진다.`, en: `"Threats are my trade." The dagger slashes your thigh and Scully is out the back.` }, damage: [2, 4], ifDown: "gameover", flags: ["scullyFled"], goto: "ending2" }
     }]
   },
   combat2: {
@@ -2282,14 +2358,82 @@ const SCENES = {
           ko: `열쇠 고리가 짤랑 — 사내가 홱 돌아본다.\n\n"쥐새끼가 들어왔군."`,
           en: `The keys jingle — he whirls.\n\n"A rat got in."`
         },
-        goto: "combat3"
+        goto: "monk1"
       }
     }, {
       label: {
         ko: "[전투] 횃불을 걷어차고 덮친다",
         en: "[Fight] Kick the torch and rush him"
       },
-      goto: "combat3"
+      goto: "monk1"
+    }]
+  },
+  /* ---------- 가짜 수도사와의 결투(3장) — 느리고 무거운 촛대. 2박: 물이 차오른다, 열쇠냐 승부냐 ---------- */
+  monk1: {
+    ch: 3,
+    text: {
+      ko: `회색 형제가 철제 촛대를 휘두른다. 느리지만 무겁다 — 한 번 제대로 맞으면 끝이다.\n\n철창 안에서 핍이 열쇠 고리를 가리킨다. 사내의 허리춤이다.`,
+      en: `The Grey Brother swings an iron candlestick. Slow, but heavy — one clean hit and you're done.\n\nBehind the bars, Pip points at the key ring. It's on the man's belt.`
+    },
+    choices: [{
+      label: { ko: "[운동] 촛대를 받아 흘린다", en: "[Athletics] Catch the candlestick and turn it aside" },
+      stake: { ko: "성공하면 다음 수가 쉬워진다 · 실패하면 크게 다친다", en: "Success makes the next move easier · failure hurts badly" },
+      check: { ability: "STR", skill: "athletics", dc: 12, label: "운동" },
+      success: { text: { ko: `쇠가 쇠를 미끄러진다. 무게에 끌려간 사내가 균형을 잃는다.`, en: `Iron slides off iron. Dragged by its weight, the man loses his footing.` }, flags: ["duelEdge3"], goto: "monk2" },
+      fail: { text: { ko: `받아 냈지만 무게가 그대로 실린다. 팔이 저려 온다.`, en: `You catch it, but the full weight comes through. Your arm goes numb.` }, damage: [3, 4], ifDown: "gameover", goto: "monk2" }
+    }, {
+      label: { ko: "[은신] 횃불 그림자로 숨어 등 뒤를 잡는다", en: "[Stealth] Melt into the torch shadows and get behind him" },
+      stake: { ko: "성공하면 등 뒤 · 실패하면 무방비로 맞는다", en: "Success puts you behind him · failure leaves you open" },
+      check: { ability: "DEX", skill: "stealth", dc: 12, label: "은신" },
+      success: { text: { ko: `촛대가 그림자를 친다. 진짜 당신은 이미 사내의 등 뒤에 있다.`, en: `The candlestick strikes a shadow. The real you is already behind him.` }, flags: ["duelEdge3"], goto: "monk2" },
+      fail: { text: { ko: `횃불이 당신의 그림자를 크게 드리운다. 촛대가 정확히 그곳으로 떨어진다.`, en: `The torch throws your shadow huge. The candlestick lands right on it.` }, damage: [3, 4], ifDown: "gameover", goto: "monk2" }
+    }, {
+      classOnly: "wizard",
+      label: { ko: "[비전학] 횃불을 키워 사내의 눈을 멀게 한다", en: "[Arcana] Flare the torch to blind him" },
+      stake: { ko: "성공하면 사내가 눈을 감싼다 · 실패하면 불길이 당신 쪽으로", en: "Success has him clutching his eyes · failure turns the flame on you" },
+      check: { ability: "INT", skill: "arcana", dc: 11, label: "비전학" },
+      success: { text: { ko: `횃불이 눈부시게 타오른다. 사내가 비명을 지르며 눈을 감싼다.`, en: `The torch blazes white. The man screams and covers his eyes.` }, flags: ["duelEdge3"], goto: "monk2" },
+      fail: { text: { ko: `불길이 거꾸로 튄다. 소매가 그을린다.`, en: `The flame lashes back. Your sleeve scorches.` }, damage: [2, 4], ifDown: "gameover", goto: "monk2" }
+    }, {
+      label: { ko: `[설득] "검은 코트는 벌써 달아났어. 너도 S에게 버려진 거다."`, en: `[Persuade] "The black coat already ran. S has dropped you too."` },
+      stake: { ko: "성공하면 열쇠를 얻는다 · 실패하면 맨몸으로 맞는다", en: "Success gets you the keys · failure means taking the hit" },
+      check: { ability: "CHA", skill: "persuasion", dc: 14, label: "설득" },
+      success: { text: { ko: `촛대가 내려간다. 사내가 열쇠 고리를 바닥에 던진다. "…버려진 건 알아. 처음부터."\n\n철창이 열린다.`, en: `The candlestick lowers. The man throws the key ring down. "…I know I was dropped. From the start."\n\nThe cell opens.` }, flags: ["quiet3"], goto: "rescue" },
+      fail: { text: { ko: `"입 닥쳐!" 촛대가 어깨를 내리친다.`, en: `"Shut up!" The candlestick crashes onto your shoulder.` }, damage: [3, 4], ifDown: "gameover", goto: "monk2" }
+    }]
+  },
+  monk2: {
+    ch: 3,
+    text: {
+      ko: `사내가 숨을 고른다. 열쇠 고리가 허리에서 짤랑인다.\n\n그때 — 지하 깊은 곳에서 물소리가 커진다. 시간이 없다.`,
+      en: `The man catches his breath. The key ring jingles at his belt.\n\nThen — from deep below, the sound of water swells. No time left.`
+    },
+    choices: [{
+      echoReq: "duelEdge3",
+      echo: { ko: "앞서 잡은 기회", en: "The opening you won" },
+      label: { ko: "[운동] 흔들린 사내를 쓰러뜨린다", en: "[Athletics] Bring the staggering man down" },
+      stake: { ko: "앞서 잡은 기회로 쉽다 · 실패하면 한 대 더 맞는다", en: "Easier thanks to your opening · failure costs another hit" },
+      check: { ability: "STR", skill: "athletics", dc: 9, label: "운동" },
+      success: { text: { ko: `사내가 촛대를 떨어뜨리고 쓰러진다. 수도복 안에는 — 부두에서 본 것과 같은 검은 코트.\n\n열쇠를 빼앗아 철창을 연다.`, en: `He drops the candlestick and falls. Under the robes — the same black coat you saw at the docks.\n\nYou take the keys and open the cell.` }, goto: "rescue" },
+      fail: { text: { ko: `쓰러뜨렸지만, 넘어지며 휘두른 촛대가 정강이를 친다. 열쇠를 빼앗아 철창을 연다.`, en: `You bring him down, but his falling swing cracks your shin. You take the keys and open the cell.` }, damage: [2, 4], ifDown: "gameover", goto: "rescue" }
+    }, {
+      label: { ko: "[운동] 정면으로 끝낸다", en: "[Athletics] End it head-on" },
+      stake: { ko: "이기면 깔끔하다 · 지면 크게 다친다", en: "Win and it's clean · lose and you're badly hurt" },
+      check: { ability: "STR", skill: "athletics", dc: 13, label: "운동" },
+      success: { text: { ko: `정면으로 부딪친 사내가 벽에 머리를 찧고 미끄러진다. 열쇠를 빼앗아 철창을 연다.`, en: `The man takes it head-on, cracks his head on the wall, and slides down. You take the keys and open the cell.` }, goto: "rescue" },
+      fail: { text: { ko: `촛대가 갈비뼈를 친다. 숨이 막힌 채로 사내를 밀어 넘기고 열쇠를 낚아챈다.`, en: `The candlestick hits your ribs. Breathless, you shove him over and snatch the keys.` }, damage: [3, 4], ifDown: "gameover", goto: "rescue" }
+    }, {
+      label: { ko: "[은신] 싸움 대신 열쇠만 낚아채 철창부터 연다", en: "[Stealth] Forget the fight — lift the keys and open the cell" },
+      stake: { ko: "성공하면 갇힌 이들이 함께 싸운다 · 실패하면 등을 보인 채 맞는다", en: "Success frees the prisoners to fight with you · failure means a hit in the back" },
+      check: { ability: "DEX", skill: "stealth", dc: 11, label: "은신" },
+      success: { text: { ko: `열쇠 고리가 소리 없이 빠져나온다. 철창이 열리자 갇혀 있던 이들이 쏟아져 나와 사내를 덮친다.`, en: `The key ring slips free without a sound. The cell opens and the prisoners pour out onto the man.` }, flags: ["quiet3"], goto: "rescue" },
+      fail: { text: { ko: `열쇠를 잡는 순간 촛대가 등을 친다. 그래도 철창은 열렸다.`, en: `The instant you grab the keys, the candlestick hits your back. But the cell is open.` }, damage: [3, 4], ifDown: "gameover", goto: "rescue" }
+    }, {
+      label: { ko: `[위협] "S가 누구냐. 물이 차기 전에 말해."`, en: `[Intimidate] "Who is S? Talk before the water rises."` },
+      stake: { ko: "성공하면 실마리를 듣는다 · 실패하면 시간과 피를 잃는다", en: "Success gets you a lead · failure costs time and blood" },
+      check: { ability: "CHA", skill: "intimidation", dc: 12, label: "위협" },
+      success: { text: { ko: `사내가 물소리에 질린 얼굴로 중얼거린다. "…바닷가 사람이야. 소금 냄새 나는 편지를 썼지."\n\n열쇠를 던지고 계단으로 달아난다.`, en: `Terrified by the water, the man mutters, "…someone from the coast. Their letters smelled of salt."\n\nHe throws the keys and flees up the stairs.` }, flags: ["trail"], goto: "rescue" },
+      fail: { text: { ko: `"물에 빠져 죽는 건 너다!" 촛대가 팔을 친다. 열쇠는 겨우 빼앗았다.`, en: `"You're the one who'll drown!" The candlestick hits your arm. You barely wrest the keys away.` }, damage: [2, 4], ifDown: "gameover", goto: "rescue" }
     }]
   },
   combat3: {
@@ -2437,8 +2581,8 @@ function buildEnding1(flags) {
 function buildEnding2(flags) {
   const ko = [];
   const en = [];
-  ko.push(flags.includes("peaceful2") ? "스컬리는 떠났다. 대신 편지가 남았다." : "스컬리는 관헌의 손에 넘어갔다. 그리고 편지가 남았다.");
-  en.push(flags.includes("peaceful2") ? "Scully is gone. A letter remains in his place." : "Scully is in the authorities' hands. And a letter remains.");
+  ko.push(flags.includes("peaceful2") ? "스컬리는 떠났다. 대신 편지가 남았다." : flags.includes("scullyFled") ? "스컬리는 뒷문으로 달아났다. 손에 남은 건 편지뿐이다." : "스컬리는 관헌의 손에 넘어갔다. 그리고 편지가 남았다.");
+  en.push(flags.includes("peaceful2") ? "Scully is gone. A letter remains in his place." : flags.includes("scullyFled") ? "Scully fled out the back door. All you have left are the letters." : "Scully is in the authorities' hands. And a letter remains.");
   if (flags.includes("ledger")) {
     ko.push("품속의 장부에는 입항 일정과 뱃이름이 빼곡하다 — 움직일 수 없는 증거다.");
     en.push("The ledger in your coat is packed with arrival times and ship names — evidence that won't budge.");
@@ -2715,7 +2859,8 @@ function chapterLedger(ch, flags) {
   } else if (ch === 2) {
     if (has("lensBack")) row(true, "렌즈 — 렌에게서 되찾았다", "Lens — won back from Ren");
     if (has("ledger")) row(true, "밀수 장부 — 품에 넣었다", "Smuggling ledger — in your coat");
-    row(has("peaceful2") ? true : null, has("peaceful2") ? "스컬리 — 말로 풀었다" : "스컬리 — 관헌에 넘겼다", has("peaceful2") ? "Scully — settled with words" : "Scully — handed to the law");
+    if (has("scullyFled")) row(false, "스컬리 — 놓쳤다", "Scully — got away");
+    else row(has("peaceful2") ? true : null, has("peaceful2") ? "스컬리 — 말로 풀었다" : "스컬리 — 관헌에 넘겼다", has("peaceful2") ? "Scully — settled with words" : "Scully — handed to the law");
   } else if (ch === 3) {
     row(has("saved3") ? true : false, "배달부 — " + (has("saved3") ? "업고 나왔다" : "스스로 기어 나왔다"), "Courier — " + (has("saved3") ? "carried out" : "crawled out on his own"));
     row(has("chase3") ? true : false, "증거 편지 — " + (has("chase3") ? "건져 냈다" : "대부분 물에 녹았다"), "Evidence letters — " + (has("chase3") ? "recovered" : "mostly dissolved"));
@@ -2760,16 +2905,22 @@ const SCENE_DOING = {
   warehouseB: bi("매복 냄새가 난다", "It smells like an ambush"),
   confront: bi("스컬리를 몰아세웠다", "Scully, cornered"),
   combat2: bi("스컬리와 싸우는 중", "Fighting Scully"),
+  scully1: bi("스컬리와 싸우는 중 — 단검이 번쩍인다", "Fighting Scully — the dagger flashes"),
+  scully2: bi("놓치면 편지도 사라진다", "Lose him and the letters go too"),
   intro3: bi("침묵하는 수도원에 닿았다", "Arriving at the silent monastery"),
   cloister: bi("흔적을 찾는다", "Searching for traces"),
   belltower: bi("종지기 오도와 마주했다", "Face to face with Odo"),
   undercroft: bi("철창 앞의 가짜 수도사", "The false monk at the bars"),
   combat3: bi("가짜 수도사와 싸우는 중", "Fighting the false monk"),
+  monk1: bi("가짜 수도사와 싸우는 중 — 촛대가 무겁다", "Fighting the false monk — a heavy candlestick"),
+  monk2: bi("물이 차오른다 — 열쇠인가, 승부인가", "The water rises — the keys or the fight"),
   rescue: bi("물이 차오른다 — 하나만 구할 수 있다", "The water rises — only one can be saved"),
   accuse: bi("세온의 서재 — 결론의 시간", "Seon's study — time for a verdict")
 };
 // 장면 분위기: 싸움(붉게) / 정적(어둡게) / 결말(밝게)
-const DUEL_SCENES = ["duel1", "duel2", "combat", "combat2", "combat3"];
+const DUEL_SCENES = ["duel1", "duel2", "scully1", "scully2", "monk1", "monk2", "combat", "combat2", "combat3"];
+// 서사 결투의 긴장 저음: 첫 박 0.8, 마지막 박 1
+const DUEL_TENSION = { duel1: 0.8, duel2: 1, scully1: 0.8, scully2: 1, monk1: 0.8, monk2: 1 };
 function stageMood(sceneKey, scene) {
   if (DUEL_SCENES.includes(sceneKey)) return "danger";
   if (BGM_HUSH.includes(sceneKey)) return "hush";
@@ -2779,6 +2930,7 @@ function stageMood(sceneKey, scene) {
 // 장면에 들어설 때 한 번 울리는 효과음
 const SCENE_SFX = {
   door: "door", stairs: "wind", duel1: "clash", duel2: "clash", railing: "wind", top: "gear",
+  scully1: "clash", scully2: "door", monk1: "clash", monk2: "water",
   signal: "fire", wharf: "crowd", warehouseA: "door", warehouseB: "door", confront: "thud",
   belltower: "wind", undercroft: "door", rescue: "water", accuse: "door"
 };
@@ -2794,7 +2946,7 @@ const CAST = {
 const SUSPECTS = ["seon", "bern", "ren"];
 const SCENE_CAST = {
   intro: ["seon"], stairs: ["ren"], duel1: ["ren"], duel2: ["ren"], railing: ["ren"], top: ["bern"], signal: ["bern"],
-  intro2: ["bern"], wharfRen: ["ren"], wharfLens: ["ren"], confront: ["scully"],
+  intro2: ["bern"], wharfRen: ["ren"], wharfLens: ["ren"], confront: ["scully"], scully1: ["scully"], scully2: ["scully"], monk1: ["grey", "pip"], monk2: ["grey"],
   belltower: ["odo"], undercroft: ["pip", "grey"], rescue: ["pip"], accuse: ["seon", "bern"]
 };
 // 사건 기록장의 상태 — 순수 함수(테스트 대상). lore에 든 조각만 센다.
@@ -2846,7 +2998,7 @@ function officialRecord(kind, flags, no) {
   };
   if (kind === 2) return {
     head,
-    lines: [has("peaceful2") ? bi("부두: 밀수 혐의자 스컬리, 도주.", "Docks: smuggling suspect Scully, fled.") : bi("부두: 밀수 혐의자 스컬리, 체포.", "Docks: smuggling suspect Scully, arrested."), bi("배후: 없음.", "Behind it: no one.")],
+    lines: [has("peaceful2") || has("scullyFled") ? bi("부두: 밀수 혐의자 스컬리, 도주.", "Docks: smuggling suspect Scully, fled.") : bi("부두: 밀수 혐의자 스컬리, 체포.", "Docks: smuggling suspect Scully, arrested."), bi("배후: 없음.", "Behind it: no one.")],
     signer: seon,
     rebut: has("f_fund") ? bi("배후가 없다고? 돈은 소금여울 공동 기금으로 갔다.", "No one behind it? The money went to the Saltmarsh Common Fund.")
       : has("peaceful2") ? bi("배후가 없다고? 편지마다 S가 있다.", "No one behind it? Every letter is signed S.") : null
@@ -2942,6 +3094,8 @@ function harborStage(sceneKey) {
     warehouseA: 2,
     warehouseB: 2,
     confront: 2,
+    scully1: 2,
+    scully2: 2,
     combat2: 2
   }[sceneKey] ?? 0;
 }
@@ -3216,6 +3370,8 @@ function monasteryStage(sceneKey) {
     belltower: 1,
     undercroft: 2,
     combat3: 2,
+    monk1: 2,
+    monk2: 2,
     rescue: 2
   }[sceneKey] ?? 0;
 }

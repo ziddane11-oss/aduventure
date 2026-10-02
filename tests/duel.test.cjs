@@ -235,3 +235,86 @@ test('all pt15 text is bilingual', () => {
     assert.equal(HANGUL.test(s.en), false, s.en);
   }
 });
+
+// ---- pt16: 2장 스컬리, 3장 가짜 수도사도 같은 서사 결투로 ----
+test('every fight entry in Ch.2 and Ch.3 now leads to its narrative duel', () => {
+  const g = game();
+  const gotos = g.run(`Object.values(SCENES).flatMap(s => (s.choices || []).flatMap(c => [c.goto, c.success?.goto, c.fail?.goto, c.result?.goto]))`);
+  assert.equal(gotos.filter(x => x === 'combat2' || x === 'combat3' || x === 'combat').length, 0, 'No story path enters the old number combat');
+  assert.ok(gotos.includes('scully1') && gotos.includes('monk1'));
+});
+
+for (const [first, second, edge, exits, down] of [
+  ['scully1', 'scully2', 'duelEdge2', ['scully2', 'ending2'], 'gameover'],
+  ['monk1', 'monk2', 'duelEdge3', ['monk2', 'rescue'], 'gameover']
+]) {
+  test(`${first}: two beats, stakes on every choice, every branch exits, 0 HP follows the record`, () => {
+    const g = game();
+    const branches = g.run(`[${JSON.stringify(first)}, ${JSON.stringify(second)}].flatMap(k => SCENES[k].choices.flatMap(c => [c.success, c.fail, c.result].filter(Boolean).map(b => [k, b.goto, b.ifDown || null])))`);
+    for (const [scene, to, d] of branches) {
+      assert.ok(scene === first ? exits.includes(to) : to === exits[1], scene + ' -> ' + to);
+      if (d) assert.equal(d, down);
+    }
+    assert.ok(g.run(`[${JSON.stringify(first)}, ${JSON.stringify(second)}].every(k => SCENES[k].choices.every(c => c.stake?.ko && c.stake?.en))`));
+    assert.ok(g.run(`SCENES[${JSON.stringify(second)}].choices.some(c => c.echoReq === ${JSON.stringify(edge)})`), 'The first beat can earn an easier finish');
+    assert.ok(g.run(`SCENES[${JSON.stringify(first)}].choices.some(c => c.classOnly === 'wizard')`), 'The wizard has an own option');
+  });
+}
+
+test('Scully duel: winning the exchange, then pressing it, ends the chapter with Scully caught', () => {
+  const g = game({sceneKey: 'confront'});
+  g.state().goto('scully1');
+  g.click('[Perception]');
+  assert.equal(g.state().sceneKey, 'scully2');
+  g.click('[Athletics] Press the opening');
+  const s = g.state();
+  assert.equal(s.sceneKey, 'ending2');
+  assert.equal(s.flags.includes('scullyFled'), false);
+  assert.ok(text(g.render()).includes('Scully is in'));
+});
+
+test('Scully duel: grabbing the letters keeps the evidence but loses the man', () => {
+  const g = game({sceneKey: 'confront'});
+  g.state().goto('scully2');
+  const tree = g.click('Snatch the letters first');
+  assert.equal(g.state().sceneKey, 'ending2');
+  assert.ok(g.state().flags.includes('scullyFled'));
+  assert.ok(text(tree).includes('Scully fled out the back door'));
+  assert.equal(g.run(`officialRecord(2, ['scullyFled'], 113).lines[0].en`), 'Docks: smuggling suspect Scully, fled.');
+  assert.ok(g.run(`chapterLedger(2, ['scullyFled']).some(r => r.kept === false && r.text.en === 'Scully — got away')`));
+});
+
+test('the monk duel: lifting the keys frees the prisoners and counts as a silent rescue', () => {
+  const g = game({sceneKey: 'undercroft'});
+  g.state().goto('monk2');
+  g.click('[Stealth] Forget the fight');
+  assert.equal(g.state().sceneKey, 'rescue');
+  assert.ok(g.state().flags.includes('quiet3'));
+});
+
+test('falling in the Ch.2 duel makes the record come true', () => {
+  const g = game({sceneKey: 'confront', success: false, hp: 1});
+  g.state().goto('scully1');
+  g.click('[Perception]');
+  assert.equal(g.state().sceneKey, 'gameover');
+});
+
+test('all pt16 duel text is bilingual', () => {
+  const g = game();
+  const strings = g.run(`(() => {
+    const out = [];
+    const walk = v => {
+      if (!v || typeof v !== 'object') return;
+      if (typeof v.ko === 'string' && 'en' in v) { out.push(v); return; }
+      Object.values(v).forEach(walk);
+    };
+    walk(['scully1','scully2','monk1','monk2'].map(k => [SCENES[k], SCENE_TITLES[k], SCENE_DOING[k]]));
+    walk([buildEnding2(['scullyFled']), chapterLedger(2, ['scullyFled'])]);
+    return out;
+  })()`);
+  assert.ok(strings.length > 80);
+  for (const s of strings) {
+    assert.ok(s.ko && s.en, JSON.stringify(s));
+    assert.equal(HANGUL.test(s.en), false, s.en);
+  }
+});
