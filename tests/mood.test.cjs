@@ -39,7 +39,7 @@ function game(sceneKey, portraits = '') {
       useEffect() {}
     }
   });
-  vm.runInContext(app.replace('const PORTRAITS = {};', 'const PORTRAITS = {' + portraits + '};'), ctx);
+  vm.runInContext(app.replace('const PORTRAIT_FILES = {};', 'const PORTRAIT_FILES = {' + portraits + '};'), ctx);
   data.set('aduventure_save', JSON.stringify({
     v: 1, sceneKey, flags: [], ruleKey: 'srd20', fate: 1, specialLeft: 2, breathLeft: 1, tutSeen: true, runNo: 140,
     pc: {...vm.runInContext('CLASSES.fighter', ctx), classKey: 'fighter', name: 'QA'}, stats: {rolls: 0, success: 0}
@@ -70,9 +70,12 @@ test('one tap on the text shows the whole scene at once', () => {
   assert.equal(byClass(tree, 'choices')[0].props['data-stage'], 'instant');
 });
 
-test('a portrait appears beside the name once its picture exists; otherwise the mark stays', () => {
+test('every character has a drawn draft portrait, and a real picture file replaces it', () => {
   const plain = byClass(game('c2_reader').render(), 'castChip')[0];
-  assert.equal(nodes(plain).some(n => n.type === 'img'), false);
+  assert.match(nodes(plain).find(n => n.type === 'img').props.src, /^data:image\/svg\+xml/, 'Draft by default');
+  const g = game('c2_reader');
+  assert.deepEqual([...g.run('Object.keys(CAST)')].sort(), [...g.run('Object.keys(PORTRAIT_DRAFTS)')].sort(), 'No one is left without a face');
+  for (const svg of g.run('Object.values(PORTRAIT_DRAFTS)')) assert.match(svg, /#c0392b/, 'One red accent each');
   const drawn = byClass(game('c2_reader', 'ire: "art/ire.png"').render(), 'castChip')[0];
   const img = nodes(drawn).find(n => n.type === 'img');
   assert.equal(img.props.src, 'art/ire.png');
