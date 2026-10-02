@@ -126,7 +126,7 @@ test("Bern's confession only opens with 3+ known fragments, then records itself"
   assert.equal(choices(few.render()).some(n => text(n).startsWith('[Memory]')), false);
   const g = game({lore: ['f_receipt', 'f_fund', 'f_addressee']});
   const tree = g.click('[Memory]');
-  assert.equal(g.state().sceneKey, 'wharf');
+  assert.equal(g.state().sceneKey, 'dawn2', 'Then the rounds before sundown');
   assert.ok(g.state().flags.includes('f_bern_lied'));
   assert.ok(text(tree).includes('I never saw a black coat'));
 });

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>어두밴처 v0.7.3-pt20</title>
+<title>어두밴처 v0.7.3-pt21</title>
 <style>body{margin:0;background:#0e1420}</style>
 </head>
 <body>
@@ -318,7 +318,7 @@ function(a,b,c){if(!Vd(b))throw Error(n(200));return Wd(null,a,b,!1,c)};Q.unmoun
    GAS 피드백 파이프 — v0.7 재구현 (제안/신호/텔레메트리)
    ============================================================ */
 /* 플레이테스트 빌드 태그 — 테스트 중 버전 구분용. 수정할 때마다 뒤 번호를 올린다. */
-const BUILD = "v0.7.3-pt20";
+const BUILD = "v0.7.3-pt21";
 const GAS_URL = "https://script.google.com/macros/s/AKfycbxFx_m5rhCZmqGoy3JcUUNqEgiObMWNHe9hx-LnZrhzIkfwa9-yJGBWP0lVulptnNQeCQ/exec";
 function gasPost(payload, options = {}) {
   return fetch(GAS_URL, {
@@ -1225,6 +1225,10 @@ function rollLooterIntent(hp, maxHp) {
   return r <= 52 ? "slash" : r <= 82 ? "hook" : "feint";
 }
 const SCENE_TITLES = {
+  dawn2: { ko: "해 지기 전", en: "Before Sundown" },
+  dawn2b: { ko: "해 지기 전", en: "Before Sundown" },
+  dusk3: { ko: "수도원 바깥", en: "Outside the Walls" },
+  dusk3b: { ko: "수도원 바깥", en: "Outside the Walls" },
   intro: { ko: "폭풍의 의뢰", en: "The Storm's Charge" },
   door: { ko: "등대 입구", en: "Lighthouse Door" },
   stairs: { ko: "기계실", en: "The Mechanism Room" },
@@ -1852,7 +1856,7 @@ const SCENES = {
         ko: "부두로 간다",
         en: "Head to the docks"
       },
-      goto: "wharf"
+      goto: "dawn2"
     }, {
       // 회차를 넘어 조각 3개 이상을 모았을 때만 열린다(한 판으로는 불가).
       caseMin: 3,
@@ -1868,9 +1872,213 @@ const SCENES = {
           en: `Bern stares out the window for a long time.\n\n"…I never saw a black coat. Someone told me to pull the gear. To put the lens away for a while. I can't say the name."\n\nHis voice shakes. "For this village to survive the winter, it needed nights when the light went dark."`
         },
         flags: ["f_bern_lied"],
-        goto: "wharf"
+        goto: "dawn2"
       }
     }]
+  },
+  dawn2: {
+    "ch": 2,
+    "text": {
+      "ko": "부두 선술집은 해가 져야 문을 연다. 그 전에 들를 수 있는 곳은 두 군데뿐이다.\n\n세관 사무소, 기름 가게, 베른의 오두막, 그리고 언덕 위 촌장 집.\n\n어디서 무엇을 듣느냐에 따라, 오늘 밤 쓸 수 있는 수가 달라진다.",
+      "en": "The dockside tavern only opens at sundown. Before then, there's time for two stops.\n\nThe customs office, the oil shop, Bern's cottage, and the chief's house up the hill.\n\nWhat you hear, and where, decides what you can play tonight."
+    },
+    "choices": [
+      {
+        "lead": "leadManifest",
+        "label": {
+          "ko": "세관 사무소 — 어젯밤 입항 기록을 들여다본다",
+          "en": "The customs office — look over last night's harbor log"
+        },
+        "stake": {
+          "ko": "오늘 밤 부두에서: 기록의 빈칸을 들이밀 수 있다",
+          "en": "Tonight at the docks: you can press on a gap in the log"
+        },
+        "result": {
+          "text": {
+            "ko": "졸던 서기가 황급히 장부를 덮는다. 덮이기 직전, 한 줄이 보였다.\n\n'3번 창고 — 입고 물품 없음.'\n\n잉크가 아직 젖어 있다. 오늘 아침에 고쳐 쓴 줄이다.",
+            "en": "The dozing clerk slams the log shut. Just before it closes, you catch one line.\n\n'Warehouse 3 — no goods received.'\n\nThe ink is still wet. Someone rewrote that line this morning."
+          },
+          "flags": [
+            "leadManifest"
+          ],
+          "goto": "dawn2b"
+        }
+      },
+      {
+        "lead": "leadOil",
+        "label": {
+          "ko": "기름 가게 — 램프 기름 한 병을 산다",
+          "en": "The oil shop — buy a flask of lamp oil"
+        },
+        "stake": {
+          "ko": "오늘 밤 싸움에서: 바닥에 기름을 쏟을 수 있다",
+          "en": "In tonight's fight: you can spill oil on the floor"
+        },
+        "result": {
+          "text": {
+            "ko": "주인이 병을 건네며 혀를 찬다. \"요새 기름이 잘 나가. 어제는 검은 코트 양반이 한 통을 통째로 사 갔지. 창고 등불용이라나.\"\n\n묵직한 병이 주머니 안에서 출렁인다.",
+            "en": "The owner hands over the flask and clicks his tongue. \"Oil's selling well lately. Yesterday a fellow in a black coat bought a whole barrel. For the warehouse lamps, he said.\"\n\nThe heavy flask sloshes in your pocket."
+          },
+          "flags": [
+            "leadOil"
+          ],
+          "goto": "dawn2b"
+        }
+      },
+      {
+        "lead": "leadBern",
+        "label": {
+          "ko": "베른의 오두막 — 노인이 없는 사이 둘러본다",
+          "en": "Bern's cottage — look around while the old man is out"
+        },
+        "stake": {
+          "ko": "스컬리를 몰아세울 때: 내밀 종이 한 장이 생긴다",
+          "en": "When you corner Scully: you'll have a slip to show him"
+        },
+        "result": {
+          "text": {
+            "ko": "침대 밑 상자. 동전 꾸러미와, 꼬깃꼬깃한 영수증 한 장.\n\n'소금여울 공동 기금 — 등대 비용 일부.'\n\n렌즈 값을 모으던 노인의 돈이, 누군가의 기금으로 흘러가고 있었다.",
+            "en": "A box under the bed. A bundle of coins, and one crumpled receipt.\n\n'Saltmarsh Common Fund — lighthouse costs, partial.'\n\nThe money the old man was saving for the lens had been flowing into someone's fund."
+          },
+          "flags": [
+            "leadBern"
+          ],
+          "goto": "dawn2b"
+        }
+      },
+      {
+        "lead": "leadWindow",
+        "label": {
+          "ko": "언덕 위 촌장 집 — 인사차 들른다",
+          "en": "The chief's house on the hill — drop by to pay respects"
+        },
+        "stake": {
+          "ko": "매복에 걸렸을 때: 신호를 흉내 낼 수 있다",
+          "en": "If you walk into the ambush: you can mimic a signal"
+        },
+        "result": {
+          "text": {
+            "ko": "세온이 직접 문을 연다. \"어제는 수고했네.\" 미소가 지나치게 반듯하다.\n\n돌아 나오며 올려다본 2층 창문. 덧문 안쪽에 소금이 엉긴 신호등이 걸려 있다. 등불을 두 번 가렸다 여는 손잡이까지.",
+            "en": "Seon opens the door himself. \"Good work last night.\" The smile is a little too straight.\n\nOn your way out you glance up at the second-floor window. Behind the shutter hangs a salt-crusted signal lamp — with a handle to cover the light twice and open it again."
+          },
+          "flags": [
+            "leadWindow"
+          ],
+          "goto": "dawn2b"
+        }
+      },
+      {
+        "label": {
+          "ko": "탐문은 건너뛰고 곧장 부두로 간다",
+          "en": "Skip the rounds and head straight to the docks"
+        },
+        "goto": "wharf"
+      }
+    ]
+  },
+  dawn2b: {
+    "ch": 2,
+    "text": {
+      "ko": "해가 기운다. 한 곳만 더 들를 수 있다.",
+      "en": "The sun is sinking. There's time for one more stop."
+    },
+    "choices": [
+      {
+        "lead": "leadManifest",
+        "label": {
+          "ko": "세관 사무소 — 어젯밤 입항 기록을 들여다본다",
+          "en": "The customs office — look over last night's harbor log"
+        },
+        "stake": {
+          "ko": "오늘 밤 부두에서: 기록의 빈칸을 들이밀 수 있다",
+          "en": "Tonight at the docks: you can press on a gap in the log"
+        },
+        "result": {
+          "text": {
+            "ko": "졸던 서기가 황급히 장부를 덮는다. 덮이기 직전, 한 줄이 보였다.\n\n'3번 창고 — 입고 물품 없음.'\n\n잉크가 아직 젖어 있다. 오늘 아침에 고쳐 쓴 줄이다.",
+            "en": "The dozing clerk slams the log shut. Just before it closes, you catch one line.\n\n'Warehouse 3 — no goods received.'\n\nThe ink is still wet. Someone rewrote that line this morning."
+          },
+          "flags": [
+            "leadManifest"
+          ],
+          "goto": "wharf"
+        },
+        "flagNot": "leadManifest"
+      },
+      {
+        "lead": "leadOil",
+        "label": {
+          "ko": "기름 가게 — 램프 기름 한 병을 산다",
+          "en": "The oil shop — buy a flask of lamp oil"
+        },
+        "stake": {
+          "ko": "오늘 밤 싸움에서: 바닥에 기름을 쏟을 수 있다",
+          "en": "In tonight's fight: you can spill oil on the floor"
+        },
+        "result": {
+          "text": {
+            "ko": "주인이 병을 건네며 혀를 찬다. \"요새 기름이 잘 나가. 어제는 검은 코트 양반이 한 통을 통째로 사 갔지. 창고 등불용이라나.\"\n\n묵직한 병이 주머니 안에서 출렁인다.",
+            "en": "The owner hands over the flask and clicks his tongue. \"Oil's selling well lately. Yesterday a fellow in a black coat bought a whole barrel. For the warehouse lamps, he said.\"\n\nThe heavy flask sloshes in your pocket."
+          },
+          "flags": [
+            "leadOil"
+          ],
+          "goto": "wharf"
+        },
+        "flagNot": "leadOil"
+      },
+      {
+        "lead": "leadBern",
+        "label": {
+          "ko": "베른의 오두막 — 노인이 없는 사이 둘러본다",
+          "en": "Bern's cottage — look around while the old man is out"
+        },
+        "stake": {
+          "ko": "스컬리를 몰아세울 때: 내밀 종이 한 장이 생긴다",
+          "en": "When you corner Scully: you'll have a slip to show him"
+        },
+        "result": {
+          "text": {
+            "ko": "침대 밑 상자. 동전 꾸러미와, 꼬깃꼬깃한 영수증 한 장.\n\n'소금여울 공동 기금 — 등대 비용 일부.'\n\n렌즈 값을 모으던 노인의 돈이, 누군가의 기금으로 흘러가고 있었다.",
+            "en": "A box under the bed. A bundle of coins, and one crumpled receipt.\n\n'Saltmarsh Common Fund — lighthouse costs, partial.'\n\nThe money the old man was saving for the lens had been flowing into someone's fund."
+          },
+          "flags": [
+            "leadBern"
+          ],
+          "goto": "wharf"
+        },
+        "flagNot": "leadBern"
+      },
+      {
+        "lead": "leadWindow",
+        "label": {
+          "ko": "언덕 위 촌장 집 — 인사차 들른다",
+          "en": "The chief's house on the hill — drop by to pay respects"
+        },
+        "stake": {
+          "ko": "매복에 걸렸을 때: 신호를 흉내 낼 수 있다",
+          "en": "If you walk into the ambush: you can mimic a signal"
+        },
+        "result": {
+          "text": {
+            "ko": "세온이 직접 문을 연다. \"어제는 수고했네.\" 미소가 지나치게 반듯하다.\n\n돌아 나오며 올려다본 2층 창문. 덧문 안쪽에 소금이 엉긴 신호등이 걸려 있다. 등불을 두 번 가렸다 여는 손잡이까지.",
+            "en": "Seon opens the door himself. \"Good work last night.\" The smile is a little too straight.\n\nOn your way out you glance up at the second-floor window. Behind the shutter hangs a salt-crusted signal lamp — with a handle to cover the light twice and open it again."
+          },
+          "flags": [
+            "leadWindow"
+          ],
+          "goto": "wharf"
+        },
+        "flagNot": "leadWindow"
+      },
+      {
+        "label": {
+          "ko": "이만하면 됐다 — 부두로 간다",
+          "en": "That's enough — head to the docks"
+        },
+        "goto": "wharf"
+      }
+    ]
   },
   wharf: {
     ch: 2,
@@ -1996,6 +2204,27 @@ const SCENES = {
           "en": "\"…Which boat did you say you're with?\" A scabbard rasps under the table.\n\nYou laugh and stand, but three sets of footsteps follow. They herd you right up to the front of Warehouse 3."
         },
         "goto": "warehouseB"
+      }
+    }, {
+      "echoReq": "leadManifest",
+      "echo": {
+        "ko": "세관에서 본 젖은 잉크",
+        "en": "the wet ink at customs"
+      },
+      "stake": {
+      "ko": "싸움 없이 3번 창고 뒷길로 들어간다",
+      "en": "Into Warehouse 3 by the back way, no fight"
+    },
+    "label": {
+        "ko": "[입항 기록] 주인장에게 '3번 창고, 오늘 아침 고쳐 쓴 기록'을 속삭인다",
+        "en": "[Harbor log] Whisper to the owner about 'Warehouse 3, rewritten this morning'"
+      },
+      "result": {
+        "text": {
+          "ko": "주인장의 행주질이 멈춘다. 한참 뒤, 턱으로 뒷문을 가리킨다. \"…3번은 뒷골목으로 돌아가. 정면은 오늘 밤 사람이 많아.\"",
+          "en": "The owner's rag stops moving. After a long moment, he jerks his chin at the back door. \"…For number 3, go round the back alley. The front's crowded tonight.\""
+        },
+        "goto": "warehouseA"
       }
     }
     ]
@@ -2211,6 +2440,30 @@ const SCENES = {
         "ifDown": "gameover",
         "goto": "scully1"
       }
+    }, {
+      "echoReq": "leadWindow",
+      "echo": {
+        "ko": "촌장 집 창문의 신호등",
+        "en": "the signal lamp in the chief's window"
+      },
+      "stake": {
+      "ko": "매복을 혼란에 빠뜨리고 스컬리를 잡는다",
+      "en": "Throw the ambush into confusion and seize Scully"
+    },
+    "label": {
+        "ko": "[신호] 등불을 두 번 가렸다 연다 — 촌장 집의 신호를 흉내 낸다",
+        "en": "[Signal] Cover the lamp twice and open it — mimic the chief's signal"
+      },
+      "result": {
+        "text": {
+          "ko": "어둠 속 매복꾼들이 멈칫한다. \"…위에서 온 신호다.\" 누군가 칼을 내린다.\n\n그 한순간의 혼란이면 충분하다. 스컬리의 손목이 이미 당신 손에 있다.",
+          "en": "The ambushers in the dark freeze. \"…Signal from up the hill.\" Someone lowers a blade.\n\nThat one moment of confusion is enough. Scully's wrist is already in your grip."
+        },
+        "goto": "confront",
+        "flags": [
+          "grip"
+        ]
+      }
     }
     ]
   },
@@ -2353,7 +2606,32 @@ const SCENES = {
         },
         goto: "scully1"
       }
-    }]
+    }, {
+      "echoReq": "leadBern",
+      "echo": {
+        "ko": "베른의 오두막에서 찾은 영수증",
+        "en": "the receipt from Bern's cottage"
+      },
+      "stake": {
+      "ko": "스컬리가 싸움 없이 무너진다",
+      "en": "Scully folds without a fight"
+    },
+    "label": {
+        "ko": "[영수증] '공동 기금' 영수증을 스컬리 코앞에 펼친다",
+        "en": "[Receipt] Spread the 'Common Fund' receipt under Scully's nose"
+      },
+      "result": {
+        "text": {
+          "ko": "스컬리의 얼굴이 하얗게 질린다. \"그, 그걸 어디서… 난 심부름만 했어. 돈은 다 기금으로 들어갔다고. 기금 장부는 위에서 쥐고 있어.\"\n\n그는 순순히 손을 내민다.",
+          "en": "Scully goes white. \"Wh-where did you get that… I just ran errands. The money all went into the fund. The fund's books are held up the hill.\"\n\nHe holds out his wrists without a fight."
+        },
+        "goto": "ending2",
+        "flags": [
+          "peaceful2"
+        ]
+      }
+    }
+    ]
   },
   /* ---------- 스컬리와의 결투(2장) — 빠른 단검. 2박: 사람을 잡을까, 편지를 잡을까(3장 수문의 예고) ---------- */
   scully1: {
@@ -2393,7 +2671,32 @@ const SCENES = {
       check: { ability: "CHA", skill: "persuasion", dc: 13, label: "설득" },
       success: { text: { ko: `단검 끝이 떨린다. 스컬리가 편지 뭉치를 밀어 준다.\n\n"잿돌 수도원. 서명은 S. …나는 여기까지야." 사내는 뒷문으로 사라진다.`, en: `The dagger tip trembles. Scully pushes the letters across.\n\n"Ashstone Monastery. Signed S. …that's as far as I go." He slips out the back.` }, flags: ["peaceful2"], goto: "ending2" },
       fail: { text: { ko: `"말 많은 놈부터 죽는 법이지." 단검이 들어온다.`, en: `"The talkers always die first." The dagger comes in.` }, damage: [3, 4], ifDown: "gameover", goto: "scully2" }
-    }]
+    }, {
+      "echoReq": "leadOil",
+      "echo": {
+        "ko": "기름 가게에서 산 램프 기름",
+        "en": "the lamp oil from the shop"
+      },
+      "stake": {
+      "ko": "판정 없이 결투의 우위를 잡는다",
+      "en": "Take the upper hand in the duel without a roll"
+    },
+    "label": {
+        "ko": "[기름] 램프 기름을 바닥에 쏟아 스컬리의 발밑을 빼앗는다",
+        "en": "[Oil] Spill the lamp oil and take the floor out from under Scully"
+      },
+      "result": {
+        "text": {
+          "ko": "병이 깨지고 기름이 번진다. 달려들던 스컬리의 발이 미끄러진다 — 단검이 바닥을 긁는다.\n\n당신은 이미 그의 등 뒤에 있다.",
+          "en": "The flask shatters and the oil spreads. Scully, mid-lunge, loses his footing — his dagger scrapes the floor.\n\nYou're already behind him."
+        },
+        "goto": "scully2",
+        "flags": [
+          "duelEdge2"
+        ]
+      }
+    }
+    ]
   },
   scully2: {
     ch: 2,
@@ -2459,11 +2762,172 @@ const SCENES = {
     },
     choices: [{
       label: {
-        ko: "수도원 문을 지나 회랑으로",
-        en: "Pass through the monastery gate into the cloister"
+        ko: "문을 두드리기 전에, 수도원 바깥부터 살핀다",
+        en: "Before you knock, look around outside the walls"
       },
-      goto: "cloister"
+      goto: "dusk3"
     }]
+  },
+  dusk3: {
+    "ch": 3,
+    "text": {
+      "ko": "문을 두드리기 전에, 해가 지기까지 수도원 바깥을 두 군데 돌아볼 시간이 있다.\n\n담장 밖 순례자 숙소, 산길의 우편 역참, 수도원 부속 대장간.",
+      "en": "Before you knock, there's time until sunset to check two places outside the walls.\n\nThe pilgrims' lodge by the wall, the post station on the mountain road, the monastery's smithy."
+    },
+    "choices": [
+      {
+        "lead": "leadPilgrim",
+        "label": {
+          "ko": "순례자 숙소 — 발이 묶인 순례자들에게 묻는다",
+          "en": "The pilgrims' lodge — ask the stranded pilgrims"
+        },
+        "stake": {
+          "ko": "종탑에서: 종지기에게 들이밀 말이 생긴다",
+          "en": "At the bell tower: you'll have words to put to the bell-keeper"
+        },
+        "result": {
+          "text": {
+            "ko": "늙은 순례자가 목소리를 낮춘다. \"종이 멈춘 뒤로 종지기 오도가 밤마다 지하로 내려가오. 횃불 둘을 들고 내려가서, 하나만 들고 올라오지.\"",
+            "en": "An old pilgrim lowers his voice. \"Since the bell stopped, Odo the bell-keeper goes down below every night. Two torches going down, one coming back up.\""
+          },
+          "flags": [
+            "leadPilgrim"
+          ],
+          "goto": "dusk3b"
+        }
+      },
+      {
+        "lead": "leadPost",
+        "label": {
+          "ko": "우편 역참 — 돌아오지 않은 배달부를 묻는다",
+          "en": "The post station — ask about the courier who never came back"
+        },
+        "stake": {
+          "ko": "지하에서: 배달부를 부를 신호를 안다",
+          "en": "Below ground: you'll know a signal to call the courier"
+        },
+        "result": {
+          "text": {
+            "ko": "역참장이 장부를 짚는다. \"핍이오. 사흘 전 수도원 우편을 들고 올라가서 감감무소식이지.\"\n\n그가 짧게 휘파람을 분다. 두 번 짧게, 한 번 길게. \"배달부들끼리 쓰는 신호요. 살아 있으면 답할 거요.\"",
+            "en": "The stationmaster taps the ledger. \"Pip. Took the monastery post up three days ago and never came back.\"\n\nHe whistles: two short, one long. \"Couriers' signal. If he's alive, he'll answer.\""
+          },
+          "flags": [
+            "leadPost"
+          ],
+          "goto": "dusk3b"
+        }
+      },
+      {
+        "lead": "leadSmith",
+        "label": {
+          "ko": "부속 대장간 — 요즘 무엇을 벼렸는지 묻는다",
+          "en": "The smithy — ask what's been forged lately"
+        },
+        "stake": {
+          "ko": "물이 차오를 때: 싸우지 않고 철창을 열 수 있다",
+          "en": "When the water rises: you can open the cell without a fight"
+        },
+        "result": {
+          "text": {
+            "ko": "대장장이가 이마의 땀을 닦는다. \"지하 철창 열쇠를 새로 깎아 달라더군. 꼬리표에 글씨까지 박아서.\"\n\n그가 남은 쇠꼬챙이 하나를 던져 준다. \"그 자물쇠, 이걸로도 열려. 내가 만들었으니 알지.\"",
+            "en": "The smith wipes his brow. \"They had me cut new keys for the cells below. Even had writing stamped on the tag.\"\n\nHe tosses you a leftover iron pick. \"That lock opens with this too. I made it; I'd know.\""
+          },
+          "flags": [
+            "leadSmith"
+          ],
+          "goto": "dusk3b"
+        }
+      },
+      {
+        "label": {
+          "ko": "돌아볼 것 없이 곧장 회랑으로 들어간다",
+          "en": "Skip it and walk straight into the cloister"
+        },
+        "goto": "cloister"
+      }
+    ]
+  },
+  dusk3b: {
+    "ch": 3,
+    "text": {
+      "ko": "그림자가 길어진다. 한 곳만 더 돌아볼 수 있다.",
+      "en": "The shadows lengthen. Time for one more."
+    },
+    "choices": [
+      {
+        "lead": "leadPilgrim",
+        "label": {
+          "ko": "순례자 숙소 — 발이 묶인 순례자들에게 묻는다",
+          "en": "The pilgrims' lodge — ask the stranded pilgrims"
+        },
+        "stake": {
+          "ko": "종탑에서: 종지기에게 들이밀 말이 생긴다",
+          "en": "At the bell tower: you'll have words to put to the bell-keeper"
+        },
+        "result": {
+          "text": {
+            "ko": "늙은 순례자가 목소리를 낮춘다. \"종이 멈춘 뒤로 종지기 오도가 밤마다 지하로 내려가오. 횃불 둘을 들고 내려가서, 하나만 들고 올라오지.\"",
+            "en": "An old pilgrim lowers his voice. \"Since the bell stopped, Odo the bell-keeper goes down below every night. Two torches going down, one coming back up.\""
+          },
+          "flags": [
+            "leadPilgrim"
+          ],
+          "goto": "cloister"
+        },
+        "flagNot": "leadPilgrim"
+      },
+      {
+        "lead": "leadPost",
+        "label": {
+          "ko": "우편 역참 — 돌아오지 않은 배달부를 묻는다",
+          "en": "The post station — ask about the courier who never came back"
+        },
+        "stake": {
+          "ko": "지하에서: 배달부를 부를 신호를 안다",
+          "en": "Below ground: you'll know a signal to call the courier"
+        },
+        "result": {
+          "text": {
+            "ko": "역참장이 장부를 짚는다. \"핍이오. 사흘 전 수도원 우편을 들고 올라가서 감감무소식이지.\"\n\n그가 짧게 휘파람을 분다. 두 번 짧게, 한 번 길게. \"배달부들끼리 쓰는 신호요. 살아 있으면 답할 거요.\"",
+            "en": "The stationmaster taps the ledger. \"Pip. Took the monastery post up three days ago and never came back.\"\n\nHe whistles: two short, one long. \"Couriers' signal. If he's alive, he'll answer.\""
+          },
+          "flags": [
+            "leadPost"
+          ],
+          "goto": "cloister"
+        },
+        "flagNot": "leadPost"
+      },
+      {
+        "lead": "leadSmith",
+        "label": {
+          "ko": "부속 대장간 — 요즘 무엇을 벼렸는지 묻는다",
+          "en": "The smithy — ask what's been forged lately"
+        },
+        "stake": {
+          "ko": "물이 차오를 때: 싸우지 않고 철창을 열 수 있다",
+          "en": "When the water rises: you can open the cell without a fight"
+        },
+        "result": {
+          "text": {
+            "ko": "대장장이가 이마의 땀을 닦는다. \"지하 철창 열쇠를 새로 깎아 달라더군. 꼬리표에 글씨까지 박아서.\"\n\n그가 남은 쇠꼬챙이 하나를 던져 준다. \"그 자물쇠, 이걸로도 열려. 내가 만들었으니 알지.\"",
+            "en": "The smith wipes his brow. \"They had me cut new keys for the cells below. Even had writing stamped on the tag.\"\n\nHe tosses you a leftover iron pick. \"That lock opens with this too. I made it; I'd know.\""
+          },
+          "flags": [
+            "leadSmith"
+          ],
+          "goto": "cloister"
+        },
+        "flagNot": "leadSmith"
+      },
+      {
+        "label": {
+          "ko": "이만하면 됐다 — 회랑으로 들어간다",
+          "en": "That's enough — into the cloister"
+        },
+        "goto": "cloister"
+      }
+    ]
   },
   cloister: {
     ch: 3,
@@ -2590,7 +3054,32 @@ const SCENES = {
         },
         goto: "undercroft"
       }
-    }]
+    }, {
+      "echoReq": "leadPilgrim",
+      "echo": {
+        "ko": "순례자에게 들은 횃불 이야기",
+        "en": "the pilgrim's story of the torches"
+      },
+      "stake": {
+      "ko": "종지기가 입을 연다",
+      "en": "The bell-keeper talks"
+    },
+    "label": {
+        "ko": "[순례자] \"횃불 둘을 들고 내려가서 하나만 들고 올라온다던데.\"",
+        "en": "[Pilgrim] \"Two torches going down, one coming back up, I hear.\""
+      },
+      "result": {
+        "text": {
+          "ko": "오도의 얼굴이 무너진다. \"…지하에 사람들이 있소. 내가 밥을 날랐지. 종을 치면 죽인다고 해서.\"\n\n그가 떨리는 손으로 계단 아래를 가리킨다.",
+          "en": "Odo's face crumples. \"…There are people below. I carried their food. They said they'd kill them if I rang the bell.\"\n\nWith a shaking hand he points down the stairs."
+        },
+        "goto": "undercroft",
+        "flags": [
+          "keeper"
+        ]
+      }
+    }
+    ]
   },
   undercroft: {
     ch: 3,
@@ -2698,6 +3187,30 @@ const SCENES = {
         },
         "goto": "monk1"
       }
+    }, {
+      "echoReq": "leadPost",
+      "echo": {
+        "ko": "역참장이 알려 준 휘파람",
+        "en": "the stationmaster's whistle"
+      },
+      "stake": {
+      "ko": "싸움 없이 열쇠를 손에 넣는다",
+      "en": "The keys are yours without a fight"
+    },
+    "label": {
+        "ko": "[휘파람] 두 번 짧게, 한 번 길게 — 배달부의 신호를 분다",
+        "en": "[Whistle] Two short, one long — the couriers' signal"
+      },
+      "result": {
+        "text": {
+          "ko": "철창 안쪽에서 똑같은 휘파람이 돌아온다. 사내가 그쪽으로 홱 돌아서는 순간 —\n\n당신은 반대편 그림자에서 열쇠 꾸러미를 낚아챈다.",
+          "en": "The same whistle comes back from inside the cell. The moment the man whips toward it —\n\nyou snatch the key ring from the shadows on the other side."
+        },
+        "goto": "rescue",
+        "flags": [
+          "quiet3"
+        ]
+      }
     }
     ]
   },
@@ -2767,7 +3280,32 @@ const SCENES = {
       check: { ability: "CHA", skill: "intimidation", dc: 12, label: "위협" },
       success: { text: { ko: `사내가 물소리에 질린 얼굴로 중얼거린다. "…바닷가 사람이야. 소금 냄새 나는 편지를 썼지."\n\n열쇠를 던지고 계단으로 달아난다.`, en: `Terrified by the water, the man mutters, "…someone from the coast. Their letters smelled of salt."\n\nHe throws the keys and flees up the stairs.` }, flags: ["trail"], goto: "rescue" },
       fail: { text: { ko: `"물에 빠져 죽는 건 너다!" 촛대가 팔을 친다. 열쇠는 겨우 빼앗았다.`, en: `"You're the one who'll drown!" The candlestick hits your arm. You barely wrest the keys away.` }, damage: [2, 4], ifDown: "gameover", goto: "rescue" }
-    }]
+    }, {
+      "echoReq": "leadSmith",
+      "echo": {
+        "ko": "대장장이가 준 쇠꼬챙이",
+        "en": "the smith's iron pick"
+      },
+      "stake": {
+      "ko": "사람들은 구하지만 사내는 놓친다",
+      "en": "You save the people but lose the man"
+    },
+    "label": {
+        "ko": "[쇠꼬챙이] 싸움은 버려 두고, 대장장이의 쇠꼬챙이로 철창부터 연다",
+        "en": "[Iron pick] Leave the fight — open the cell with the smith's pick"
+      },
+      "result": {
+        "text": {
+          "ko": "물이 무릎까지 찬다. 쇠꼬챙이를 자물쇠에 밀어 넣고 비튼다 — 대장장이 말대로다. 철컥.\n\n문이 열리자 사람들이 쏟아져 나오고, 사내는 물살에 떠밀려 어둠 속으로 사라진다.",
+          "en": "The water is at your knees. You jam the pick into the lock and twist — just as the smith said. Clack.\n\nThe door swings open, people pour out, and the man is swept off into the dark."
+        },
+        "goto": "rescue",
+        "flags": [
+          "quiet3"
+        ]
+      }
+    }
+    ]
   },
   combat3: {
     ch: 3,
@@ -3326,6 +3864,10 @@ const CLASS_ROADS = {
 };
 // 위치 카드: 지금 어디서 무엇을 하는지 한 줄로.
 const SCENE_DOING = {
+  dawn2: bi("해 지기 전, 두 곳만 들를 수 있다", "Before sundown — two stops only"),
+  dawn2b: bi("한 곳만 더 들를 수 있다", "One more stop"),
+  dusk3: bi("해 지기 전, 바깥을 두 곳만 돌아볼 수 있다", "Before sunset — two places outside the walls"),
+  dusk3b: bi("한 곳만 더 돌아볼 수 있다", "One more place"),
   intro: bi("촌장에게 등대 열쇠를 받는다", "Taking the lighthouse key from the chief"),
   door: bi("어둠 속 계단 앞", "At the foot of the dark stairs"),
   stairs: bi("렌즈를 훔치는 사내와 마주쳤다", "Face to face with a lens thief"),
@@ -3367,6 +3909,7 @@ function stageMood(sceneKey, scene) {
 }
 // 장면에 들어설 때 한 번 울리는 효과음
 const SCENE_SFX = {
+  dawn2: "crowd", dusk3: "wind",
   door: "door", stairs: "wind", duel1: "clash", duel2: "clash", railing: "wind", top: "gear",
   scully1: "clash", scully2: "door", monk1: "clash", monk2: "water",
   signal: "fire", wharf: "crowd", warehouseA: "door", warehouseB: "door", confront: "thud",
