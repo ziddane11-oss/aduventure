@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>어두밴처 v0.7.3-pt36</title>
+<title>어두밴처 v0.7.3-pt37</title>
 <style>body{margin:0;background:#0e1420}</style>
 </head>
 <body>
@@ -318,7 +318,7 @@ function(a,b,c){if(!Vd(b))throw Error(n(200));return Wd(null,a,b,!1,c)};Q.unmoun
    GAS 피드백 파이프 — v0.7 재구현 (제안/신호/텔레메트리)
    ============================================================ */
 /* 플레이테스트 빌드 태그 — 테스트 중 버전 구분용. 수정할 때마다 뒤 번호를 올린다. */
-const BUILD = "v0.7.3-pt36";
+const BUILD = "v0.7.3-pt37";
 const GAS_URL = "https://script.google.com/macros/s/AKfycbxFx_m5rhCZmqGoy3JcUUNqEgiObMWNHe9hx-LnZrhzIkfwa9-yJGBWP0lVulptnNQeCQ/exec";
 function gasPost(payload, options = {}) {
   return fetch(GAS_URL, {
@@ -891,6 +891,11 @@ const UI = {
   goalsH: { ko: "이번 기록의 의뢰", en: "This record's commission" },
   goalsDone: { ko: "의뢰 {n}/3 완수", en: "Commission {n}/3 done" },
   endMoreH: { ko: "📜 이번 장 정리", en: "📜 Chapter summary" },
+  eyeRecord: { ko: "기록 제{n}호", en: "Record No. {n}" },
+  eyeNew: { ko: "새 기록", en: "A new record" },
+  eyeSkip: { ko: "탭하면 넘어간다", en: "Tap to continue" },
+  eyeStamp: { ko: "기록됨", en: "Recorded" },
+  eyeSeal: { ko: "기록", en: "REC" },
   pauseOk: { ko: "☕ 여기서 멈춰도 된다 — 다음에 열면 「이어서 하기」로 이 장 끝부터 이어진다.", en: "☕ Fine to stop here — next time, “Continue” picks up right at this chapter's end." },
   objStart: { ko: "✒ 이의 있음 — 거짓 문장을 짚는다", en: "✒ Objection — point at the lie" },
   objPickLine: { ko: "어느 줄이 거짓인가? (실수는 한 번까지)", en: "Which line is the lie? (You may slip once)" },
@@ -5064,6 +5069,30 @@ const SCAR_MAX = 2;
 const MID_ENDINGS = [1, 2, 3, 5, 6, 7];
 const UNLOCK_AT = { paths: 1, scars: 2, notes: 3, timer: 1 };
 // 장마다 시작 장면(쓰러지면 그 장 처음부터 다시 쓸 수 있다 — 1000명 인터뷰: 2·3장에서 죽으면 1장부터라 그만둠).
+// pt37 아이캐치 — 애니메이션의 아이캐치처럼 잠깐 주의를 바꾼다. 둘 다 '처음일 때만', 탭하거나 잠시 뒤 사라진다.
+// ① 기록 도장: 단서·핵심 결정을 처음 얻는 순간 "기록됨 — …"이 종이에 찍힌다(입력을 막지 않는다).
+// ② 장 전환 카드: 각 장을 처음 시작할 때 장 제목 카드(탭하면 넘어간다). 이어 하기·다시 하기 땐 이미 본 장이라 안 뜬다.
+const STAMP_EXTRA = {
+  caughtRen: bi("렌을 붙잡았다", "You caught Ren"),
+  keptLens: bi("렌즈를 지켰다", "You kept the lens"),
+  c2_saved: bi("지워질 사본 수십 장을 품에 안았다", "You carried out dozens of copies before they were erased"),
+  c2_memorized: bi("지워진 번호들을 외웠다", "You memorized the erased numbers"),
+  c2_confess: bi("묵의 자백", "Muk's confession"),
+  fin_prev: bi("제112호의 붉은 한 줄 — 앞사람의 것", "No. 112's red line — the one before you")
+};
+// 한 번에 도장 하나: 사건 기록장의 조각(FRAGMENTS)이 먼저, 그다음 단서, 그다음 결정. 함께 얻은 나머지도 '본 것'으로 둔다.
+function stampFor(prev, next, seen) {
+  const got = next.filter(x => !prev.includes(x) && !seen.includes(x) && (STAMP_EXTRA[x] || CLUES[x] || FRAGMENTS[x]));
+  if (!got.length) return null;
+  const f = got.find(x => FRAGMENTS[x]) || got.find(x => CLUES[x]) || got[0];
+  return { id: f, ids: got, text: FRAGMENTS[f] ? FRAGMENTS[f].text : CLUES[f] || STAMP_EXTRA[f] };
+}
+const CHAPTER_CARD = { intro: 1, intro2: 2, intro3: 3, accuse: 4, c2_intro: 5, c2_day: 6, c2_night: 7, fin_intro: 8 };
+const CHAPTER_UI = { 1: "ch1", 2: "ch2", 3: "ch3", 4: "ch4", 5: "c2ch1", 6: "c2ch2", 7: "c2ch3", 8: "finCh" };
+function chapterCardFor(sceneKey, seen) {
+  const ch = CHAPTER_CARD[sceneKey];
+  return ch && !seen.includes(sceneKey) ? ch : null;
+}
 const CHAPTER_START = { 1: "intro", 2: "intro2", 3: "intro3", 5: "c2_intro", 6: "c2_day", 7: "c2_night", 8: "fin_intro" };
 const ui_bi = k => UI[k];
 const UNLOCK_LINES = {
@@ -6601,6 +6630,23 @@ const css = `
 .crpg .artifactitem { font-size:12px; padding:5px 9px; border-radius:6px; border:1px solid var(--line); color:var(--dim); background:var(--panel); }
 .crpg .artifactitem.on { border-color:var(--gold); color:var(--gold); background:rgba(205,182,139,.1); }
 .crpg .choice .tag.artifact { border:1px solid var(--gold); color:var(--gold); background:rgba(205,182,139,.16); }
+.crpg .eyecatch { position:fixed; inset:0; z-index:60; display:flex; align-items:center; justify-content:center; padding:16px; }
+.crpg .eyecatch.chapter { background:rgba(12,11,10,.94); cursor:pointer; animation:ecFade 1.7s ease both; }
+.crpg .eyecatch.stamp { pointer-events:none; }
+.crpg .eyecatch .ecCard { position:relative; max-width:340px; width:100%; text-align:center; }
+.crpg .eyecatch.chapter .ecCard small { display:block; color:var(--dim); font-size:13px; letter-spacing:.2em; margin-bottom:12px; }
+.crpg .eyecatch.chapter .ecCard strong { display:block; color:#f3ede2; font-size:26px; line-height:1.4; font-weight:700; }
+.crpg .eyecatch .ecLine { display:block; height:2px; margin:16px auto 0; background:var(--red); width:0; animation:ecLine .9s .25s ease-out forwards; }
+.crpg .eyecatch .ecSkip { display:block; margin-top:22px; color:var(--dim); font-size:12px; }
+.crpg .eyecatch.stamp .ecCard { background:#efe6d2; color:#2a241c; border-radius:6px; padding:16px 18px 18px; box-shadow:0 10px 30px rgba(0,0,0,.55); transform:rotate(-2deg); animation:ecStamp 1.2s ease both; }
+.crpg .eyecatch.stamp .ecCard small { display:block; color:#a8301f; font-size:13px; font-weight:700; letter-spacing:.2em; }
+.crpg .eyecatch.stamp .ecCard strong { display:block; margin-top:6px; font-size:17px; line-height:1.5; font-weight:600; }
+.crpg .eyecatch .ecSeal { position:absolute; right:-8px; top:-12px; padding:4px 8px; border:2px solid #b3271c; color:#b3271c; border-radius:4px; font-size:13px; font-weight:700; letter-spacing:.1em; transform:rotate(12deg); background:rgba(239,230,210,.9); animation:ecSeal .35s .15s cubic-bezier(.2,1.6,.4,1) both; }
+@keyframes ecFade { 0% { opacity:0; } 12% { opacity:1; } 82% { opacity:1; } 100% { opacity:0; } }
+@keyframes ecLine { to { width:60%; } }
+@keyframes ecStamp { 0% { opacity:0; transform:rotate(-2deg) scale(1.25); } 14% { opacity:1; transform:rotate(-2deg) scale(.97); } 22% { transform:rotate(-2deg) scale(1); } 80% { opacity:1; } 100% { opacity:0; transform:rotate(-2deg) scale(1); } }
+@keyframes ecSeal { 0% { opacity:0; transform:rotate(12deg) scale(2.2); } 100% { opacity:1; transform:rotate(12deg) scale(1); } }
+@media (prefers-reduced-motion: reduce) { .crpg .eyecatch, .crpg .eyecatch * { animation:none !important; } .crpg .eyecatch .ecLine { width:60%; } }
 .crpg .pauseOk { margin:10px 0 0; color:var(--dim); font-size:13px; line-height:1.6; }
 .crpg .endMore { margin:18px 0 6px; border:1px solid var(--line); border-radius:8px; background:var(--panel); }
 .crpg .endMore > summary { min-height:44px; display:flex; align-items:center; flex-wrap:wrap; gap:2px; padding:8px 14px; cursor:pointer; color:var(--dim); font-size:14px; }
@@ -6797,6 +6843,9 @@ function CRPG() {
   const [lang, setLang] = useState(() => store.get("aduventure_lang") || "ko");
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [caseOpen, setCaseOpen] = useState(false);
+  const [eyecatch, setEyecatch] = useState(null);
+  const prevFlagsRef = useRef(null);
+  const stampQuiet = useRef(true);
   // 공식 기록: opening = 첫 화면에서 고른 태도(lie/believe), recordNo = 다음 회차의 기록 번호, runNo = 이번 회차
   const [opening, setOpening] = useState(null);
   const [recordNo, setRecordNo] = useState(() => store.get("aduventure_record_no") || RECORD_FIRST);
@@ -7027,6 +7076,32 @@ function CRPG() {
     if (!seen.includes(sceneKey)) store.set("aduventure_seen", [...seen, sceneKey]);
     if (sfxOn) SFX.cue(SCENE_SFX[sceneKey]);
   }, [sceneKey, pc]);
+  // 아이캐치 ② 장 전환 카드 — 그 장을 처음 시작할 때만.
+  useEffect(() => {
+    if (!pc) return;
+    const seen = store.get("aduventure_chcards") || [];
+    const ch = chapterCardFor(sceneKey, seen);
+    if (!ch) return;
+    store.set("aduventure_chcards", [...seen, sceneKey]);
+    setEyecatch({ kind: "chapter", ch, key: "ch-" + sceneKey });
+  }, [sceneKey, pc]);
+  // 아이캐치 ① 기록 도장 — 선택으로 단서·핵심 결정을 처음 얻었을 때만(이어 하기·다시 하기로 한꺼번에 들어온 기록은 조용히).
+  useEffect(() => {
+    const prev = prevFlagsRef.current;
+    prevFlagsRef.current = flags;
+    if (!pc || !prev || stampQuiet.current) { stampQuiet.current = false; return; }
+    const seen = store.get("aduventure_stamps") || [];
+    const st = stampFor(prev, flags, seen);
+    if (!st) return;
+    store.set("aduventure_stamps", [...seen, ...st.ids].slice(-400));
+    setEyecatch(e => e && e.kind === "chapter" ? e : { kind: "stamp", text: st.text, key: "st-" + st.id });
+    try { if (sfxOn) SFX.cue("pen"); } catch (e) {}
+  }, [flags]);
+  useEffect(() => {
+    if (!eyecatch) return;
+    const t = setTimeout(() => setEyecatch(null), eyecatch.kind === "chapter" ? 1700 : 1200);
+    return () => clearTimeout(t);
+  }, [eyecatch]);
   useEffect(() => {
     if (!pc) return;
     const ids = (SCENE_CAST[sceneKey] || []).filter(id => !met.includes(id));
@@ -7701,6 +7776,7 @@ function CRPG() {
     setMoreOpen(null);
     setResultOpen(null);
     // 장을 다시 할 때는 앞 장에서 한 일(장 시작 때의 기록)을 남긴다. 처음부터면 비운다.
+    stampQuiet.current = true;
     setFlags(toScene && (store.get("aduventure_chstart") || {})[toScene] || []);
     setStats({
       rolls: 0,
@@ -7732,6 +7808,7 @@ function CRPG() {
   function continueGame() {
     const s = savedGame || store.get(SAVE_KEY);
     if (!s || !s.pc) return;
+    stampQuiet.current = true;
     const run = restoreTelemetryRun(s.telemetry);
     setTelemetryRun(run);
     emitTelemetry("run_continue", run, {scene_id: s.sceneKey, seq: run.seq, lang, rule: s.ruleKey || "srd20", class: s.pc.classKey, legacy_save: !s.telemetry});
@@ -7797,7 +7874,15 @@ function CRPG() {
   const disruptMove = pc && looterDisruptFor(pc.classKey);
   return /*#__PURE__*/React.createElement("div", {
     className: "crpg"
-  }, /*#__PURE__*/React.createElement("style", null, css), caseOpen && React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("style", null, css), eyecatch && React.createElement("div", {
+    key: eyecatch.key,
+    className: "eyecatch " + eyecatch.kind,
+    role: "status",
+    "aria-live": "polite",
+    onClick: () => setEyecatch(null)
+  }, eyecatch.kind === "chapter"
+    ? React.createElement("div", { className: "ecCard" }, React.createElement("small", null, runNo ? ui("eyeRecord", { n: runNo }) : ui("eyeNew")), React.createElement("strong", null, ui(CHAPTER_UI[eyecatch.ch])), React.createElement("i", { className: "ecLine", "aria-hidden": "true" }), React.createElement("span", { className: "ecSkip" }, ui("eyeSkip")))
+    : React.createElement("div", { className: "ecCard" }, React.createElement("small", null, ui("eyeStamp")), React.createElement("strong", null, tx(eyecatch.text)), React.createElement("span", { className: "ecSeal", "aria-hidden": "true" }, ui("eyeSeal")))), caseOpen && React.createElement("div", {
     className: "fbModal caseBoard",
     role: "dialog"
   }, React.createElement("div", {
