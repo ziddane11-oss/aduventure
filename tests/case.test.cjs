@@ -122,8 +122,12 @@ test("suspicion first falls on Bern from Ren's word, then shifts to Seon as the 
 
 // ---- 실제 렌더 ----
 test("Bern's confession only opens with 3+ known fragments, then records itself", () => {
+  // pt31: 숨기지 않고 잠근다 — 3장 끝의 안내를 따라온 사람이 막다른 길에서 헤매지 않게.
   const few = game({lore: ['f_receipt', 'f_fund']});
-  assert.equal(choices(few.render()).some(n => text(n).startsWith('[Memory]')), false);
+  const locked = choices(few.render()).find(n => text(n).startsWith('[Memory]'));
+  assert.ok(locked, 'the way is visible');
+  assert.equal(locked.props.disabled, true);
+  assert.match(text(locked), /fragments 2\/3 — gather more to open/);
   const g = game({lore: ['f_receipt', 'f_fund', 'f_addressee']});
   const tree = g.click('[Memory]');
   assert.equal(g.state().sceneKey, 'dawn2', 'Then the rounds before sundown');

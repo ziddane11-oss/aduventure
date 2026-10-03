@@ -188,3 +188,28 @@ test('at the end of Ch.3 the highlighted road leads to what is actually missing'
   assert.equal(p2.length, 1);
   assert.match(text(p2[0]), /Replay Ch\.3/);
 });
+
+// pt31 — 1000명 인터뷰: 조각 3개 미만인데 「2장 아침으로 — 베른에게 묻는다」가 떠서 막다른 길로 보냈다.
+test('with fewer than three fragments the ending does not send you to ask Bern; it says why', () => {
+  const g = game({sceneKey: 'ending3', lore: ['f_addressee', 'f_receipt']});
+  const primary = nodes(g.render()).filter(n => n.type === 'button' && n.props.className === 'restart primary');
+  assert.equal(primary.length, 1);
+  assert.match(text(primary[0]), /Replay Ch\.3/);
+  assert.ok(!nodes(g.render()).some(n => n.type === 'button' && /ask Bern/.test(text(n))));
+  assert.match(text(g.render()), /To question Bern you need 3 fragments \(you have 2\)/);
+  const both = game({sceneKey: 'ending3', lore: ['f_addressee', 'f_hand_match']});
+  const p2 = nodes(both.render()).filter(n => n.type === 'button' && n.props.className === 'restart primary');
+  assert.equal(p2.length, 1);
+  assert.match(text(p2[0]), /From the beginning/, 'both Ch.3 fragments in hand: Ch.3 has nothing new, so start over');
+});
+
+test('a wrong piece of evidence says why it fails', () => {
+  const g = game({flags: ['sabotage', 'trail']});
+  g.press('choice objStart');
+  g.press('choice objLine', 1);
+  const ev = nodes(g.panel()).filter(n => n.props.className === 'choice objEvidence').map(text);
+  g.press('choice objEvidence', ev.findIndex(t => t.includes('Footprints')));
+  assert.match(text(g.panel()), /'Someone went down below' — that doesn't contradict this line/);
+  const ko = JSON.parse(g.run('JSON.stringify([UI.objWhy, UI.caseBernLater, UI.caseMinNeed, UI.rewriteChapter, UI.rewriteAll, UI.nextStepH])'));
+  for (const t of ko) assert.ok(/[가-힣]/.test(t.ko) && t.en && !/[가-힣]/.test(t.en));
+});
