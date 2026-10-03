@@ -62,7 +62,7 @@ function game({sceneKey = 'ending', flags = [], lore = [], lang = 'en', seenResu
 
 const result = tree => nodes(tree).find(n => typeof n.props.className === 'string' && n.props.className.startsWith('result '));
 
-test('a result read before shows its first paragraph and can be opened; damage and clues stay in full', () => {
+test('a result read before shows its outcome paragraph and can be opened; damage and clues stay in full', () => {
   // duel2 철사 길: 결과 문단이 둘(넘어감 + 철사 끊어짐)
   const fresh = game({sceneKey: 'duel2', flags: ['sawTrap']});
   let s = fresh.state(); s.doChoice(s.scene.choices[2]);
@@ -71,8 +71,8 @@ test('a result read before shows its first paragraph and can be opened; damage a
   const again = game({sceneKey: 'duel2', flags: ['sawTrap'], seenResults: [rid]});
   s = again.state(); s.doChoice(s.scene.choices[2]);
   const t = text(result(again.render()));
-  assert.match(t, /tip over the railing together\. …/);
-  assert.ok(!/wire has snapped/.test(t), 'the rest is folded');
+  assert.match(t, /^… The taut wire has snapped/, 'the outcome (last paragraph) stays in view');
+  assert.ok(!/skids across the oil/.test(t), 'the build-up is folded');
   const open = nodes(again.render()).find(n => n.type === 'button' && /It went this way before/.test(text(n)));
   open.props.onClick();
   assert.match(text(result(again.render())), /The taut wire has snapped/);
@@ -93,4 +93,14 @@ test('the fold label speaks both languages', () => {
   const g = game();
   const t = JSON.parse(g.run('JSON.stringify(UI.resultSeen)'));
   assert.ok(HANGUL.test(t.ko) && !HANGUL.test(t.en));
+});
+
+test('replaying Ch.2 keeps what you did in Ch.1 (its echoes stay), but not the Ch.2 run', () => {
+  const g = game({sceneKey: 'ending', flags: ['sabotage', 'caughtRen']});
+  g.state().goto('intro2');
+  g.state().goto('ending2', ['peaceful2']);
+  nodes(g.render()).find(n => n.type === 'button' && /Replay Ch\.2/.test(text(n))).props.onClick();
+  const f = [...g.state().flags];
+  assert.ok(f.includes('sabotage') && f.includes('caughtRen'), 'Ch.1 deeds remain: ' + f.join(','));
+  assert.ok(!f.includes('peaceful2'), 'the replayed chapter starts clean');
 });

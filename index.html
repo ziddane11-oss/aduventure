@@ -846,17 +846,18 @@ const UI = {
   shareFail: { ko: "복사 실패 — 화면을 캡처해 주세요", en: "Couldn't copy — take a screenshot instead" },
   seenExpand: { ko: "▸ 이미 기록한 장면 — 펼쳐 읽기", en: "▸ Already on record — read it again" },
   moreChoices: { ko: "▾ 다른 방법 {n}개 더", en: "▾ {n} more ways" },
+  moreChoice1: { ko: "▾ 다른 방법 1개 더", en: "▾ 1 more way" },
   deduceH: { ko: "추론 — 등대 사건: 누가 · 무엇을 · 왜", en: "Deduction — the lighthouse night: who · what · why" },
-  deduceWho: { ko: "누가", en: "Who" },
+  deduceWho: { ko: "누가 시켰나", en: "Who ordered it" },
   deduceWhat: { ko: "무엇을", en: "What" },
   deduceWhy: { ko: "왜", en: "Why" },
   deducePick: { ko: "— 고른다 —", en: "— choose —" },
-  deduceCheck: { ko: "추론을 확인한다 (이번 기록에 한 번)", en: "Check the deduction (once this record)" },
+  deduceCheck: { ko: "추론을 확인한다 (한 판에 한 번)", en: "Check the deduction (once per run)" },
   deduceScore: { ko: "셋 중 {n}개가 맞다. 어느 칸인지는 기록이 말해 주지 않는다.", en: "{n} of three are right. The record won't say which." },
-  deduceSolved: { ko: "추론 확정 — 세온이, 등대를 끄라고, 밀수선을 들이려고. 조각이 모자라도 결론을 내릴 수 있다.", en: "Deduction confirmed — Seon, ordered the light out, to bring the ship in. You can reach a verdict even with fragments missing." },
+  deduceSolved: { ko: "추론 확정 — 세온이 등대 불을 끄게 했다. 밀수선을 들여 마을의 겨울을 사려고. 조각이 모자라도 결론을 내릴 수 있다.", en: "Deduction confirmed — Seon had the light put out, to bring the ship in and buy the village its winter. You can reach a verdict even with fragments missing." },
   deduceLocked: { ko: "조각을 2개 이상 모으면 추론할 수 있다.", en: "Gather two or more fragments to start deducing." },
-  deduceWait: { ko: "이번 기록의 추론은 이미 확인했다. 다음 기록에서 다시.", en: "You already checked this record. Try again next record." },
-  resultSeen: { ko: "▸ 전에도 이렇게 됐다 — 펼쳐 읽기", en: "▸ It went this way before — read it all" },
+  deduceWait: { ko: "이번 판의 추론은 이미 확인했다. 다음 판에서 다시(장을 다시 해도 된다).", en: "You already checked this run. Try again next run (replaying a chapter counts)." },
+  resultSeen: { ko: "▸ 전에도 이렇게 됐다 — 처음부터 읽기", en: "▸ It went this way before — read it all" },
   forkStairs: { ko: "⤳ 갈림길로: 렌과 마주치는 계단부터", en: "⤳ Jump to the fork: the stairs where you meet Ren" },
   forkRescue: { ko: "⤳ 갈림길로: 3장 수문 앞부터", en: "⤳ Jump to the fork: Ch.3, at the sluice" },
   forkTag: { ko: "다른 쪽을 골라 볼 곳", en: "where you can choose differently" },
@@ -4556,8 +4557,10 @@ function banterFor(scene, flags, no) {
 const DEDUCE = {
   who: { seon: bi("촌장 세온", "Chief Seon"), bern: bi("등대지기 베른", "Keeper Bern"), ren: bi("도굴꾼 렌", "Ren the grave-robber"), scully: bi("심부름꾼 스컬리", "Scully the errand man") },
   // 보기는 '등대 사건 그날 밤'에 한정한다. 이야기 속 다른 사실(반출 확인서·종탑 등)과 겹쳐 억울한 오답이 되지 않게.
-  what: { dark: bi("등대를 끄라고 시켰다", "ordered the lighthouse put out"), sell: bi("렌즈를 팔아 돈을 챙기려 했다", "meant to sell the lens for money"), botch: bi("기관을 고치려다 망가뜨렸다", "broke the mechanism trying to fix it"), oust: bi("등대지기를 쫓아내려 했다", "tried to drive the keeper out") },
-  why: { ship: bi("밀수선을 어둠 속에 들이려고", "to bring the smuggling ship in under darkness"), debt: bi("빚을 갚으려고", "to pay off a debt"), post: bi("등대지기 자리를 차지하려고", "to take the keeper's post"), accident: bi("이유는 없다 — 사고였다", "no reason — it was an accident") },
+  // 내레이션이 한때 '사고'라고 단정하는 보기(수리 실수·사고)는 억울한 오답이 되므로 넣지 않는다.
+  // 미끼는 이야기 속에서 거짓으로 밝혀지는 것(베른이 지어낸 '검은 코트 습격')이나 근거가 없는 것만.
+  what: { dark: bi("등대 불을 끄게 했다", "had the lighthouse put out"), raid: bi("검은 코트를 보내 등대를 습격하게 했다", "sent the black coat to raid the lighthouse"), sell: bi("렌즈를 팔아 돈을 챙기려 했다", "meant to sell the lens for money"), oust: bi("등대지기를 쫓아내려 했다", "tried to drive the keeper out") },
+  why: { ship: bi("밀수선을 어둠 속에 들여 — 마을 겨울 곡식 값을 대려고", "to bring the smuggling ship in under darkness — and pay for the village's winter grain"), debt: bi("자기 빚을 갚으려고", "to pay off his own debt"), post: bi("등대지기 자리를 차지하려고", "to take the keeper's post"), revenge: bi("베른에게 앙갚음하려고", "to get back at Bern") },
   answer: { who: "seon", what: "dark", why: "ship" }
 };
 function deduceScore(pick) {
@@ -6109,9 +6112,23 @@ function CRPG() {
   // 정보 과밀 줄이기(pt30, 100명 시뮬·리뷰: confront에 선택지 7개). 4개를 넘으면
   // 지난 판에서 얻은 것으로 열린 길·안 가 본 길을 먼저 보이고 나머지는 「다른 방법 n개 더」로 접는다.
   // 탐문 거점(lead가 있는 장면)은 고르는 것 자체가 설계라 접지 않는다.
-  const choiceRank = ch => (ch.echoReq || ch.loreReq || ch.artifactReq || ch.classOnly || ch.caseMin ? 2 : 0) + (pathMark(ch) === "fresh" ? 1 : pathMark(ch) === "walked" ? -1 : 0) - (lockedBy(ch).length ? 3 : 0);
+  // 순위(pt30 재평가 반영): 탐문에서 약속받은 길(lead 메아리)·판정 없이 확정되는 결과를 가장 먼저,
+  // 그다음 지난 판에서 얻은 길·직업의 길, 안 가 본 길. 그리고 조건 없는 기본 길(대화 우선) 한 자리는 늘 남긴다.
+  const isPlain = ch => !(ch.echoReq || ch.loreReq || ch.artifactReq || ch.classOnly || ch.caseMin || ch.needFrags);
+  const isTalk = ch => /설득|위협|기만|Persuasion|Intimidat|Decept|"/.test(ch.label ? (ch.label.ko || "") + (ch.label.en || "") : "");
+  const choiceRank = ch => (typeof ch.echoReq === "string" && ch.echoReq.startsWith("lead") ? 3 : 0) + (ch.result && !ch.check ? 1 : 0) + (isPlain(ch) ? 0 : 2) + (pathMark(ch) === "fresh" ? 1 : pathMark(ch) === "walked" ? -1 : 0) - (lockedBy(ch).length ? 3 : 0);
   const choicesCapped = pathOrdered.length > CHOICE_CAP && !pathOrdered.some(ch => ch.lead) && moreOpen !== sceneKey;
-  const shownKeep = choicesCapped ? new Set([...pathOrdered].sort((a, b) => choiceRank(b) - choiceRank(a)).slice(0, CHOICE_CAP)) : null;
+  const shownKeep = (() => {
+    if (!choicesCapped) return null;
+    const ranked = [...pathOrdered].sort((a, b) => choiceRank(b) - choiceRank(a));
+    const keep = ranked.slice(0, CHOICE_CAP);
+    if (!keep.some(isPlain)) {
+      const plains = ranked.filter(isPlain);
+      const plain = plains.find(isTalk) || plains[0];
+      if (plain) keep[keep.length - 1] = plain;
+    }
+    return new Set(keep);
+  })();
   const shownChoices = choicesCapped ? pathOrdered.filter(ch => shownKeep.has(ch)) : pathOrdered;
   // 덜어내기(pt23): 기본은 꼬리표 하나 + 쉬움/반반/어려움. '숫자 보기'를 켜면 예전처럼 전부 보인다.
   const difficulty = ch => { const v = pct(ch); return v >= 70 ? "diffEasy" : v >= 40 ? "diffEven" : "diffHard"; };
@@ -6431,6 +6448,8 @@ function CRPG() {
       }
     }
     if (key === "intro2" || key === "intro3") {
+      // 장 시작 시점의 기록(앞 장에서 한 일)을 남겨 둔다 — '다른 선택으로 이 장 다시' 때 앞 장의 메아리가 사라지지 않게.
+      try { store.set("aduventure_chstart", { ...(store.get("aduventure_chstart") || {}), [key]: flags.filter(f => !/^rebut/.test(f)) }); } catch (e) {}
       setPc(p => ({
         ...p,
         hp: p.maxHp
@@ -6475,7 +6494,7 @@ function CRPG() {
         if (FRAGMENTS[g]) extra += (lang === "en" ? `\n\n✎ Rebuttal recorded — ${tx(FRAGMENTS[g].text)}` : `\n\n✎ 반박 기록 — ${tx(FRAGMENTS[g].text)}`);
       }
     }
-    // 다시 하기 피로 줄이기(pt30): 전에 읽은 결과는 첫 문단만 보이고 펼칠 수 있다. 피해·단서 같은 새 정보(extra)는 늘 다 보인다.
+    // 다시 하기 피로 줄이기(pt30): 전에 읽은 결과는 마지막 문단(어떻게 됐는지)만 보이고 펼칠 수 있다. 피해·단서 같은 새 정보(extra)는 늘 다 보인다.
     const body = fmt(tx(branch.text), pc);
     const rid = sceneKey + ":" + String((branch.text && (branch.text.ko || branch.text)) || "").slice(0, 32);
     let seenBefore = false;
@@ -6489,7 +6508,7 @@ function CRPG() {
       dice: res,
       label,
       text: body + extra,
-      short: seenBefore && paras.length > 1 ? paras[0] + " …" + extra : null,
+      short: seenBefore && paras.length > 1 ? "… " + paras[paras.length - 1] + extra : null,
       rid,
       kind: !res || res.success ? "good" : "bad"
     });
@@ -6889,7 +6908,8 @@ function CRPG() {
     setExpanded(null);
     setMoreOpen(null);
     setResultOpen(null);
-    setFlags([]);
+    // 장을 다시 할 때는 앞 장에서 한 일(장 시작 때의 기록)을 남긴다. 처음부터면 비운다.
+    setFlags(toScene && (store.get("aduventure_chstart") || {})[toScene] || []);
     setStats({
       rolls: 0,
       success: 0
@@ -6965,11 +6985,12 @@ function CRPG() {
   const cs = caseState(lore);
   // 추론이 확정되면 조각이 모자라도 결론을 내릴 수 있다(추리를 노가다보다 먼저 보상).
   if (deduce.solved && !cs.ready) { cs.ready = true; cs.viaDeduction = true; }
-  const deduceState = deduceOpen(deduce, cs.found.length, runNo);
+  const deduceRunKey = (telemetryRun && telemetryRun.id) || runNo;
+  const deduceState = deduceOpen(deduce, cs.found.length, deduceRunKey);
   function checkDeduction() {
     if (deduceState !== "open" || !deducePick.who || !deducePick.what || !deducePick.why) return;
     const n = deduceScore(deducePick);
-    const next = { ...deduce, tried: [...(deduce.tried || []), runNo || 0].slice(-50), last: { n }, solved: n === 3 };
+    const next = { ...deduce, tried: [...(deduce.tried || []), deduceRunKey || 0].slice(-50), last: { n }, solved: n === 3 };
     store.set("aduventure_deduce", next);
     setDeduce(next);
     try { if (sfxOn) { if (n === 3) { SFX.good(); SFX.cue("pen"); } else SFX.bad(); } } catch (e) {}
@@ -7382,7 +7403,7 @@ function CRPG() {
   }, ui("stakeLabel"), tx(ch.stake))] : simpleTags(ch))), choicesCapped && React.createElement("button", {
     className: "moreChoices",
     onClick: () => setMoreOpen(sceneKey)
-  }, ui("moreChoices", { n: pathOrdered.length - shownChoices.length })), forks.map(k => React.createElement("button", {
+  }, pathOrdered.length - shownChoices.length === 1 ? ui("moreChoice1") : ui("moreChoices", { n: pathOrdered.length - shownChoices.length })), forks.map(k => React.createElement("button", {
     key: "fork" + k,
     className: "choice fork",
     onClick: () => jumpTo(k)

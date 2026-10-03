@@ -64,10 +64,12 @@ test('confront with every key in hand shows four ways first, the rest folded', (
   const g = game({sceneKey: 'confront', flags: ['ledger', 'grip', 'ren_tip', 'sabotage', 'leadBern']});
   const shown = choiceBtns(g.render()).map(text);
   assert.equal(shown.length, 4);
-  assert.ok(shown.every(t => t.includes('🦋')), 'ways earned in earlier play come first');
-  assert.ok(!shown.some(t => /\[(Persuasion|Combat|Fight)\]/.test(t)), 'plain fallbacks are folded');
+  assert.ok(shown.some(t => /\[Receipt\]/.test(t)), 'the receipt promised at the morning lead is never folded');
+  assert.equal(shown.filter(t => !t.includes('🦋')).length, 1, 'exactly one plain way stays in view');
+  assert.ok(shown.some(t => /\[Persuade\]/.test(t)), 'and it is the talking one: ' + shown.join(' | '));
   const more = nodes(g.render()).find(n => n.props.className === 'moreChoices');
   assert.match(text(more), /3 more ways/);
+  assert.equal(g.run('UI.moreChoice1.en'), '▾ 1 more way');
   more.props.onClick();
   assert.equal(choiceBtns(g.render()).length, 7);
   assert.equal(nodes(g.render()).find(n => n.props.className === 'moreChoices'), undefined);

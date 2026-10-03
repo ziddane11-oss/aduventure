@@ -71,7 +71,7 @@ test('the deduction opens after two fragments and tells only how many of three a
   const g = game({sceneKey: 'intro', lore: ['f_receipt', 'f_window']});
   pick(g, 'seon', 'sell', 'ship');
   assert.match(text(board(g)), /2 of three are right\. The record won't say which/);
-  assert.match(text(board(g)), /You already checked this record/);
+  assert.match(text(board(g)), /You already checked this run/);
   assert.equal(nodes(board(g)).find(n => n.type === 'button' && /Check the deduction/.test(text(n))), undefined, 'once per record');
   assert.equal(JSON.parse(g.data.get('aduventure_deduce')).solved, false);
 });
@@ -91,10 +91,21 @@ test('a confirmed deduction opens the verdict even with fragments missing', () =
   assert.ok(!nodes(no.render()).some(n => n.type === 'button' && /reach a verdict/.test(text(n))));
 });
 
+test('replaying a chapter is a new run: the deduction may be checked again', () => {
+  const g = game({sceneKey: 'ending2', lore: ['f_receipt', 'f_window']});
+  pick(g, 'seon', 'sell', 'ship');
+  assert.match(text(board(g)), /You already checked this run/);
+  g.state().setCaseOpen(false);
+  nodes(g.render()).find(n => n.type === 'button' && /Replay Ch\.2/.test(text(n))).props.onClick();
+  assert.ok(nodes(board(g)).some(n => n.type === 'button' && /Check the deduction/.test(text(n))), 'a fresh chance after replaying the chapter');
+});
+
 test('the answer is the story: Seon ordered the light out to bring the ship in; every option is bilingual', () => {
   const g = game();
   assert.equal(g.run('deduceScore(DEDUCE.answer)'), 3);
   assert.equal(g.run('deduceScore({who: "bern", what: "dark", why: "ship"})'), 2);
+  assert.equal(g.run('"botch" in DEDUCE.what || "accident" in DEDUCE.why'), false, 'no decoy the narration once states as fact');
+  assert.match(g.run('UI.deduceWho.en'), /ordered/);
   const all = JSON.parse(g.run('JSON.stringify(["who","what","why"].flatMap(k => Object.values(DEDUCE[k])))'));
   assert.equal(all.length, 12);
   for (const t of all) assert.ok(HANGUL.test(t.ko) && t.en && !HANGUL.test(t.en), JSON.stringify(t));
