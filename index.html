@@ -6143,7 +6143,7 @@ const css = `
 .crpg {
   --ink:#121110; --panel:#1b1917; --panel2:#23201d; --line:#3d3731;
   --text:#e6dfd1; --dim:#8e867a; --gold:#cdb68b; --red:#c0392b;
-  --good:#7fbf7f; --bad:#d96a5f; --accent:#b3aa9c;
+  --good:#7fbf7f; --bad:#d96a5f; --accent:#b3aa9c; --redText:#e0604f;
   min-height:100vh; background:var(--ink); color:var(--text);
   font-family:'Noto Serif KR',serif; display:flex; flex-direction:column; align-items:center; padding:0 16px 48px;
 }
@@ -6151,17 +6151,17 @@ const css = `
 .crpg header { display:flex; justify-content:space-between; align-items:baseline; gap:10px;
   padding:18px 4px 12px; border-bottom:1px solid var(--line); margin-bottom:14px; }
 .crpg h1 { font-weight:900; font-size:21px; letter-spacing:.2em; color:var(--gold); }
-.crpg h1 span { color:var(--dim); font-weight:400; font-size:11px; letter-spacing:.08em; margin-left:10px; }
-.crpg .hctrl { display:flex; gap:8px; align-items:center; font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--dim); }
+.crpg h1 span { color:var(--dim); font-weight:400; font-size:12px; letter-spacing:.08em; margin-left:10px; }
+.crpg .hctrl { display:flex; gap:8px; align-items:center; font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--dim); }
 .crpg .hctrl select, .crpg .hctrl button { background:var(--panel); color:var(--gold); border:1px solid var(--line);
-  border-radius:4px; padding:4px 9px; font-family:inherit; font-size:11px; cursor:pointer; }
+  border-radius:4px; padding:4px 9px; font-family:inherit; font-size:12px; cursor:pointer; }
 .crpg .lhscene { display:block; width:100%; border:1px solid var(--line); border-radius:10px; margin-bottom:16px; background:#0f0e0d; }
 .crpg .artimg { display:block; width:100%; border:1px solid var(--gold); border-radius:10px; margin-bottom:4px; }
-.crpg .artcredit { font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:var(--dim); text-align:right; margin-bottom:12px; }
+.crpg .artcredit { font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--dim); text-align:right; margin-bottom:12px; }
 .crpg .sheet { display:flex; gap:14px; flex-wrap:wrap; align-items:center; background:var(--panel);
   border:1px solid var(--line); border-radius:8px; padding:10px 14px; margin-bottom:16px; font-size:13px; }
 .crpg .sheet .nm { font-weight:600; color:var(--gold); }
-.crpg .sheet .cls { font-style:normal; font-size:11px; color:var(--dim); margin-left:4px; }
+.crpg .sheet .cls { font-style:normal; font-size:12px; color:var(--dim); margin-left:4px; }
 .crpg .health { flex:1 1 160px; min-width:110px; }
 .crpg .healthLabel { display:flex; justify-content:space-between; gap:12px; margin-bottom:5px; font-size:12px; }
 .crpg .hpbar { height:8px; background:#0d0c0b; border-radius:4px; overflow:hidden; }
@@ -6173,7 +6173,7 @@ const css = `
 .crpg .recordScope strong { color:var(--text); }
 .crpg .recordScope p { margin:4px 0; }
 .crpg .actionHelp { display:block; margin-top:6px; color:var(--dim); font-size:12px; line-height:1.5; }
-.crpg .ab { font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--dim); }
+.crpg .ab { font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--dim); }
 .crpg .scene { animation:fadeIn .6s ease; }
 .crpg .narr { white-space:pre-wrap; line-height:2.05; font-size:17px; margin-bottom:10px; letter-spacing:.01em; }
 .crpg .tut { border:1px solid var(--gold); border-radius:10px; background:var(--panel); padding:16px 18px; margin:16px 0; animation:fadeIn .4s ease; }
@@ -6202,15 +6202,15 @@ const css = `
 .crpg .diceMeta { font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--dim); line-height:1.9; flex:1; }
 .crpg .diceMeta b { font-size:16px; }
 .crpg .diceMeta b.good { color:var(--good); } .crpg .diceMeta b.bad { color:var(--bad); }
-.crpg .calcToggle { background:none; border:none; color:var(--accent); font-family:inherit; font-size:11px;
-  cursor:pointer; padding:2px 0; text-decoration:underline dotted; }
+.crpg .calcToggle { background:none; border:none; color:var(--accent); font-family:inherit; font-size:12px;
+  cursor:pointer; padding:10px 0; min-height:40px; text-decoration:underline dotted; }
 .crpg .jump { margin-top:8px; min-width:180px; }
 .crpg .track { position:relative; height:10px; background:#0d0c0b; border-radius:5px; }
 .crpg .track .fill { position:absolute; left:0; top:0; bottom:0; border-radius:5px; transition:width .5s ease; }
 .crpg .track .fill.good { background:linear-gradient(90deg,#3e6e3e,var(--good)); }
 .crpg .track .fill.bad { background:linear-gradient(90deg,#7a3a34,var(--bad)); }
 .crpg .track .dcMark { position:absolute; top:-4px; bottom:-4px; width:2px; background:var(--gold); }
-.crpg .jlbl { display:block; font-size:10.5px; color:var(--dim); margin-top:5px; }
+.crpg .jlbl { display:block; font-size:12px; color:var(--dim); margin-top:5px; }
 .crpg .combat { border:1px solid var(--line); border-radius:10px; padding:16px; margin-top:16px; background:var(--panel); }
 .crpg .combat h3 { font-size:14px; letter-spacing:.1em; color:var(--bad); margin-bottom:10px; }
 .crpg .clog { font-size:13.5px; line-height:2; max-height:220px; overflow-y:auto; margin:10px 0; }
@@ -6228,17 +6228,17 @@ const css = `
 .crpg .card:hover { border-color:var(--gold); transform:translateY(-3px); }
 .crpg .card .ci { font-size:26px; } .crpg .card h2 { font-size:17px; margin:8px 0 6px; color:var(--gold); }
 .crpg .card p { font-size:13px; color:var(--dim); line-height:1.7; }
-.crpg .card .st { font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:var(--accent); margin-top:10px; }
+.crpg .card .st { font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--accent); margin-top:10px; }
 .crpg .nameLb { display:block; font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--gold); letter-spacing:.1em; margin:18px 0 8px; }
 .crpg .nameIn { width:100%; max-width:340px; background:var(--panel2); color:var(--text); border:1px solid var(--line);
   border-radius:8px; padding:11px 14px; font-family:inherit; font-size:16px; }
 .crpg .nameIn:focus { outline:none; border-color:var(--gold); }
 .crpg .badges { display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; }
-.crpg .badge { font-family:'IBM Plex Mono',monospace; font-size:11px; border:1px solid var(--line);
+.crpg .badge { font-family:'IBM Plex Mono',monospace; font-size:12px; border:1px solid var(--line);
   border-radius:20px; padding:5px 12px; color:var(--dim); }
 .crpg .badge.on { border-color:var(--gold); color:var(--gold); }
 .crpg .badge.new { animation:popIn .4s ease; box-shadow:0 0 12px rgba(205,182,139,.45); }
-.crpg .bcount { font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--accent); margin-top:16px; }
+.crpg .bcount { font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--accent); margin-top:16px; }
 .crpg .sgToggle { margin-top:26px; background:none; border:1px dashed var(--line); color:var(--dim);
   border-radius:8px; padding:9px 14px; font-family:inherit; font-size:13px; cursor:pointer; }
 .crpg .sgToggle:hover { border-color:var(--gold); color:var(--gold); }
@@ -6268,7 +6268,7 @@ const css = `
   border:1.5px solid var(--line); border-radius:8px; padding:2px 8px; }
 .crpg .chipDie.good { border-color:var(--good); color:var(--good); }
 .crpg .chipDie.bad { border-color:var(--bad); color:var(--bad); }
-.crpg .chipMore { margin-left:auto; font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--dim); }
+.crpg .chipMore { margin-left:auto; font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--dim); }
 .crpg .resDetail { border:1px solid var(--line); border-top:none; border-radius:0 0 8px 8px;
   padding:10px 12px; font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--dim); line-height:1.9; }
 .crpg .divider { text-align:center; color:var(--line); font-size:10px; margin:18px 0; letter-spacing:.5em; }
@@ -6277,7 +6277,7 @@ const css = `
   background:linear-gradient(180deg, rgba(205,182,139,.07), transparent); animation:fadeIn .6s ease; }
 .crpg .teaser p { font-size:13.5px; line-height:1.9; color:var(--text); margin-top:10px; font-style:italic; }
 .crpg footer { margin-top:34px; padding-top:14px; border-top:1px solid var(--line);
-  font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:var(--dim); line-height:1.9; }
+  font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--dim); line-height:1.9; }
 .crpg .titleArt { display:block; width:100%; max-height:440px; object-fit:cover; object-position:50% 26%;
   border:1px solid var(--line); border-radius:10px; margin-bottom:16px; }
 .crpg .bell { transform-origin:512px 88px; }
@@ -6317,7 +6317,7 @@ const css = `
 .crpg .daily { display:flex; flex-direction:column; gap:4px; margin:18px 0 6px; padding:12px 14px;
   border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:8px; background:var(--panel); }
 .crpg .daily.done { border-left-color:var(--good); }
-.crpg .daily .daily-h { font-size:11px; letter-spacing:.18em; color:var(--accent); font-weight:600; }
+.crpg .daily .daily-h { font-size:12px; letter-spacing:.18em; color:var(--accent); font-weight:600; }
 .crpg .daily.done .daily-h { color:var(--good); }
 .crpg .daily .daily-l { font-size:15px; color:var(--text); }
 .crpg .daily .daily-s { font-size:12px; color:var(--dim); }
@@ -6338,7 +6338,7 @@ const css = `
 .crpg .choice .tag.artifact { border:1px solid var(--gold); color:var(--gold); background:rgba(205,182,139,.16); }
 .crpg .artifact-get { margin:10px 0 4px; padding:11px 14px; border-radius:8px; text-align:center; font-weight:600; color:var(--gold); border:1px solid var(--gold); background:linear-gradient(180deg, rgba(205,182,139,.16), rgba(205,182,139,.04)); animation:popIn .4s ease; }
 .crpg .intent { display:flex; flex-direction:column; gap:3px; margin:10px 0; padding:10px 12px; border-radius:8px; border:1px solid var(--line); background:var(--panel2); animation:fadeIn .3s ease; }
-.crpg .intent-h { font-size:11px; letter-spacing:.15em; color:var(--dim); font-weight:600; }
+.crpg .intent-h { font-size:12px; letter-spacing:.15em; color:var(--dim); font-weight:600; }
 .crpg .intent-t { font-size:14px; color:var(--text); }
 .crpg .intent.hook { border-color:var(--bad); background:rgba(217,106,95,.12); }
 .crpg .intent.hook .intent-h { color:var(--bad); }
@@ -6351,7 +6351,7 @@ const css = `
 .crpg .stageWrap.mood-dawn::after { background:rgba(255,200,120,.10); }
 .crpg .locCard { position:absolute; left:8px; bottom:6px; max-width:78%; z-index:22; display:flex; flex-direction:column; gap:0; padding:4px 9px; border-radius:6px; background:linear-gradient(90deg, rgba(8,12,20,.78), rgba(8,12,20,.25)); animation:fadeIn .5s ease; pointer-events:none; }
 .crpg .locPlace { font-size:15px; font-weight:700; color:#f0d48a; text-shadow:0 1px 3px #000; }
-.crpg .locCh { font-size:11px; color:#c9b88a; opacity:.85; }
+.crpg .locCh { font-size:12px; color:#c9b88a; opacity:.85; }
 .crpg .locDoing { font-size:12px; color:#fff; text-shadow:0 1px 3px #000; overflow-wrap:anywhere; }
 .crpg .stageWrap.mood-danger .locPlace { color:#ff9c8a; }
 .crpg .expandBtn { display:block; margin:-4px 0 12px; padding:4px 0; border:0; background:transparent; color:#c7bfb1; font-size:13px; cursor:pointer; }
@@ -6381,7 +6381,7 @@ const css = `
 .crpg .goal { margin:2px 0; color:var(--dim); }
 .crpg .goal.done { color:var(--text); }
 .crpg .objection { margin:12px 0 16px; padding:10px 14px; border:1px solid var(--red); border-radius:8px; background:rgba(192,57,43,.07); }
-.crpg .objection h4 { margin:0 0 6px; color:var(--red); letter-spacing:.06em; }
+.crpg .objection h4 { margin:0 0 6px; color:var(--redText); letter-spacing:.06em; }
 .crpg .objection .objAsk { font-size:14px; margin:4px 0 8px; }
 .crpg .objection .objResult { font-size:15px; line-height:1.6; }
 .crpg .objection.won .objResult { color:#e8b4aa; }
@@ -6411,7 +6411,7 @@ const css = `
 .crpg .choice.walked .tag.path { border-color:var(--line); color:inherit; }
 .crpg .pathNote { font-size:13px; opacity:.75; margin:4px 0 8px; }
 .crpg .noteCard { display:flex; flex-direction:column; gap:2px; margin:0 0 8px; padding:7px 11px; border-left:3px solid #b0281c; background:rgba(176,40,28,.10); border-radius:4px; font-size:13.5px; overflow-wrap:anywhere; }
-.crpg .noteFrom { font-size:11.5px; color:#d47a6a; }
+.crpg .noteFrom { font-size:12px; color:#d47a6a; }
 .crpg .noteText { color:#f0d9d4; font-style:italic; }
 .crpg .noteBtn { display:block; margin:0 0 10px; padding:4px 0; border:0; background:transparent; color:#d47a6a; font-size:13px; cursor:pointer; }
 .crpg .notePick { display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin:0 0 12px; padding:8px; border:1px dashed #b0281c; border-radius:6px; }
@@ -6424,7 +6424,7 @@ const css = `
 .crpg .recSign { margin-top:10px; font-size:12px; color:#6b5d44; text-align:right; }
 .crpg .recStamp { position:absolute; top:12px; right:12px; padding:2px 8px; border:2px solid #8a2e22; color:#8a2e22; font-weight:700; font-size:12px; transform:rotate(-6deg); opacity:.85; }
 .crpg .redhand { margin-top:10px; color:#b0281c; font-size:19px; font-weight:700; font-style:italic; transform:rotate(-2deg); animation:fadeIn 1.2s ease .9s both; }
-.crpg .shareRec { display:block; margin:12px 0 0 auto; padding:5px 10px; font-size:12px; border:1px solid #8a7a5a; border-radius:4px; background:transparent; color:#4a3f2c; cursor:pointer; }
+.crpg .shareRec { display:block; margin:12px 0 0 auto; min-height:40px; padding:8px 12px; font-size:13px; border:1px solid #8a7a5a; border-radius:4px; background:transparent; color:#4a3f2c; cursor:pointer; }
 .crpg .opening .choices { margin-top:6px; }
 .crpg .choice.primaryChoice { border-color:var(--gold); }
 .crpg .lastRun { margin:0 0 10px; font-size:14px; color:#c9a35a; font-style:italic; }
@@ -6455,13 +6455,13 @@ const css = `
 .crpg .ledgerRow.kept .ledgerMark { color:#7fbf7f; }
 .crpg .ledgerRow.lost .ledgerMark { color:#d47a6a; }
 .crpg .echoBanner { display:flex; flex-direction:column; gap:3px; margin:2px 0 14px; padding:10px 13px; border-radius:8px; border:1px solid #8a2e22; border-left:3px solid #c0392b; background:rgba(192,57,43,.12); animation:fadeIn .4s ease; }
-.crpg .echo-h { font-size:11px; letter-spacing:.15em; color:#e08a7c; font-weight:600; }
+.crpg .echo-h { font-size:12px; letter-spacing:.15em; color:#e08a7c; font-weight:600; }
 .crpg .echo-t { font-size:14px; color:var(--text); font-style:italic; }
 .crpg .choice .tag.echo { border:1px solid #c0392b; color:#e08a7c; background:rgba(192,57,43,.16); }
 .crpg .fbModal { position:fixed; inset:0; z-index:100; background:rgba(8,12,20,.82); display:flex; align-items:flex-start; justify-content:center; overflow-y:auto; padding:24px 12px; }
 .crpg .fbCard { width:100%; max-width:560px; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:18px; margin:auto; }
 .crpg .fbCard h3 { color:var(--gold); font-size:17px; margin-bottom:4px; }
-.crpg .fbBuild { font-size:11px; color:var(--dim); font-weight:400; font-family:'IBM Plex Mono',monospace; }
+.crpg .fbBuild { font-size:12px; color:var(--dim); font-weight:400; font-family:'IBM Plex Mono',monospace; }
 .crpg .fbIntro { font-size:13px; color:var(--text); line-height:1.7; margin-bottom:12px; }
 .crpg .fbField { display:flex; flex-direction:column; gap:4px; margin-bottom:10px; }
 .crpg .fbField span { font-size:13px; color:var(--dim); }
@@ -6470,7 +6470,7 @@ const css = `
 .crpg .fbOpt { display:flex; align-items:center; gap:6px; padding:6px 10px; border:1px solid var(--line); border-radius:8px; background:var(--panel2); cursor:pointer; font-size:13px; color:var(--text); }
 .crpg .fbOpt.on { border-color:var(--gold); color:var(--gold); }
 .crpg .fbOpt input { accent-color:var(--gold); }
-.crpg .fbMetaNote { font-size:11.5px; color:var(--dim); line-height:1.6; margin:6px 0 10px; }
+.crpg .fbMetaNote { font-size:12px; color:var(--dim); line-height:1.6; margin:6px 0 10px; }
 .crpg .fbStatus { font-size:13px; padding:8px 10px; border-radius:6px; margin-bottom:10px; line-height:1.6; }
 .crpg .fbStatus.sent { color:var(--good); border:1px solid var(--good); }
 .crpg .fbStatus.fail { color:var(--bad); border:1px solid var(--bad); }
@@ -6492,10 +6492,11 @@ const css = `
 .crpg .duelTimer .timerBar { flex:1 1 120px; height:4px; background:rgba(255,255,255,.08); border-radius:2px; overflow:hidden; }
 .crpg .duelTimer .timerBar i { display:block; height:100%; background:var(--red, #c0392b); transition:width 1s linear; }
 .crpg .duelTimer.urgent .timerText { color:var(--red, #c0392b); font-weight:bold; }
-.crpg .duelTimer .timerToggle { background:none; border:1px solid rgba(255,255,255,.15); color:inherit; font-size:.85em; padding:2px 8px; border-radius:4px; cursor:pointer; }
+.crpg .duelTimer .timerToggle { background:none; border:1px solid rgba(255,255,255,.15); color:inherit; font-size:13px; min-height:40px; padding:6px 12px; border-radius:4px; cursor:pointer; }
 @keyframes inkIn { from { opacity:0; visibility:hidden; filter:blur(2px); } to { opacity:1; visibility:visible; filter:none; } }
 @media (prefers-reduced-motion: reduce) { .crpg .narr .para, .crpg .choices[data-stage] { animation:none; } }
-.crpg .redhand { color:var(--red); }
+.crpg .redhand { color:var(--redText); }
+.crpg .recordCard .redhand { color:var(--red); }
 .crpg .portrait { width:64px; height:64px; object-fit:cover; border-radius:6px; border:1px solid var(--line); margin-right:10px; flex:none; }
 .crpg .castChip { display:inline-flex; align-items:center; border-radius:10px; padding:4px 12px 4px 4px; }
 `;
