@@ -205,6 +205,7 @@ function play(persona) {
       const fresh = !out.scenesSeen.has(key); out.scenesSeen.add(key);
       if (scene && scene.ch) out.maxChapter = Math.max(out.maxChapter, scene.ch === 5 ? 4 : scene.ch);
       if (key.startsWith('c2_')) out.sawCase2 = true;
+      if (key === 'c2_end3') out.c2done = true;
       // 읽기: 서사 + 결과 + 대사. 이미 본 장면은 접혀 있어 조금만 읽는다.
       const narr = all(tree).filter(n => ['narr', 'result good', 'result bad', 'result ', 'banter', 'pickShare', 'echoBanner'].includes(cls(n))).map(text).join(' ');
       const skim = persona.story < 0.3 ? 0.5 : 1;
@@ -398,7 +399,7 @@ const summary = {
   over15min: pctOf(ok, r => r.totalMin >= 15),
   replayed: pctOf(ok, r => r.runs.length >= 2),
   avgRuns: +avg(ok, r => r.runs.length).toFixed(2),
-  reach: { ch1end: pctOf(ok, r => r.runs.some(x => x.endings.includes(1))), ch2end: pctOf(ok, r => r.runs.some(x => x.endings.includes(2))), ch3end: pctOf(ok, r => r.runs.some(x => x.endings.includes(3))), verdict: pctOf(ok, r => r.runs.some(x => x.endings.includes(4))), case2: pctOf(ok, r => r.sawCase2) },
+  reach: { ch1end: pctOf(ok, r => r.runs.some(x => x.endings.includes(1))), ch2end: pctOf(ok, r => r.runs.some(x => x.endings.includes(2))), ch3end: pctOf(ok, r => r.runs.some(x => x.endings.includes(3))), verdict: pctOf(ok, r => r.runs.some(x => x.endings.includes(4))), case2: pctOf(ok, r => r.sawCase2), case2end: pctOf(ok, r => r.c2done), firstRunVerdict: pctOf(ok, r => r.runs[0] && (r.runs[0].endings.includes(4))) },
   diedAtLeastOnce: pctOf(ok, r => r.runs.some(x => x.deaths > 0)),
   failRate: Math.round(avg(ok.flatMap(r => r.runs).filter(x => x.checks), x => x.fails / x.checks) * 100),
   timeouts: { people: pctOf(ok, r => r.timeouts > 0), total: ok.reduce((a, r) => a + r.timeouts, 0), turnedOff: pctOf(ok, r => r.timerOffBy && r.timerOffBy !== 'next') },
