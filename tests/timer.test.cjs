@@ -64,7 +64,9 @@ test('the last move of a duel shows a clock that can be turned off and stays off
   const g = game({sceneKey: 'duel2'});
   const box = timerBox(g.render());
   assert.ok(box, 'timer on duel2');
-  assert.match(text(box), /16s before you falter/);
+  const want = g.run('timerBudget(0, fmt(SCENES.duel2.text.en, {name: "QA"}).length, false)');
+  assert.ok(want > 16 && want <= 46, 'first visit adds reading time');
+  assert.match(text(box), new RegExp(want + 's before you falter'));
   nodes(box).find(n => n.props.className === 'timerToggle').props.onClick();
   assert.equal(g.data.get('aduventure_timer'), 'false');
   assert.match(text(timerBox(g.render())), /Clock off/);
@@ -87,10 +89,18 @@ test('only the three last-move scenes are timed, and the clock speaks both langu
   for (const k of ['scully2', 'monk2']) assert.ok(timerBox(game({sceneKey: k}).render()), k);
   for (const k of ['duel1', 'intro', 'scully1']) assert.equal(timerBox(game({sceneKey: k}).render()), undefined, k);
   const ko = game({sceneKey: 'scully2', lang: 'ko'});
-  assert.match(text(timerBox(ko.render())), /망설일 시간 16초/);
+  assert.match(text(timerBox(ko.render())), /망설일 시간 \d+초/);
   const g = game();
   for (const k of ['timerLeft', 'timerOff', 'timerOffNote', 'timerOn', 'timerHesitate']) {
     const t = JSON.parse(g.run(`JSON.stringify(UI.${k})`));
     assert.ok(HANGUL.test(t.ko) && t.en && !HANGUL.test(t.en), k);
   }
+});
+
+test('the clock gives reading time: the result above and, on a first visit, the scene itself', () => {
+  const g = game();
+  assert.equal(g.run('timerBudget(0, 0, true)'), 16, 'a known scene with nothing above: just the 16s');
+  assert.equal(g.run('timerBudget(200, 60, true)'), 16 + 20, 'result text is always read');
+  assert.equal(g.run('timerBudget(200, 60, false)'), 16 + 26, 'first visit also reads the scene');
+  assert.equal(g.run('timerBudget(5000, 900, false)'), 16 + 30, 'capped');
 });

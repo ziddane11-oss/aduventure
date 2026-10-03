@@ -63,15 +63,28 @@ test('the official record no longer rebuts itself; the red line must be won', ()
   assert.match(text(g.panel()), /Objection — point at the lie/);
 });
 
-test('pointing at a true line seals the record, with one chance only', () => {
+test('one slip is allowed across line and evidence; the second seals the record', () => {
+  const g = game({flags: ['sabotage', 'trail']});
+  g.press('choice objStart');
+  assert.match(text(g.panel()), /Which line is the lie\? \(You may slip once\)/);
+  g.press('choice objLine', 0);
+  assert.equal(g.state().flags.includes('rebutX1'), false, 'first slip is forgiven');
+  assert.match(text(g.panel()), /That line is true\.” — You have no slips left|That line is true\." — You have no slips left/);
+  g.press('choice objLine', 1);
+  const ev = nodes(g.panel()).filter(n => n.props.className === 'choice objEvidence').map(text);
+  g.press('choice objEvidence', ev.findIndex(t => t.includes('Footprints')));
+  assert.ok(g.state().flags.includes('rebutX1'), 'no slips left, so a wrong piece seals it');
+  assert.equal(g.card().stamp.en, 'Sealed');
+  assert.equal(g.card().rebut, null);
+});
+
+test('two wrong lines in a row also seal it', () => {
   const g = game({flags: ['sabotage']});
   g.press('choice objStart');
-  assert.match(text(g.panel()), /Which line is the lie\?/);
+  g.press('choice objLine', 0);
   g.press('choice objLine', 0);
   assert.ok(g.state().flags.includes('rebutX1'));
   assert.match(text(g.panel()), /That line is true/);
-  assert.equal(g.card().stamp.en, 'Sealed');
-  assert.equal(g.card().rebut, null);
 });
 
 test('the right line and the right evidence strike the lie in red, and the next chapter starts with two fate dice', () => {
@@ -96,7 +109,7 @@ test('a wrong piece of evidence gets one more try; the second miss seals it', ()
   g.press('choice objStart');
   g.press('choice objLine', 1);
   const panel = text(g.panel());
-  assert.match(panel, /“Cause: bad luck\.”/, 'the lie being rebutted is quoted');
+  assert.match(panel, /“Cause: mechanism failure — bad luck\.”/, 'the lie being rebutted is quoted');
   assert.match(panel, /Not a breakdown — someone tampered with it/, 'each piece says what it shows');
   const pick = name => { const ev = nodes(g.panel()).filter(n => n.props.className === 'choice objEvidence').map(text); g.press('choice objEvidence', ev.findIndex(t => t.includes(name))); };
   pick('Footprints');
@@ -147,4 +160,31 @@ test('every chapter has a lie and enough possible proof, and the words are bilin
   }
   for (const k of ['objH', 'objStart', 'objPickLine', 'objPickEvidence', 'objNoEvidence', 'objWithdraw', 'objWon', 'objWrongLine', 'objWrongEvidence', 'objStamp', 'objSealed']) assert.equal(HANGUL.test(g.run(`UI.${k}.en`)), false, k);
   for (const e of g.run('Object.values(EVIDENCE)')) assert.equal(HANGUL.test(e.name.en), false);
+});
+
+test('replaying a chapter clears the last objection, so it can be raised again', () => {
+  const g = game({sceneKey: 'ending2', flags: ['ledger']});
+  g.press('choice objStart');
+  g.press('choice objLine', 1);
+  g.press('choice objEvidence', 0);
+  assert.match(text(g.panel()), /Red ink strikes/);
+  nodes(g.render()).find(n => n.type === 'button' && /Replay Ch\.2/.test(text(n))).props.onClick();
+  g.state().goto('ending2');
+  assert.equal(g.state().flags.includes('rebut2'), false);
+  assert.match(text(g.panel()), /Objection — point at the lie/, 'a fresh objection, not last run\'s result');
+});
+
+// pt29 — 100명 시뮬레이션에서 발견: 베른의 진술(2장)만 빠졌는데 3장 끝의 강조 버튼이 '3장 다시'라 판결에 못 가던 고리.
+test('at the end of Ch.3 the highlighted road leads to what is actually missing', () => {
+  const noBern = game({sceneKey: 'ending3', lore: ['f_addressee', 'f_receipt', 'f_window', 'f_fund']});
+  const primary = () => nodes(noBern.render()).filter(n => n.type === 'button' && n.props.className === 'restart primary');
+  assert.equal(primary().length, 1);
+  assert.match(text(primary()[0]), /Back to Ch\.2 morning — ask Bern/);
+  assert.match(text(noBern.render()), /Bern's statement \(Ch\.2, morning\)/);
+  primary()[0].props.onClick();
+  assert.equal(noBern.state().sceneKey, 'intro2');
+  const noProof = game({sceneKey: 'ending3', lore: ['f_bern_lied', 'f_receipt', 'f_window', 'f_fund']});
+  const p2 = nodes(noProof.render()).filter(n => n.type === 'button' && n.props.className === 'restart primary');
+  assert.equal(p2.length, 1);
+  assert.match(text(p2[0]), /Replay Ch\.3/);
 });
