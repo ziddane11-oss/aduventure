@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>어두밴처 v0.7.3-pt31</title>
+<title>어두밴처 v0.7.3-pt32</title>
 <style>body{margin:0;background:#0e1420}</style>
 </head>
 <body>
@@ -318,7 +318,7 @@ function(a,b,c){if(!Vd(b))throw Error(n(200));return Wd(null,a,b,!1,c)};Q.unmoun
    GAS 피드백 파이프 — v0.7 재구현 (제안/신호/텔레메트리)
    ============================================================ */
 /* 플레이테스트 빌드 태그 — 테스트 중 버전 구분용. 수정할 때마다 뒤 번호를 올린다. */
-const BUILD = "v0.7.3-pt31";
+const BUILD = "v0.7.3-pt32";
 const GAS_URL = "https://script.google.com/macros/s/AKfycbxFx_m5rhCZmqGoy3JcUUNqEgiObMWNHe9hx-LnZrhzIkfwa9-yJGBWP0lVulptnNQeCQ/exec";
 function gasPost(payload, options = {}) {
   return fetch(GAS_URL, {
@@ -560,7 +560,9 @@ const BGM_THEMES = {
   1: { notes: [55, 82.41], wave: "triangle", noise: 700, noiseGain: 0.05 }, // 폭풍 속 등대 — 빗소리 + 낮은 A
   2: { notes: [73.42, 110], wave: "triangle", noise: 420, noiseGain: 0.035 }, // 안개 부두 — 파도 + D
   3: { notes: [65.41, 98, 130.81], wave: "sine", noise: 260, noiseGain: 0.015 }, // 빈 수도원 — 오르간 같은 C 화음
-  5: { notes: [61.74, 92.5, 123.47], wave: "sine", noise: 1800, noiseGain: 0.012 } // 먹울 필사소 — 종이 긁는 높은 잡음 + B 화음
+  5: { notes: [61.74, 92.5, 123.47], wave: "sine", noise: 1800, noiseGain: 0.012 }, // 먹울 필사소 — 종이 긁는 높은 잡음 + B 화음
+  6: { notes: [61.74, 92.5, 138.59], wave: "sine", noise: 1500, noiseGain: 0.01 }, // 먹울의 낮 — 같은 B, 위가 조금 밝다
+  7: { notes: [55, 82.41, 123.47], wave: "triangle", noise: 2200, noiseGain: 0.018 } // 지우는 밤 — 긁는 소리가 커진다
 };
 // 숨을 멈추는 장면: 고르기 전에 소리를 비워 선택의 무게를 키운다.
 const BGM_HUSH = ["railing", "rescue", "signal"];
@@ -822,6 +824,14 @@ const UI = {
   c2Go: { ko: "사건 2 「붉은 손글씨」로 →", en: "On to Case 2, \"The Red Hand\" →" },
   c2Skip: { ko: "(판결 기록 있음) 사건 2 「붉은 손글씨」부터 시작한다 →", en: "(Verdict on record) Start from Case 2, \"The Red Hand\" →" },
   c2More: { ko: "사건 2의 다음 장은 다음 업데이트에서 이어집니다.", en: "Case 2 continues in a future update." },
+  c2ch2: { ko: "사건 2 · 제2장 긁힌 자리", en: "Case 2 · Ch.2 The Scraped Places" },
+  c2ch3: { ko: "사건 2 · 제3장 붉은 손들", en: "Case 2 · Ch.3 The Red Hands" },
+  c2Next2: { ko: "사건 2 · 2장 「긁힌 자리」 계속 →", en: "Continue to Case 2 · Ch.2 “The Scraped Places” →" },
+  c2Next3: { ko: "사건 2 · 3장 「붉은 손들」 계속 →", en: "Continue to Case 2 · Ch.3 “The Red Hands” →" },
+  c2Again1: { ko: "다른 선택으로 사건 2 · 1장 다시", en: "Replay Case 2 · Ch.1 with other choices" },
+  c2Again2: { ko: "다른 선택으로 사건 2 · 2장 다시", en: "Replay Case 2 · Ch.2 with other choices" },
+  c2Again3: { ko: "다른 선택으로 사건 2 · 3장 다시", en: "Replay Case 2 · Ch.3 with other choices" },
+  c2Done: { ko: "사건 2 「붉은 손글씨」 완결. 사건 3은 다음 업데이트에서 이어집니다.", en: "Case 2, “The Red Hand,” is complete. Case 3 arrives in a future update." },
   c2Hall: { ko: "제{a}호부터 제{b}호까지. 전부 당신이 고쳐 쓴 기록이다.", en: "No. {a} through No. {b}. Every one of them, a record you rewrote." },
   c2Notes: { ko: "다른 여백의 붉은 글씨:", en: "Red ink in other margins:" },
   caseBtn: { ko: "사건 기록장", en: "Case board" },
@@ -842,6 +852,9 @@ const UI = {
   fragNew: { ko: "◇ 아직 못 본 조각", en: "◇ unseen fragment" },
   fragSeen: { ko: "◆ 이미 본 조각", en: "◆ fragment already seen" },
   accuseGo: { ko: "소금여울로 돌아가 결론을 내린다 →", en: "Return to Saltmarsh and reach a verdict →" },
+  accuseGoEarly: { ko: "지금 가진 것만으로 결론을 내린다 →", en: "Reach a verdict with what you have →" },
+  caseTruthNeeds: { ko: "세온을 고발하려면(진실의 결말) 더 필요하다: ", en: "To accuse Seon (the true ending) you still need: " },
+  caseReadyNeed: { ko: "🔒 증거가 모자라다 — 사건 기록장을 채우거나 추론을 확정하라", en: "🔒 Not enough proof — fill the case board or confirm the deduction" },
   shareRec: { ko: "📋 이 기록 복사하기 (공유)", en: "📋 Copy this record (share)" },
   shareDone: { ko: "복사됨 — 붙여넣어 공유하세요", en: "Copied — paste it anywhere" },
   shareFail: { ko: "복사 실패 — 화면을 캡처해 주세요", en: "Couldn't copy — take a screenshot instead" },
@@ -1293,6 +1306,13 @@ const SCENE_TITLES = {
   c2_duel: { ko: "먹 묻은 경비", en: "The Ink-Stained Guards" },
   c2_hall: { ko: "끝없는 서가", en: "The Endless Shelves" },
   c2_reader: { ko: "낭독가의 구석", en: "The Reader's Corner" },
+  c2_day: { ko: "필사소 마당의 귓속말", en: "A Whisper in the Scriptorium Yard" },
+  c2_day2: { ko: "기우는 해", en: "The Sinking Sun" },
+  c2_master: { ko: "필사소장의 방", en: "The Copy-Master's Room" },
+  c2_night: { ko: "마지막 청소", en: "The Last Cleaning" },
+  c2_scrape: { ko: "긁는 소리", en: "The Sound of Scraping" },
+  c2_ire: { ko: "붉은 새벽", en: "A Red Dawn" },
+  c2_verdict: { ko: "감찰관의 마차", en: "The Inspector's Carriage" },
   dawn2: { ko: "해 지기 전", en: "Before Sundown" },
   dawn2b: { ko: "해 지기 전", en: "Before Sundown" },
   dusk3: { ko: "수도원 바깥", en: "Outside the Walls" },
@@ -3895,6 +3915,361 @@ const SCENES = {
     "ch": 5,
     "ending": 5
   },
+  /* ---------- 사건 2 · 제2장 「긁힌 자리」 — 해 질 녘 필사소장이 돌아오기 전, 두 곳 ---------- */
+  c2_day: {
+    ch: 6,
+    text: {
+      ko: `이튿날 아침, 필사소 마당. 이레가 빨래를 너는 척하며 속삭인다.\n\n"필사소장 묵은 해 질 녘에 돌아와요. 그 전에 볼 수 있는 곳은 두 군데뿐이에요."\n\n잉크 가게, 필사소 장부실, 필사공 숙소. 그리고 — 이레가 말하지 않은 곳 — 그녀의 방.`,
+      en: `The next morning, in the scriptorium yard. Ire pretends to hang laundry and whispers.\n\n"Muk, the copy-master, comes back at sundown. Before then, there's time for two places."\n\nThe ink shop, the scriptorium ledger room, the copyists' lodging. And — a place Ire doesn't mention — her own room.`
+    },
+    choices: [{
+      lead: "c2_leadInk",
+      label: { ko: "잉크 가게 — 붉은 잉크를 누가 사 가는지 묻는다", en: "The ink shop — ask who buys the red ink" },
+      stake: { ko: "필사소장 앞에서: 주문서 한 장을 내밀 수 있다", en: "Before the copy-master: you'll have an order slip to show" },
+      result: {
+        text: {
+          ko: `주인이 손가락을 꼽는다. "붉은 잉크는 낭독가 아가씨만 사 가요. 매일 아침 한 병씩."\n\n"그리고 필사소에서는 — 이거." 계산대 밑에서 꺼낸 주문서. '잉크 지우개 가루, 열 통. 필사소장 묵.'\n\n누군가는 붉게 쓰고, 누군가는 그걸 매일 밤 갈아 없앤다.`,
+          en: `The owner counts on his fingers. "Only the reader girl buys red ink. One bottle every morning."\n\n"And the scriptorium orders — this." An order slip from under the counter: 'Ink-eraser powder, ten tins. Copy-master Muk.'\n\nSomeone writes in red, and someone grinds it away every night.`
+        },
+        flags: ["c2_leadInk", "c2f_powder"],
+        goto: "c2_day2"
+      }
+    }, {
+      lead: "c2_leadLedger",
+      label: { ko: "필사소 장부실 — 필사료가 어디서 들어오는지 본다", en: "The ledger room — see where the copying fees come from" },
+      stake: { ko: "필사소장 앞에서: 돈의 흐름을 짚을 수 있다", en: "Before the copy-master: you can point to the money" },
+      result: {
+        text: {
+          ko: `먼지 쌓인 수입 장부. 대부분 몇 푼짜리 필사료다. 한 줄만 다르다.\n\n'소금여울 촌장실 — 정서비(淨書費). 매달. 금화 열.'\n\n깨끗하게 베껴 주는 값. 붉은 반박 없이.`,
+          en: `A dusty income ledger. Mostly copying fees of a few coppers. One line is different.\n\n'Saltmarsh chief's office — clean-copy fee. Monthly. Ten gold.'\n\nThe price of a clean copy. Without the red rebuttals.`
+        },
+        flags: ["c2_leadLedger", "c2f_pay"],
+        goto: "c2_day2"
+      }
+    }, {
+      lead: "c2_leadDorm",
+      label: { ko: "필사공 숙소 — 밤일을 하는 견습생을 찾는다", en: "The copyists' lodging — find the apprentice who works nights" },
+      stake: { ko: "필사소장 앞에서: 증인이 한 명 생긴다", en: "Before the copy-master: you'll have a witness" },
+      result: {
+        text: {
+          ko: `구석 침상의 소년, 솔. 손톱 밑이 붉다. 붉은 잉크가 아니라 — 긁어낸 붉은 가루.\n\n"밤마다 시켜서 해요. 붉은 글씨만 긁어요. 안 하면 쫓겨나요." 소년이 긁개를 내민다. "이거 보세요. 다 빨개요."`,
+          en: `A boy on the corner cot, Sol. Red under his fingernails. Not red ink — scraped red dust.\n\n"I'm told to, every night. Just the red writing. If I don't, I'm out." He holds out a scraper. "Look. It's all red."`
+        },
+        flags: ["c2_leadDorm", "c2f_scraper"],
+        goto: "c2_day2"
+      }
+    }, {
+      lead: "c2_leadIre",
+      label: { ko: "이레의 방 — 그녀가 마당에 있는 사이 들여다본다", en: "Ire's room — look in while she's in the yard" },
+      stake: { ko: "3장에서: 붉은 손의 비밀을 먼저 안다", en: "In Chapter 3: you'll know the red hand's secret first" },
+      result: {
+        text: {
+          ko: `방 안은 붉다. 빈 잉크병이 벽을 따라 쌓여 있고, 책상 위에는 사본 수십 장 — 여백마다 붉은 반박.\n\n긁힌 자리 위에, 같은 말이 다시 쓰여 있다. 글씨는 제각각인데, 잉크는 전부 같은 병이다.`,
+          en: `The room is red. Empty ink bottles line the walls, and on the desk lie dozens of copies — a red rebuttal in every margin.\n\nOver the scraped places, the same words are written again. The hands differ, but the ink all comes from the same bottle.`
+        },
+        flags: ["c2_leadIre", "c2f_ire"],
+        goto: "c2_day2"
+      }
+    }]
+  },
+  c2_day2: {
+    ch: 6,
+    text: {
+      ko: `해가 기울기 시작한다. 한 곳은 더 볼 수 있다.`,
+      en: `The sun is starting to sink. There's time for one more place.`
+    },
+    choices: [{
+      flagNot: "c2_leadInk",
+      label: { ko: "잉크 가게", en: "The ink shop" },
+      stake: { ko: "필사소장 앞에서: 주문서 한 장", en: "Before the copy-master: an order slip" },
+      result: {
+        text: {
+          ko: `주인이 주문서를 보여 준다. '잉크 지우개 가루, 열 통. 필사소장 묵.' "붉은 잉크는 낭독가 아가씨만 사 가요. 매일 아침."`,
+          en: `The owner shows you an order slip. 'Ink-eraser powder, ten tins. Copy-master Muk.' "Only the reader girl buys red ink. Every morning."`
+        },
+        flags: ["c2_leadInk", "c2f_powder"],
+        goto: "c2_master"
+      }
+    }, {
+      flagNot: "c2_leadLedger",
+      label: { ko: "필사소 장부실", en: "The ledger room" },
+      stake: { ko: "필사소장 앞에서: 돈의 흐름", en: "Before the copy-master: the money" },
+      result: {
+        text: {
+          ko: `한 줄이 눈에 걸린다. '소금여울 촌장실 — 정서비(淨書費). 매달. 금화 열.'`,
+          en: `One line catches your eye. 'Saltmarsh chief's office — clean-copy fee. Monthly. Ten gold.'`
+        },
+        flags: ["c2_leadLedger", "c2f_pay"],
+        goto: "c2_master"
+      }
+    }, {
+      flagNot: "c2_leadDorm",
+      label: { ko: "필사공 숙소", en: "The copyists' lodging" },
+      stake: { ko: "필사소장 앞에서: 증인 한 명", en: "Before the copy-master: a witness" },
+      result: {
+        text: {
+          ko: `견습생 솔의 손톱 밑이 붉다. "밤마다 붉은 글씨만 긁어요. 시켜서요."`,
+          en: `The apprentice Sol has red under his fingernails. "Every night I scrape off just the red writing. I'm told to."`
+        },
+        flags: ["c2_leadDorm", "c2f_scraper"],
+        goto: "c2_master"
+      }
+    }, {
+      flagNot: "c2_leadIre",
+      label: { ko: "이레의 방", en: "Ire's room" },
+      stake: { ko: "3장에서: 붉은 손의 비밀을 먼저 안다", en: "In Chapter 3: the red hand's secret, first" },
+      result: {
+        text: {
+          ko: `붉은 잉크병이 벽을 따라 쌓여 있다. 긁힌 자리 위에 같은 반박이 다시 쓰여 있다.`,
+          en: `Red ink bottles line the walls. Over the scraped places, the same rebuttals are written again.`
+        },
+        flags: ["c2_leadIre", "c2f_ire"],
+        goto: "c2_master"
+      }
+    }]
+  },
+  c2_master: {
+    ch: 6,
+    text: {
+      ko: `해 질 녘, 필사소장의 방. 묵은 반듯한 가르마에 잉크 한 점 없는 소매다. 붓을 내려놓지도 않고 말한다.\n\n"기록관이시군요. 기록은 깨끗해야 합니다. 여백의 낙서는 기록이 아니지요."\n\n그의 글씨는 자로 잰 듯 곧다.`,
+      en: `Sundown, in the copy-master's room. Muk has a perfectly straight parting and not a speck of ink on his sleeves. He speaks without setting down his brush.\n\n"An archivist, I see. Records must be clean. Scribbles in the margin are not records."\n\nHis handwriting is ruler-straight.`
+    },
+    choices: [{
+      echoReq: "c2_leadLedger",
+      echo: { ko: "장부실의 정서비", en: "The clean-copy fee from the ledger room" },
+      label: { ko: "[장부] \"소금여울 촌장실이 매달 금화 열을 내더군요. 무엇을 깨끗하게 해 주는 값입니까?\"", en: "[Ledger] \"Saltmarsh's chief pays ten gold a month. What exactly does that keep clean?\"" },
+      stake: { ko: "판정 없이 확정 · 묵이 입을 연다", en: "No roll · Muk talks" },
+      result: {
+        text: {
+          ko: `붓끝이 처음으로 떨린다.\n\n"…깨끗한 기록일수록 도청은 묻지 않습니다. 묻지 않으면 감찰이 오지 않고, 감찰이 오지 않으면 마을은 조용하지요. 저는 조용함을 베껴 줄 뿐입니다."`,
+          en: `For the first time, the brush tip trembles.\n\n"…The cleaner the record, the fewer questions from the provincial office. No questions, no inspectors. No inspectors, a quiet village. I merely copy the quiet."`
+        },
+        flags: ["c2_confess"],
+        goto: "c2_end2"
+      }
+    }, {
+      echoReq: "c2_leadDorm",
+      echo: { ko: "견습생 솔의 붉은 손톱", en: "Sol's red fingernails" },
+      label: { ko: "[증인] 견습생 솔을 문 앞에 세운다", en: "[Witness] Stand the apprentice Sol in the doorway" },
+      stake: { ko: "판정 없이 확정 · 소년은 쫓겨날 수도 있다", en: "No roll · the boy may be thrown out" },
+      result: {
+        text: {
+          ko: `솔이 붉은 손을 내민다. 묵이 소년을 내려다본다.\n\n"…그래, 내가 시켰다." 그가 붓을 내려놓는다. "반박은 낙서다. 낙서를 지우는 게 내 일이고."`,
+          en: `Sol holds out his red hands. Muk looks down at the boy.\n\n"…Yes, I told him to." He sets down the brush. "Rebuttals are scribbles. Erasing scribbles is my job."`
+        },
+        flags: ["c2_confess", "c2_solExposed"],
+        goto: "c2_end2"
+      }
+    }, {
+      echoReq: "c2_leadInk",
+      echo: { ko: "지우개 가루 주문서", en: "The eraser-powder order slip" },
+      label: { ko: "[주문서] 지우개 가루 열 통의 주문서를 책상에 올려놓는다", en: "[Order slip] Lay the order for ten tins of eraser powder on his desk" },
+      check: { ability: "CHA", skill: "intimidation", dc: 9, label: "위협" },
+      stake: { ko: "앞서 얻은 종이로 쉽다 · 실패하면 그가 종이를 찢는다", en: "Easier with the slip in hand · fail, and he tears it up" },
+      success: {
+        text: {
+          ko: `묵이 종이를 오래 본다. "…열 통으로는 모자라더군요. 붉은 글씨는 매일 아침 다시 생기니까."`,
+          en: `Muk looks at the slip a long while. "…Ten tins weren't enough. The red writing comes back every morning."`
+        },
+        flags: ["c2_confess"],
+        goto: "c2_end2"
+      },
+      fail: {
+        text: {
+          ko: `묵이 종이를 반으로, 다시 반으로 찢는다. "증거는 깨끗하지 않군요."`,
+          en: `Muk tears the slip in half, then in half again. "Your evidence isn't very clean."`
+        },
+        goto: "c2_end2"
+      }
+    }, {
+      label: { ko: "[설득] \"반박이 낙서라면, 왜 매일 밤 지워야 합니까?\"", en: "[Persuade] \"If rebuttals are scribbles, why erase them every night?\"" },
+      check: { ability: "CHA", skill: "persuasion", dc: 13, label: "설득" },
+      stake: { ko: "성공하면 그가 실수한다 · 실패하면 문전박대", en: "Success: he slips up · Failure: you're shown the door" },
+      success: {
+        text: {
+          ko: `"낙서는 지우지 않아도 되지요." 묵이 멈칫한다. 자기 말에 걸려 넘어진 얼굴이다.\n\n"…읽히니까 지우는 겁니다."`,
+          en: `"Scribbles don't need erasing." Muk freezes, a man tripped by his own words.\n\n"…I erase them because they get read."`
+        },
+        flags: ["c2_confess"],
+        goto: "c2_end2"
+      },
+      fail: {
+        text: {
+          ko: `"기록관의 질문은 기록하지 않겠습니다." 문이 닫힌다.`,
+          en: `"I shan't record an archivist's questions." The door closes.`
+        },
+        goto: "c2_end2"
+      }
+    }]
+  },
+  c2_end2: {
+    ch: 6,
+    ending: 6
+  },
+  /* ---------- 사건 2 · 제3장 「붉은 손들」 — 지우는 밤, 다시 쓰는 아침, 그리고 감찰관 ---------- */
+  c2_night: {
+    ch: 7,
+    text: {
+      ko: `그날 밤. 필사소의 등불이 하나씩 꺼지고, 서고 안쪽에서만 불빛이 샌다.\n\n긁는 소리가 시작된다. 사각, 사각. 백 명의 반박이 한 줄씩 사라지는 소리.\n\n내일 아침 도청 감찰관이 온다는 소문이 돌았다. 오늘 밤이 마지막 청소다.`,
+      en: `That night, the scriptorium lamps go out one by one; light leaks only from deep in the archive.\n\nThe scraping begins. Scritch, scritch. The sound of a hundred rebuttals vanishing one line at a time.\n\nWord has gone round that the provincial inspector arrives tomorrow morning. Tonight is the last cleaning.`
+    },
+    choices: [{
+      label: { ko: "[은신] 서고 안쪽, 지우는 현장으로 숨어든다", en: "[Stealth] Slip into the archive, where the erasing happens" },
+      check: { ability: "DEX", skill: "stealth", dc: 12, label: "은신" },
+      stake: { ko: "성공하면 아무도 모르게 본다 · 실패하면 들킨 채 들어간다", en: "Success: you watch unseen · Failure: you go in spotted" },
+      success: {
+        text: {
+          ko: `서가 그림자 사이로 미끄러져 들어간다. 아무도 고개를 들지 않는다.`,
+          en: `You slide in between the shadows of the shelves. No one looks up.`
+        },
+        flags: ["c2_hidden"],
+        goto: "c2_scrape"
+      },
+      fail: {
+        text: {
+          ko: `발밑에서 깃펜이 부러진다. 묵이 고개를 든다. "들어오시지요. 어차피 보실 거라면."`,
+          en: `A quill snaps underfoot. Muk raises his head. "Come in, then. If you're going to watch anyway."`
+        },
+        goto: "c2_scrape"
+      }
+    }, {
+      echoReq: "c2_leadIre",
+      echo: { ko: "이레의 붉은 방", en: "Ire's red room" },
+      label: { ko: "지우는 곳 대신, 이레의 방에서 아침을 기다린다", en: "Instead of the erasing, wait for morning in Ire's room" },
+      stake: { ko: "붉은 손의 비밀을 먼저 듣는다 · 오늘 밤 지우는 현장은 놓친다", en: "You hear the red hand's secret first · you miss tonight's erasing" },
+      result: {
+        text: {
+          ko: `이레가 문을 열고 들어오다 멈춘다. "…발소리가 하나 더 있네요. 기록관이죠?"\n\n그녀가 웃는다. "다 봤군요. 그럼 숨길 것도 없어요."`,
+          en: `Ire opens the door and stops. "…There's one more set of footsteps. The archivist?"\n\nShe smiles. "So you've seen it all. Then there's nothing left to hide."`
+        },
+        goto: "c2_ire"
+      }
+    }]
+  },
+  c2_scrape: {
+    ch: 7,
+    text: {
+      ko: `견습생들이 긁개를 들고 사본 위에 엎드려 있다. 묵이 사이를 걸으며 등불을 비춘다.\n\n그의 책상 위에 뜯긴 봉투 하나. 소금여울 촌장실의 봉인이다. 촌장이 바뀌었어도, 봉인은 같다.`,
+      en: `Apprentices bend over the copies with scrapers. Muk walks between them, holding up a lamp.\n\nOn his desk, an opened envelope. The seal of the Saltmarsh chief's office. The chief may have changed, but the seal is the same.`
+    },
+    choices: [{
+      label: { ko: "[기만] 견습생 틈에 섞여 봉투 속 편지를 빼낸다", en: "[Deceive] Blend in with the apprentices and lift the letter from the envelope" },
+      check: { ability: "CHA", skill: "deception", dc: 12, label: "기만" },
+      stake: { ko: "성공하면 거래의 증거를 쥔다 · 실패하면 쫓겨난다", en: "Success: proof of the deal in hand · Failure: you're thrown out" },
+      success: {
+        text: {
+          ko: `편지 한 장. '이번 달 정서비. 감찰 전에 제113호부터 전부 깨끗하게. — 소금여울 촌장실.'\n\n사람은 바뀌어도, 지우라는 주문은 그대로다.`,
+          en: `One letter. 'This month's clean-copy fee. Everything from No. 113 on, clean before the inspection. — Saltmarsh chief's office.'\n\nThe people changed. The order to erase did not.`
+        },
+        flags: ["c2f_letter"],
+        goto: "c2_ire"
+      },
+      fail: {
+        text: {
+          ko: `"넌 몇 번 서가 담당이냐." 묵의 등불이 얼굴을 비춘다. 당신은 문밖으로 밀려난다.`,
+          en: `"Which shelf are you on?" Muk's lamp finds your face. You're pushed out the door.`
+        },
+        goto: "c2_ire"
+      }
+    }, {
+      label: { ko: "[운동] 긁개를 쥔 손들 사이로 들어가 사본 더미를 끌어안는다", en: "[Athletics] Wade in among the scrapers and haul off an armful of copies" },
+      check: { ability: "STR", skill: "athletics", dc: 12, label: "운동" },
+      stake: { ko: "성공하면 반박 수십 장을 지킨다 · 실패하면 다친다", en: "Success: dozens of rebuttals saved · Failure: you get hurt" },
+      success: {
+        text: {
+          ko: `사본 더미를 안고 서가 사이를 달린다. 등 뒤에서 묵이 외친다. "그건 낙서요!"\n\n품 안에서 붉은 글씨들이 바스락거린다.`,
+          en: `You run between the shelves with the copies in your arms. Behind you Muk shouts, "Those are scribbles!"\n\nThe red writing rustles against your chest.`
+        },
+        flags: ["c2_saved"],
+        goto: "c2_ire"
+      },
+      fail: {
+        text: {
+          ko: `긁개 손잡이가 옆구리를 친다. 사본 몇 장이 손에서 흩어진다.`,
+          en: `A scraper handle catches your ribs. A few copies scatter from your hands.`
+        },
+        damage: [2, 4],
+        ifDown: "gameover",
+        goto: "c2_ire"
+      }
+    }, {
+      echoReq: "c2_hidden",
+      echo: { ko: "아무도 모르게 숨어든 자리", en: "The spot you reached unseen" },
+      label: { ko: "끝까지 지켜보며, 무엇이 지워지는지 순서를 외운다", en: "Watch to the end and memorize the order of what's erased" },
+      stake: { ko: "판정 없이 확정 · 무엇이 사라졌는지 안다", en: "No roll · you'll know what vanished" },
+      result: {
+        text: {
+          ko: `제113호, 제114호, 제115호…. 당신이 고쳐 쓴 번호들이 차례로 하얘진다. 마지막은 오늘 날짜다.\n\n지운 자리를 머릿속에 하나씩 적는다. 종이가 아니라 기억에.`,
+          en: `No. 113, No. 114, No. 115…. The numbers you rewrote go white one after another. The last is dated today.\n\nYou note each erased place in your head. Not on paper — in memory.`
+        },
+        flags: ["c2_memorized"],
+        goto: "c2_ire"
+      }
+    }]
+  },
+  c2_ire: {
+    ch: 7,
+    text: {
+      ko: `새벽. 이레의 방에 붉은 잉크 냄새가 가득하다. 그녀는 지워진 사본을 무릎에 놓고, 긁힌 자리를 손끝으로 더듬으며 다시 쓰고 있다.\n\n"붉은 손은 여럿이에요. 기록을 믿지 않은 모든 사람. 그런데 지워진 걸 되살리는 손은 — 하나죠."\n\n그녀가 잉크병을 내려놓는다. "봉투를 보낸 것도 저예요. 지워지지 않는 반박을 써 줄 사람이 필요했어요."`,
+      en: `Dawn. Ire's room is thick with the smell of red ink. She has an erased copy on her knees, tracing the scraped places with her fingertips and writing them in again.\n\n"The red hand is many. Everyone who refused to believe the record. But the hand that brings back what was erased — that's one."\n\nShe sets down the ink bottle. "I sent you the envelope, too. I needed someone who'd write a rebuttal that couldn't be erased."`
+    },
+    choices: [{
+      label: { ko: "\"감찰관이 오면, 무엇을 기록으로 남기죠?\"", en: "\"When the inspector comes, what goes on the record?\"" },
+      result: {
+        text: {
+          ko: `이레가 고개를 든다. "그건 당신이 정해요, 기록관. 저는 다시 쓸 뿐이에요."`,
+          en: `Ire lifts her head. "That's yours to decide, archivist. I only write it back."`
+        },
+        goto: "c2_verdict"
+      }
+    }]
+  },
+  c2_verdict: {
+    ch: 7,
+    text: {
+      ko: `아침. 필사소 마당에 도청 감찰관의 마차가 선다. 묵이 반듯하게 인사한다. 서고는 깨끗하다. 너무 깨끗하다.\n\n감찰관이 당신을 본다. "기록관이라고? 이 필사소에 대해 남길 말이 있소?"\n\n이레가 담장 너머에서 듣고 있다. 묵이 당신을 본다. 그의 눈이 말한다 — 당신의 기록만은 지우지 않겠다고.`,
+      en: `Morning. The provincial inspector's carriage stops in the scriptorium yard. Muk bows, perfectly straight. The archive is clean. Too clean.\n\nThe inspector looks at you. "An archivist? Anything to put on record about this scriptorium?"\n\nIre is listening beyond the wall. Muk looks at you. His eyes say it — your record alone, he will not erase.`
+    },
+    choices: [{
+      needFrags: ["c2f_pay", "c2f_letter"],
+      label: { ko: "[폭로] 정서비 장부와 촌장실의 편지를 감찰관에게 내민다", en: "[Expose] Hand the inspector the clean-copy ledger and the chief's office letter" },
+      stake: { ko: "두 증거를 모두 내놓아야 한다 · 묵은 물러나고, 지워진 반박들이 되살아난다", en: "You need both pieces · Muk steps down, and the erased rebuttals come back" },
+      result: {
+        text: {
+          ko: `감찰관이 장부와 편지를 나란히 놓고 오래 읽는다. 묵의 반듯한 어깨가 처음으로 기운다.\n\n"정서비라…. 깨끗한 기록을 돈으로 샀다는 기록이군."`,
+          en: `The inspector lays the ledger and the letter side by side and reads a long while. For the first time, Muk's straight shoulders sag.\n\n"A clean-copy fee…. So this is a record of clean records being bought."`
+        },
+        flags: ["c2_expose"],
+        goto: "c2_end3"
+      }
+    }, {
+      label: { ko: "[보존] 감찰관에겐 아무 말도 하지 않고, 이레와 함께 반박들을 숨긴다", en: "[Preserve] Say nothing to the inspector; hide the rebuttals with Ire instead" },
+      stake: { ko: "반박은 살아남는다 · 지우는 일은 계속된다", en: "The rebuttals survive · the erasing goes on" },
+      result: {
+        text: {
+          ko: `"남길 말은 없습니다." 감찰관이 고개를 끄덕이고 떠난다. 그날 밤, 필사소 지하 빈 창고에 붉은 사본이 한 장씩 쌓이기 시작한다.`,
+          en: `"Nothing to put on record." The inspector nods and leaves. That night, in an empty cellar beneath the scriptorium, red copies begin to pile up one sheet at a time.`
+        },
+        flags: ["c2_keep"],
+        goto: "c2_end3"
+      }
+    }, {
+      label: { ko: "[거래] 묵의 눈짓을 받아들인다 — 내 기록만은 남긴다", en: "[Deal] Accept Muk's glance — keep only your own record" },
+      stake: { ko: "당신의 반박은 남는다 · 다른 백 명의 반박은 사라진다", en: "Your rebuttal stays · a hundred others vanish" },
+      result: {
+        text: {
+          ko: `"이상 없습니다." 감찰관이 떠난다. 묵이 당신의 사본 한 장을 서가 맨 위에 꽂는다. 그 아래 칸은 하얗다.`,
+          en: `"Nothing out of order." The inspector leaves. Muk slips one copy — yours — onto the top shelf. The shelves below are white.`
+        },
+        flags: ["c2_dealMuk"],
+        goto: "c2_end3"
+      }
+    }]
+  },
+  c2_end3: {
+    ch: 7,
+    ending: 7
+  },
   /* ---------- 에필로그 「S」 — 사건 기록장이 결론을 허락할 때만 온다 ---------- */
   accuse: {
     ch: 4,
@@ -3904,6 +4279,7 @@ const SCENES = {
     },
     choices: [{
       wrongNot: true,
+      caseReady: true,
       label: { ko: "[고발] 세온이 S다 — 관헌에 넘긴다", en: "[Accuse] Seon is S — hand him to the law" },
       stake: { ko: "진실이 밝혀진다 · 이번 겨울의 곡식과 약이 끊긴다", en: "The truth comes out · this winter's grain and medicine stop" },
       result: {
@@ -3950,7 +4326,6 @@ const SCENES = {
         goto: "ending4"
       }
     }, {
-      wrongReq: true,
       label: { ko: "[보류] 아직이다 — 증거를 더 모아 다시 오겠다", en: "[Withdraw] Not yet — I'll come back with more evidence" },
       stake: { ko: "판결은 그대로 남는다 · 다음 기록에서 다시 이 서재에 설 수 있다", en: "The verdict stands for now · you can stand in this study again next record" },
       result: {
@@ -4062,8 +4437,53 @@ function buildEnding5(flags) {
   }
   ko.push("붉은 손은 한 사람이 아니다. 기록을 믿지 않은 모든 사람의 손이다. 그리고 그 손들을 지우는 누군가가 있다.");
   en.push("The red hand is not one person. It is the hand of everyone who refused to believe the record. And someone is erasing those hands.");
-  ko.push("\n— 사건 2 「붉은 손글씨」 제1장 끝. 다음 장은 다음 기록에서 이어진다.");
-  en.push("\n— End of Case 2, \"The Red Hand,\" Chapter 1. The next chapter continues in a later record.");
+  ko.push("\n— 사건 2 「붉은 손글씨」 제1장 끝.");
+  en.push("\n— End of Case 2, \"The Red Hand,\" Chapter 1.");
+  return bi(ko.join("\n\n"), en.join("\n\n"));
+}
+function buildEnding6(flags) {
+  const has = f => flags.includes(f);
+  const ko = [], en = [];
+  if (has("c2_confess")) {
+    ko.push("묵은 인정했다. 지우는 건 그의 일이고, 값은 소금여울 촌장실이 냈다. 깨끗한 기록은 돈으로 사는 물건이었다.");
+    en.push("Muk admitted it. Erasing is his job, and the Saltmarsh chief's office paid the price. A clean record was something you bought.");
+  } else {
+    ko.push("묵은 아무것도 인정하지 않았다. 문이 닫히고, 그 너머에서 붓 소리가 다시 이어진다.");
+    en.push("Muk admitted nothing. The door closed, and behind it the brush went on.");
+  }
+  if (has("c2_solExposed")) { ko.push("견습생 솔은 그날 밤 짐을 쌌다. 붉은 손톱은 끝내 지워지지 않았다."); en.push("The apprentice Sol packed his things that night. The red under his nails never came out."); }
+  if (has("c2f_ire")) { ko.push("이레의 방에 쌓인 빈 잉크병들이 자꾸 떠오른다. 지워진 자리에 누가 다시 쓰는가."); en.push("You keep seeing the empty ink bottles stacked in Ire's room. Who writes back into the erased places?"); }
+  ko.push("내일 아침 도청 감찰관이 온다는 소문이 돈다. 그렇다면 오늘 밤은 — 마지막 청소다.");
+  en.push("Word goes round that the provincial inspector arrives tomorrow morning. Then tonight is the last cleaning.");
+  ko.push("\n— 사건 2 「붉은 손글씨」 제2장 「긁힌 자리」 끝.");
+  en.push("\n— End of Case 2, \"The Red Hand,\" Chapter 2, \"The Scraped Places.\"");
+  return bi(ko.join("\n\n"), en.join("\n\n"));
+}
+function buildEnding7(flags) {
+  const has = f => flags.includes(f);
+  const ko = [], en = [];
+  if (has("c2_expose")) {
+    ko.push("감찰관의 보고서 첫 줄: '먹울 필사소 — 정서비 수수. 필사소장 해임.' 묵은 마지막까지 반듯하게 인사하고 떠났다.");
+    en.push("The first line of the inspector's report: 'Inkfold Scriptorium — clean-copy fees taken. Copy-master dismissed.' Muk bowed, perfectly straight, to the very end, and left.");
+    ko.push("그날부터 필사소는 붉은 반박을 지우지 않고 함께 베낀다. 이레가 서가 사이를 걸으며, 되살아난 글씨를 손끝으로 하나씩 읽는다.");
+    en.push("From that day the scriptorium copies the red rebuttals instead of erasing them. Ire walks the shelves, reading each restored line with her fingertips.");
+  } else if (has("c2_keep")) {
+    ko.push("감찰관은 '이상 없음'이라고 썼다. 필사소는 오늘 밤도 지운다.");
+    en.push("The inspector wrote 'nothing out of order.' Tonight, the scriptorium erases again.");
+    ko.push("하지만 지하 창고에는 붉은 서고가 생겼다. 지워진 반박이 한 장씩 그곳으로 내려간다. 언젠가 누군가 그 문을 열 것이다.");
+    en.push("But beneath it, a red archive has begun. Each erased rebuttal goes down there, one sheet at a time. Someday, someone will open that door.");
+  } else {
+    ko.push("감찰관은 '이상 없음'이라고 썼다. 서가 맨 위 칸에 당신의 반박 한 장이 꽂혀 있다. 그 아래는 전부 하얗다.");
+    en.push("The inspector wrote 'nothing out of order.' On the top shelf sits one rebuttal — yours. Everything below it is white.");
+    ko.push("이레는 그날 이후 당신의 발소리에 고개를 들지 않는다.");
+    en.push("From that day on, Ire no longer lifts her head at your footsteps.");
+  }
+  if (has("c2_saved")) { ko.push("품에서 꺼낸 사본 수십 장. 붉은 글씨들이 아직 따뜻하다."); en.push("You take dozens of copies from your coat. The red writing is still warm."); }
+  if (has("c2_memorized")) { ko.push("지워진 번호들은 당신 머릿속에 남아 있다. 종이는 긁을 수 있어도, 기억은 긁을 수 없다."); en.push("The erased numbers stay in your head. Paper can be scraped. Memory can't."); }
+  ko.push("붉은 손은 여럿이었다. 기록을 믿지 않은 모든 사람. 그리고 이제 — 당신도 그 손 가운데 하나다.");
+  en.push("The red hand was many. Everyone who refused to believe the record. And now — you are one of those hands.");
+  ko.push("\n— 사건 2 「붉은 손글씨」 끝.");
+  en.push("\n— End of Case 2, \"The Red Hand.\"");
   return bi(ko.join("\n\n"), en.join("\n\n"));
 }
 function buildEnding4(flags) {
@@ -4108,6 +4528,11 @@ const SPECIALS = {
 };
 const TEASER = bi("잿돌 수도원에서 회수한 편지의 봉인이 풀렸다 — \"등대는 시험이었다. 통과한 자에게는, 이제 내가 직접 간다. — S\"", "The seal on a letter recovered from the Ashstone Monastery has broken — \"The lighthouse was a test. For the one who passed, I am coming myself. — S\"");
 const CLUES = {
+  c2f_powder: { ko: "지우개 가루 열 통의 주문서", en: "An order for ten tins of eraser powder" },
+  c2f_pay: { ko: "소금여울 촌장실의 정서비", en: "The Saltmarsh chief's office's clean-copy fee" },
+  c2f_scraper: { ko: "붉은 가루가 묻은 긁개", en: "A scraper caked in red dust" },
+  c2f_ire: { ko: "이레의 방, 다시 쓴 반박들", en: "Ire's room, the rebuttals written back" },
+  c2f_letter: { ko: "'감찰 전에 깨끗하게' — 촌장실의 편지", en: "'Clean before the inspection' — the chief's office letter" },
   peaceful: { ko: "도굴꾼의 증언", en: "The grave-robber's testimony" },
   fixed: { ko: "완전히 되살린 등대 기관", en: "A fully restored lighthouse mechanism" },
   sabotage: { ko: "일부러 빼낸 톱니", en: "A gear pulled out on purpose" },
@@ -4183,6 +4608,21 @@ const BADGES = [{
   id: "5",
   name: { ko: "붉은 손의 첫 장", en: "The Red Hand, Chapter One" }
 }, {
+  id: "6",
+  name: { ko: "긁힌 자리를 본 사람", en: "Saw the Scraped Places" }
+}, {
+  id: "7e",
+  name: { ko: "붉은 손을 되살린 기록관", en: "The Archivist Who Brought Back the Red Hand" },
+  how: { ko: "사건 2: 정서비를 폭로한다", en: "Case 2: expose the clean-copy fee" }
+}, {
+  id: "7k",
+  name: { ko: "지하의 붉은 서고", en: "The Red Archive Below" },
+  how: { ko: "사건 2: 반박들을 숨겨 지킨다", en: "Case 2: hide the rebuttals to keep them" }
+}, {
+  id: "7d",
+  name: { ko: "맨 윗칸의 한 장", en: "One Sheet on the Top Shelf" },
+  how: { ko: "사건 2: 내 기록만 남긴다", en: "Case 2: keep only your own record" }
+}, {
   id: "1pf",
   ch: 1,
   name: { ko: "침묵의 교섭가", en: "The Silent Negotiator" },
@@ -4244,7 +4684,7 @@ const BADGES = [{
   name: { ko: "S의 사람", en: "S's Own" },
   how: { ko: "에필로그: 알고도 덮는다", en: "Epilogue: bury what you know" }
 }];
-const badgeId = (ending, flags) => ending === 5 ? "5" : ending === 4 ? "4" + (flags.includes("accuseSeon") ? "t" : flags.includes("accuseBern") ? "b" : "d") : ending === 1 && flags.includes("signal") ? "1s" : ending === 1 ? "1" + (flags.includes("peaceful") ? "p" : "c") + (flags.includes("fixed") ? "f" : "j") : ending === 2 ? "2" + (flags.includes("peaceful2") ? "p" : "c") : "3" + (flags.includes("saved3") ? "s" : "e");
+const badgeId = (ending, flags) => ending === 7 ? "7" + (flags.includes("c2_expose") ? "e" : flags.includes("c2_keep") ? "k" : "d") : ending === 6 ? "6" : ending === 5 ? "5" : ending === 4 ? "4" + (flags.includes("accuseSeon") ? "t" : flags.includes("accuseBern") ? "b" : "d") : ending === 1 && flags.includes("signal") ? "1s" : ending === 1 ? "1" + (flags.includes("peaceful") ? "p" : "c") + (flags.includes("fixed") ? "f" : "j") : ending === 2 ? "2" + (flags.includes("peaceful2") ? "p" : "c") : "3" + (flags.includes("saved3") ? "s" : "e");
 
 /* ---------- 오늘의 도전 — 날짜 기반으로 매일 하나가 결정된다(재방문 유도) ---------- */
 const DAILY_CHALLENGES = [{
@@ -4315,6 +4755,18 @@ function chapterLedger(ch, flags) {
   const has = f => flags.includes(f);
   const rows = [];
   const row = (kept, ko, en, next) => rows.push({ kept, text: bi(ko, en), next: next || null });
+  if (ch === 6) {
+    row(has("c2_confess") ? true : false, has("c2_confess") ? "묵의 자백 — 들었다" : "묵의 자백 — 듣지 못했다", has("c2_confess") ? "Muk's confession — heard" : "Muk's confession — not heard", has("c2_confess") ? bi("3장에서: 지우는 밤이 마지막 청소임을 안다", "In Ch.3: you know tonight is the last cleaning") : null);
+    row(has("c2f_pay") ? true : null, has("c2f_pay") ? "정서비 장부 — 손에 넣었다" : "정서비 장부 — 보지 못했다", has("c2f_pay") ? "The clean-copy ledger — in hand" : "The clean-copy ledger — not seen", has("c2f_pay") ? bi("판결에서: [폭로]의 증거 하나", "At the verdict: one piece of proof for [Expose]") : null);
+    row(has("c2f_ire") ? true : null, has("c2f_ire") ? "이레의 방 — 들여다봤다" : "이레의 방 — 모른다", has("c2f_ire") ? "Ire's room — looked in" : "Ire's room — unknown", has("c2f_ire") ? bi("3장에서: 이레의 방에서 아침을 기다릴 수 있다", "In Ch.3: you can wait for dawn in Ire's room") : null);
+    return rows;
+  }
+  if (ch === 7) {
+    row(has("c2_expose") ? true : false, has("c2_expose") ? "지워진 반박들 — 되살렸다" : "지워진 반박들 — 여전히 지워진다", has("c2_expose") ? "The erased rebuttals — restored" : "The erased rebuttals — still being erased");
+    row(has("c2_saved") ? true : null, has("c2_saved") ? "사본 수십 장 — 품에 안고 나왔다" : "사본 — 챙기지 못했다", has("c2_saved") ? "Dozens of copies — carried out" : "Copies — none carried out");
+    row(has("c2_dealMuk") ? false : true, has("c2_dealMuk") ? "이레 — 등을 돌렸다" : "이레 — 곁에 있다", has("c2_dealMuk") ? "Ire — turned away" : "Ire — still beside you");
+    return rows;
+  }
   if (ch === 5) {
     row(has("c2_erased") ? true : null, has("c2_erased") ? "필사소장의 작업 목록 — 읽었다" : "필사소장의 작업 목록 — 보지 못했다", has("c2_erased") ? "The copy-master's work list — read" : "The copy-master's work list — not seen");
     row(has("c2_ownCopy") ? true : false, has("c2_ownCopy") ? "내 반박의 사본 — 챙겼다" : "내 반박의 사본 — 서가에 남겨 두었다", has("c2_ownCopy") ? "Copy of your rebuttal — taken" : "Copy of your rebuttal — left on the shelf");
@@ -4371,7 +4823,7 @@ const SCAR_MAX = 2;
 // 장치는 한 번에 하나씩 드러난다: 2번째 기록 발자국, 3번째 흉터, 4번째 붉은 쪽지.
 const UNLOCK_AT = { paths: 1, scars: 2, notes: 3, timer: 1 };
 // 장마다 시작 장면(쓰러지면 그 장 처음부터 다시 쓸 수 있다 — 1000명 인터뷰: 2·3장에서 죽으면 1장부터라 그만둠).
-const CHAPTER_START = { 1: "intro", 2: "intro2", 3: "intro3", 5: "c2_intro" };
+const CHAPTER_START = { 1: "intro", 2: "intro2", 3: "intro3", 5: "c2_intro", 6: "c2_day", 7: "c2_night" };
 const ui_bi = k => UI[k];
 const UNLOCK_LINES = {
   1: bi("이번 기록부터 — 발자국. 지난번에 간 길은 흐리게, 안 가 본 길은 금색으로 보인다.", "From this record on — footprints. Roads you took last time fade; roads not taken glow gold."),
@@ -4398,6 +4850,13 @@ const SCENE_DOING = {
   c2_duel: bi("셋을 다 상대할 수는 없다", "You can't take all three"),
   c2_hall: bi("내가 고쳐 쓴 기록들 사이에서", "Among the records you rewrote"),
   c2_reader: bi("손끝으로 글씨를 읽는 사람", "Someone who reads with her fingertips"),
+  c2_day: bi("해 지기 전 두 곳", "Two places before sundown"),
+  c2_day2: bi("한 곳 더", "One more place"),
+  c2_master: bi("반듯한 사람과 마주 앉아", "Facing a very straight man"),
+  c2_night: bi("지우는 밤", "The night of erasing"),
+  c2_scrape: bi("백 명의 반박이 사라지는 소리", "A hundred rebuttals vanishing"),
+  c2_ire: bi("다시 쓰는 손", "The hand that writes it back"),
+  c2_verdict: bi("무엇을 기록으로 남길 것인가", "What goes on the record"),
   dawn2: bi("해 지기 전, 두 곳만 들를 수 있다", "Before sundown — two stops only"),
   dawn2b: bi("한 곳만 더 들를 수 있다", "One more stop"),
   dusk3: bi("해 지기 전, 바깥을 두 곳만 돌아볼 수 있다", "Before sunset — two places outside the walls"),
@@ -4467,16 +4926,17 @@ const CAST = {
   odo: { name: bi("오도", "Odo"), role: bi("잿돌 수도원 종지기", "Bell-keeper of Ashstone"), mark: "\uD83D\uDD14" },
   pip: { name: bi("핍", "Pip"), role: bi("붙잡혀 있던 배달부", "A captive courier"), mark: "\u2709\uFE0F" },
   grey: { name: bi("회색 형제", "Grey Brother"), role: bi("가짜 수도사", "The false monk"), mark: "\uD83D\uDD6F\uFE0F" },
-  ire: { name: bi("이레", "Ire"), role: bi("먹울의 눈먼 낭독가", "The blind reader of Inkfold"), mark: "\uD83D\uDC50" }
+  ire: { name: bi("이레", "Ire"), role: bi("먹울의 눈먼 낭독가", "The blind reader of Inkfold"), mark: "\uD83D\uDC50" },
+  muk: { name: bi("묵", "Muk"), role: bi("먹울 필사소장", "Copy-master of Inkfold"), mark: "\uD83D\uDD8C" }
 };
 const SUSPECTS = ["seon", "bern", "ren"];
 // 인물 초상: 진짜 그림이 준비되면 PORTRAIT_FILES에 경로만 채운다(예: seon: "art/seon.png") → docs/art-brief.md
 // 그 전까지는 코드로 그린 도형 초안(회색조 + 붉은 잉크 하나)이 대신한다.
 const PORTRAIT_FILES = {};
-const PORTRAIT_DRAFTS = {"seon": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\"><rect width=\"100\" height=\"100\" fill=\"#1d1a17\"/><polygon points=\"10,100 22,74 50,68 50,100\" fill=\"#2b2724\"/><polygon points=\"50,68 78,74 90,100 50,100\" fill=\"#3a3530\"/><polygon points=\"38,66 50,72 62,66 62,76 50,80 38,76\" fill=\"#d9d2c6\"/><polygon points=\"35,30 50,22 50,65 35,55\" fill=\"#857d72\"/><polygon points=\"50,22 65,30 65,55 50,65\" fill=\"#b8b0a4\"/><polygon points=\"34,30 50,20 66,30 66,26 50,14 34,26\" fill=\"#2a2622\"/><rect x=\"34\" y=\"26\" width=\"18\" height=\"4\" fill=\"#2a2622\"/><rect x=\"42.2\" y=\"40\" width=\"2.6\" height=\"7\" fill=\"#141210\"/><rect x=\"55.2\" y=\"40\" width=\"2.6\" height=\"7\" fill=\"#141210\"/><rect x=\"44\" y=\"54\" width=\"12\" height=\"1.4\" fill=\"#141210\"/><polygon points=\"66,86 82,86 80,96 68,96\" fill=\"#d9d2c6\"/><circle cx=\"74\" cy=\"86\" r=\"1.8\" fill=\"#c0392b\"/></svg>", "bern": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\"><rect width=\"100\" height=\"100\" fill=\"#1d1a17\"/><polygon points=\"10,100 22,74 50,68 50,100\" fill=\"#3e3832\"/><polygon points=\"50,68 78,74 90,100 50,100\" fill=\"#4d463e\"/><polygon points=\"35,32 50,24 50,67 35,57\" fill=\"#857d72\"/><polygon points=\"50,24 65,32 65,57 50,67\" fill=\"#b8b0a4\"/><polygon points=\"33,32 50,20 67,32 67,24 50,12 33,24\" fill=\"#4a443c\"/><rect x=\"33\" y=\"28\" width=\"34\" height=\"5\" fill=\"#5a534a\"/><polygon points=\"35,48 50,52 65,48 63,66 50,74 37,66\" fill=\"#d6cfc3\"/><rect x=\"33\" y=\"34\" width=\"34\" height=\"3.4\" fill=\"#ece6da\"/><circle cx=\"62\" cy=\"35.7\" r=\"1.7\" fill=\"#c0392b\"/><rect x=\"42.2\" y=\"42\" width=\"2.6\" height=\"3\" fill=\"#141210\"/><rect x=\"55.2\" y=\"42\" width=\"2.6\" height=\"3\" fill=\"#141210\"/></svg>", "ren": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\"><rect width=\"100\" height=\"100\" fill=\"#1d1a17\"/><polygon points=\"10,100 22,74 50,68 50,100\" fill=\"#34302b\"/><polygon points=\"50,68 78,74 90,100 50,100\" fill=\"#433d36\"/><polygon points=\"30,70 33,26 50,12 67,26 70,70 50,64\" fill=\"#2c2824\"/><polygon points=\"37,32 50,24 50,67 37,57\" fill=\"#857d72\"/><polygon points=\"50,24 63,32 63,57 50,67\" fill=\"#b8b0a4\"/><rect x=\"43.2\" y=\"41\" width=\"2.6\" height=\"7\" fill=\"#141210\"/><rect x=\"54.2\" y=\"41\" width=\"2.6\" height=\"7\" fill=\"#141210\"/><path d=\"M55,48 l6,6\" stroke=\"#141210\" stroke-width=\"1.2\"/><path d=\"M78,98 L78,60 q0,-10 -8,-10 q-6,0 -6,6\" stroke=\"#9a9184\" stroke-width=\"3\" fill=\"none\"/><path d=\"M64,56 q0,4 3,5\" stroke=\"#c0392b\" stroke-width=\"3\" fill=\"none\"/></svg>", "scully": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\"><rect width=\"100\" height=\"100\" fill=\"#1d1a17\"/><polygon points=\"8,100 24,70 50,74 50,100\" fill=\"#151311\"/><polygon points=\"50,74 76,70 92,100 50,100\" fill=\"#211e1b\"/><polygon points=\"36,70 44,58 50,76\" fill=\"#2b2724\"/><polygon points=\"64,70 56,58 50,76\" fill=\"#34302b\"/><polygon points=\"39,30 50,22 50,66 39,56\" fill=\"#857d72\"/><polygon points=\"50,22 61,30 61,56 50,66\" fill=\"#b8b0a4\"/><polygon points=\"39,30 50,18 61,30 61,25 50,14 39,25\" fill=\"#1a1715\"/><rect x=\"43.900000000000006\" y=\"40\" width=\"2.6\" height=\"5\" fill=\"#141210\"/><rect x=\"53.5\" y=\"40\" width=\"2.6\" height=\"5\" fill=\"#141210\"/><rect x=\"80\" y=\"62\" width=\"2\" height=\"30\" fill=\"#c0392b\"/><rect x=\"77\" y=\"88\" width=\"8\" height=\"2.5\" fill=\"#6f675d\"/></svg>", "odo": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\"><rect width=\"100\" height=\"100\" fill=\"#1d1a17\"/><line x1=\"18\" y1=\"20\" x2=\"40\" y2=\"78\" stroke=\"#5a534a\" stroke-width=\"3\"/><line x1=\"82\" y1=\"20\" x2=\"60\" y2=\"78\" stroke=\"#5a534a\" stroke-width=\"3\"/><polygon points=\"14,20 18,10 22,20\" fill=\"#8f877b\"/><polygon points=\"78,20 82,8 86,20\" fill=\"#c0392b\"/><polygon points=\"10,100 22,74 50,68 50,100\" fill=\"#4a443c\"/><polygon points=\"50,68 78,74 90,100 50,100\" fill=\"#5a534a\"/><polygon points=\"40,70 50,78 60,70 60,74 50,82 40,74\" fill=\"#3a352f\"/><polygon points=\"36,32 50,24 50,67 36,57\" fill=\"#857d72\"/><polygon points=\"50,24 64,32 64,57 50,67\" fill=\"#b8b0a4\"/><rect x=\"43.2\" y=\"42\" width=\"2.6\" height=\"6\" fill=\"#141210\"/><rect x=\"54.2\" y=\"42\" width=\"2.6\" height=\"6\" fill=\"#141210\"/></svg>", "pip": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\"><rect width=\"100\" height=\"100\" fill=\"#1d1a17\"/><polygon points=\"10,100 22,74 50,68 50,100\" fill=\"#3e3832\"/><polygon points=\"50,68 78,74 90,100 50,100\" fill=\"#4d463e\"/><polygon points=\"22,74 30,72 74,100 64,100\" fill=\"#2a2622\"/><polygon points=\"37,34 50,26 50,66 37,56\" fill=\"#857d72\"/><polygon points=\"50,26 63,34 63,56 50,66\" fill=\"#b8b0a4\"/><polygon points=\"35,32 50,22 65,32 65,28 50,18 35,28\" fill=\"#2a2622\"/><polygon points=\"50,30 72,30 70,34 50,34\" fill=\"#2a2622\"/><rect x=\"43.2\" y=\"42\" width=\"2.6\" height=\"7\" fill=\"#141210\"/><rect x=\"54.2\" y=\"42\" width=\"2.6\" height=\"7\" fill=\"#141210\"/><rect x=\"30\" y=\"86\" width=\"22\" height=\"14\" fill=\"#5a534a\"/><circle cx=\"41\" cy=\"92\" r=\"3\" fill=\"#c0392b\"/></svg>", "grey": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\"><rect width=\"100\" height=\"100\" fill=\"#1d1a17\"/><polygon points=\"10,100 22,74 50,68 50,100\" fill=\"#5a554e\"/><polygon points=\"50,68 78,74 90,100 50,100\" fill=\"#6a645b\"/><polygon points=\"28,78 31,24 50,8 69,24 72,78 50,70\" fill=\"#6f6960\"/><polygon points=\"37,32 50,22 63,32 63,58 50,66 37,58\" fill=\"#151311\"/><rect x=\"43.5\" y=\"42\" width=\"3\" height=\"1.6\" fill=\"#8a8278\"/><rect x=\"53.5\" y=\"42\" width=\"3\" height=\"1.6\" fill=\"#8a8278\"/><rect x=\"80\" y=\"50\" width=\"3\" height=\"46\" fill=\"#2a2622\"/><rect x=\"75\" y=\"50\" width=\"13\" height=\"3\" fill=\"#2a2622\"/><polygon points=\"79.5,49 81.5,40 83.5,49\" fill=\"#c0392b\"/></svg>", "ire": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\"><rect width=\"100\" height=\"100\" fill=\"#1d1a17\"/><polygon points=\"26,96 30,30 50,14 70,30 74,96 60,96 60,40 40,40 40,96\" fill=\"#2a2622\"/><polygon points=\"10,100 22,74 50,68 50,100\" fill=\"#3a352f\"/><polygon points=\"50,68 78,74 90,100 50,100\" fill=\"#4a443c\"/><polygon points=\"37,32 50,24 50,67 37,57\" fill=\"#857d72\"/><polygon points=\"50,24 63,32 63,57 50,67\" fill=\"#b8b0a4\"/><polygon points=\"37,34 50,20 63,34 63,30 50,16 37,30\" fill=\"#2a2622\"/><path d=\"M41.5,44 q3,3 6,0\" stroke=\"#141210\" stroke-width=\"1.6\" fill=\"none\"/><path d=\"M52.5,44 q3,3 6,0\" stroke=\"#141210\" stroke-width=\"1.6\" fill=\"none\"/><rect x=\"32\" y=\"84\" width=\"36\" height=\"12\" fill=\"#d9d2c6\"/><rect x=\"34\" y=\"82\" width=\"10\" height=\"5\" rx=\"2\" fill=\"#b8b0a4\"/><rect x=\"34\" y=\"82\" width=\"3\" height=\"3\" fill=\"#c0392b\"/><rect x=\"38.5\" y=\"82\" width=\"3\" height=\"3\" fill=\"#c0392b\"/></svg>"};
+const PORTRAIT_DRAFTS = {"seon": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\"><rect width=\"100\" height=\"100\" fill=\"#1d1a17\"/><polygon points=\"10,100 22,74 50,68 50,100\" fill=\"#2b2724\"/><polygon points=\"50,68 78,74 90,100 50,100\" fill=\"#3a3530\"/><polygon points=\"38,66 50,72 62,66 62,76 50,80 38,76\" fill=\"#d9d2c6\"/><polygon points=\"35,30 50,22 50,65 35,55\" fill=\"#857d72\"/><polygon points=\"50,22 65,30 65,55 50,65\" fill=\"#b8b0a4\"/><polygon points=\"34,30 50,20 66,30 66,26 50,14 34,26\" fill=\"#2a2622\"/><rect x=\"34\" y=\"26\" width=\"18\" height=\"4\" fill=\"#2a2622\"/><rect x=\"42.2\" y=\"40\" width=\"2.6\" height=\"7\" fill=\"#141210\"/><rect x=\"55.2\" y=\"40\" width=\"2.6\" height=\"7\" fill=\"#141210\"/><rect x=\"44\" y=\"54\" width=\"12\" height=\"1.4\" fill=\"#141210\"/><polygon points=\"66,86 82,86 80,96 68,96\" fill=\"#d9d2c6\"/><circle cx=\"74\" cy=\"86\" r=\"1.8\" fill=\"#c0392b\"/></svg>", "bern": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\"><rect width=\"100\" height=\"100\" fill=\"#1d1a17\"/><polygon points=\"10,100 22,74 50,68 50,100\" fill=\"#3e3832\"/><polygon points=\"50,68 78,74 90,100 50,100\" fill=\"#4d463e\"/><polygon points=\"35,32 50,24 50,67 35,57\" fill=\"#857d72\"/><polygon points=\"50,24 65,32 65,57 50,67\" fill=\"#b8b0a4\"/><polygon points=\"33,32 50,20 67,32 67,24 50,12 33,24\" fill=\"#4a443c\"/><rect x=\"33\" y=\"28\" width=\"34\" height=\"5\" fill=\"#5a534a\"/><polygon points=\"35,48 50,52 65,48 63,66 50,74 37,66\" fill=\"#d6cfc3\"/><rect x=\"33\" y=\"34\" width=\"34\" height=\"3.4\" fill=\"#ece6da\"/><circle cx=\"62\" cy=\"35.7\" r=\"1.7\" fill=\"#c0392b\"/><rect x=\"42.2\" y=\"42\" width=\"2.6\" height=\"3\" fill=\"#141210\"/><rect x=\"55.2\" y=\"42\" width=\"2.6\" height=\"3\" fill=\"#141210\"/></svg>", "ren": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\"><rect width=\"100\" height=\"100\" fill=\"#1d1a17\"/><polygon points=\"10,100 22,74 50,68 50,100\" fill=\"#34302b\"/><polygon points=\"50,68 78,74 90,100 50,100\" fill=\"#433d36\"/><polygon points=\"30,70 33,26 50,12 67,26 70,70 50,64\" fill=\"#2c2824\"/><polygon points=\"37,32 50,24 50,67 37,57\" fill=\"#857d72\"/><polygon points=\"50,24 63,32 63,57 50,67\" fill=\"#b8b0a4\"/><rect x=\"43.2\" y=\"41\" width=\"2.6\" height=\"7\" fill=\"#141210\"/><rect x=\"54.2\" y=\"41\" width=\"2.6\" height=\"7\" fill=\"#141210\"/><path d=\"M55,48 l6,6\" stroke=\"#141210\" stroke-width=\"1.2\"/><path d=\"M78,98 L78,60 q0,-10 -8,-10 q-6,0 -6,6\" stroke=\"#9a9184\" stroke-width=\"3\" fill=\"none\"/><path d=\"M64,56 q0,4 3,5\" stroke=\"#c0392b\" stroke-width=\"3\" fill=\"none\"/></svg>", "scully": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\"><rect width=\"100\" height=\"100\" fill=\"#1d1a17\"/><polygon points=\"8,100 24,70 50,74 50,100\" fill=\"#151311\"/><polygon points=\"50,74 76,70 92,100 50,100\" fill=\"#211e1b\"/><polygon points=\"36,70 44,58 50,76\" fill=\"#2b2724\"/><polygon points=\"64,70 56,58 50,76\" fill=\"#34302b\"/><polygon points=\"39,30 50,22 50,66 39,56\" fill=\"#857d72\"/><polygon points=\"50,22 61,30 61,56 50,66\" fill=\"#b8b0a4\"/><polygon points=\"39,30 50,18 61,30 61,25 50,14 39,25\" fill=\"#1a1715\"/><rect x=\"43.900000000000006\" y=\"40\" width=\"2.6\" height=\"5\" fill=\"#141210\"/><rect x=\"53.5\" y=\"40\" width=\"2.6\" height=\"5\" fill=\"#141210\"/><rect x=\"80\" y=\"62\" width=\"2\" height=\"30\" fill=\"#c0392b\"/><rect x=\"77\" y=\"88\" width=\"8\" height=\"2.5\" fill=\"#6f675d\"/></svg>", "odo": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\"><rect width=\"100\" height=\"100\" fill=\"#1d1a17\"/><line x1=\"18\" y1=\"20\" x2=\"40\" y2=\"78\" stroke=\"#5a534a\" stroke-width=\"3\"/><line x1=\"82\" y1=\"20\" x2=\"60\" y2=\"78\" stroke=\"#5a534a\" stroke-width=\"3\"/><polygon points=\"14,20 18,10 22,20\" fill=\"#8f877b\"/><polygon points=\"78,20 82,8 86,20\" fill=\"#c0392b\"/><polygon points=\"10,100 22,74 50,68 50,100\" fill=\"#4a443c\"/><polygon points=\"50,68 78,74 90,100 50,100\" fill=\"#5a534a\"/><polygon points=\"40,70 50,78 60,70 60,74 50,82 40,74\" fill=\"#3a352f\"/><polygon points=\"36,32 50,24 50,67 36,57\" fill=\"#857d72\"/><polygon points=\"50,24 64,32 64,57 50,67\" fill=\"#b8b0a4\"/><rect x=\"43.2\" y=\"42\" width=\"2.6\" height=\"6\" fill=\"#141210\"/><rect x=\"54.2\" y=\"42\" width=\"2.6\" height=\"6\" fill=\"#141210\"/></svg>", "pip": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\"><rect width=\"100\" height=\"100\" fill=\"#1d1a17\"/><polygon points=\"10,100 22,74 50,68 50,100\" fill=\"#3e3832\"/><polygon points=\"50,68 78,74 90,100 50,100\" fill=\"#4d463e\"/><polygon points=\"22,74 30,72 74,100 64,100\" fill=\"#2a2622\"/><polygon points=\"37,34 50,26 50,66 37,56\" fill=\"#857d72\"/><polygon points=\"50,26 63,34 63,56 50,66\" fill=\"#b8b0a4\"/><polygon points=\"35,32 50,22 65,32 65,28 50,18 35,28\" fill=\"#2a2622\"/><polygon points=\"50,30 72,30 70,34 50,34\" fill=\"#2a2622\"/><rect x=\"43.2\" y=\"42\" width=\"2.6\" height=\"7\" fill=\"#141210\"/><rect x=\"54.2\" y=\"42\" width=\"2.6\" height=\"7\" fill=\"#141210\"/><rect x=\"30\" y=\"86\" width=\"22\" height=\"14\" fill=\"#5a534a\"/><circle cx=\"41\" cy=\"92\" r=\"3\" fill=\"#c0392b\"/></svg>", "grey": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\"><rect width=\"100\" height=\"100\" fill=\"#1d1a17\"/><polygon points=\"10,100 22,74 50,68 50,100\" fill=\"#5a554e\"/><polygon points=\"50,68 78,74 90,100 50,100\" fill=\"#6a645b\"/><polygon points=\"28,78 31,24 50,8 69,24 72,78 50,70\" fill=\"#6f6960\"/><polygon points=\"37,32 50,22 63,32 63,58 50,66 37,58\" fill=\"#151311\"/><rect x=\"43.5\" y=\"42\" width=\"3\" height=\"1.6\" fill=\"#8a8278\"/><rect x=\"53.5\" y=\"42\" width=\"3\" height=\"1.6\" fill=\"#8a8278\"/><rect x=\"80\" y=\"50\" width=\"3\" height=\"46\" fill=\"#2a2622\"/><rect x=\"75\" y=\"50\" width=\"13\" height=\"3\" fill=\"#2a2622\"/><polygon points=\"79.5,49 81.5,40 83.5,49\" fill=\"#c0392b\"/></svg>", "ire": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\"><rect width=\"100\" height=\"100\" fill=\"#1d1a17\"/><polygon points=\"26,96 30,30 50,14 70,30 74,96 60,96 60,40 40,40 40,96\" fill=\"#2a2622\"/><polygon points=\"10,100 22,74 50,68 50,100\" fill=\"#3a352f\"/><polygon points=\"50,68 78,74 90,100 50,100\" fill=\"#4a443c\"/><polygon points=\"37,32 50,24 50,67 37,57\" fill=\"#857d72\"/><polygon points=\"50,24 63,32 63,57 50,67\" fill=\"#b8b0a4\"/><polygon points=\"37,34 50,20 63,34 63,30 50,16 37,30\" fill=\"#2a2622\"/><path d=\"M41.5,44 q3,3 6,0\" stroke=\"#141210\" stroke-width=\"1.6\" fill=\"none\"/><path d=\"M52.5,44 q3,3 6,0\" stroke=\"#141210\" stroke-width=\"1.6\" fill=\"none\"/><rect x=\"32\" y=\"84\" width=\"36\" height=\"12\" fill=\"#d9d2c6\"/><rect x=\"34\" y=\"82\" width=\"10\" height=\"5\" rx=\"2\" fill=\"#b8b0a4\"/><rect x=\"34\" y=\"82\" width=\"3\" height=\"3\" fill=\"#c0392b\"/><rect x=\"38.5\" y=\"82\" width=\"3\" height=\"3\" fill=\"#c0392b\"/></svg>", "muk": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\"><rect width=\"100\" height=\"100\" fill=\"#1d1a17\"/><polygon points=\"10,100 22,74 50,68 50,100\" fill=\"#2b2724\"/><polygon points=\"50,68 78,74 90,100 50,100\" fill=\"#3a3530\"/><polygon points=\"40,68 50,74 60,68 60,72 50,78 40,72\" fill=\"#d9d2c6\"/><polygon points=\"36,30 50,22 50,66 36,56\" fill=\"#857d72\"/><polygon points=\"50,22 64,30 64,56 50,66\" fill=\"#b8b0a4\"/><polygon points=\"35,30 50,18 65,30 65,25 50,13 35,25\" fill=\"#141210\"/><rect x=\"49.4\" y=\"14\" width=\"1.2\" height=\"12\" fill=\"#d9d2c6\"/><rect x=\"42.2\" y=\"41\" width=\"4\" height=\"1.6\" fill=\"#141210\"/><rect x=\"53.8\" y=\"41\" width=\"4\" height=\"1.6\" fill=\"#141210\"/><rect x=\"45\" y=\"54\" width=\"10\" height=\"1.2\" fill=\"#141210\"/><rect x=\"74\" y=\"56\" width=\"2.4\" height=\"34\" fill=\"#8f877b\" transform=\"rotate(18 75 73)\"/><polygon points=\"79,88 82,96 85,88\" fill=\"#c0392b\" transform=\"rotate(18 75 73)\"/></svg>"};
 const PORTRAITS = Object.assign(Object.fromEntries(Object.entries(PORTRAIT_DRAFTS).map(([k, v]) => [k, "data:image/svg+xml;utf8," + encodeURIComponent(v)])), PORTRAIT_FILES);
 const SCENE_CAST = {
-  c2_reader: ["ire"],
+  c2_reader: ["ire"], c2_master: ["muk"], c2_scrape: ["muk"], c2_ire: ["ire"], c2_verdict: ["muk", "ire"],
   intro: ["seon"], stairs: ["ren"], duel1: ["ren"], duel2: ["ren"], railing: ["ren"], top: ["bern"], signal: ["bern"],
   intro2: ["bern"], wharfRen: ["ren"], wharfLens: ["ren"], confront: ["scully"], scully1: ["scully"], scully2: ["scully"], monk1: ["grey", "pip"], monk2: ["grey"],
   belltower: ["odo"], undercroft: ["pip", "grey"], rescue: ["pip"], accuse: ["seon", "bern"]
@@ -4547,6 +5007,20 @@ const BANTER = {
   accuse: [
     { who: "seon", text: bi("증거라. 자네가 쓴 기록 말인가, 내가 쓴 기록 말인가?", "Evidence? From the record you wrote, or the one I did?") },
     { who: "bern", text: bi("난 불만 지켰어. 불 말고는… 아무것도 못 지켰지.", "I only kept the light. Nothing else did I keep.") }
+  ],
+  c2_master: [
+    { who: "muk", text: bi("여백은 비워 두라고 있는 겁니다.", "Margins are there to be left empty.") },
+    { who: "muk", text: bi("기록이 반듯하면 사람도 반듯해집니다.", "Keep the record straight and people straighten too.") }
+  ],
+  c2_scrape: [
+    { who: "muk", text: bi("한 줄도 남기지 마라. 붉은 건 전부.", "Not a single line. Every red one.") }
+  ],
+  c2_ire: [
+    { who: "ire", text: bi("긁힌 자리는 오히려 더 잘 읽혀요.", "The scraped places read even more clearly.") },
+    { who: "ire", text: bi("잉크는 제가 사요. 글씨는 백 명이 써요.", "I buy the ink. A hundred people write the words.") }
+  ],
+  c2_verdict: [
+    { who: "muk", text: bi("깨끗한 기록에는 아무도 다치지 않습니다.", "No one gets hurt by a clean record.") }
   ],
   c2_reader: [
     { who: "ire", text: bi("글씨는 못 봐요. 그래도 거짓말은 들려요. 종이가 바스락거리거든요.", "I can't see the writing. But I hear lies — the paper rustles.") },
@@ -4682,6 +5156,20 @@ function officialRecord(kind, flags, no, verdict) {
     rebut: has("f_addressee") ? bi("무관하다고? 편지의 수신인은 세온이다.", "Unrelated? The letters were addressed to Seon.")
       : has("f_hand_match") ? bi("무관하다고? S의 글씨는 열쇠 꼬리표와 같다.", "Unrelated? S's hand matches the key tag.") : null
   };
+  if (kind === 6) return {
+    head: bi(`먹울 필사소 업무 일지 · 제${n}호`, `Inkfold Scriptorium daybook · No. ${n}`),
+    lines: [bi("필사소: 이상 없음. 모든 사본 정상 보관.", "Scriptorium: nothing out of order. All copies kept as normal."), bi("여백의 붉은 표시: 낙서로 판명, 제거.", "Red marks in the margins: found to be scribbles, removed.")],
+    signer: bi("필사소장 묵", "Copy-master Muk"),
+    rebut: has("c2_confess") ? bi("낙서가 아니다. 돈을 받고 지운 반박이다.", "Not scribbles. Rebuttals erased for pay.") : null
+  };
+  if (kind === 7) return {
+    head: bi(`도청 감찰 보고 · 먹울 필사소 · 제${n}호`, `Provincial inspection report · Inkfold Scriptorium · No. ${n}`),
+    lines: has("c2_expose")
+      ? [bi("정서비 수수 확인. 필사소장 해임.", "Clean-copy fees confirmed. Copy-master dismissed."), bi("삭제된 붉은 반박: 복원하여 함께 보관.", "Erased red rebuttals: restored and kept alongside.")]
+      : [bi("이상 없음.", "Nothing out of order."), bi("붉은 반박: 기록 대상 아님.", "Red rebuttals: not part of the record.")],
+    signer: bi("감찰관", "Inspector"),
+    rebut: has("c2_expose") ? null : has("c2_keep") ? bi("기록 대상이 아니라고? 지하 서고에 백 장이 쌓여 있다.", "Not part of the record? A hundred sheets are piling up in the cellar.") : bi("맨 윗칸의 한 장만 남았다. 내 것만.", "Only one sheet is left on the top shelf. Mine.")
+  };
   if (kind === 5) return {
     head: bi(`먹울 필사소 사본 · 소금여울 공식 기록 제${n}호`, `Inkfold Scriptorium copy · Saltmarsh Official Record No. ${n}`),
     lines: [bi("(여백의 붉은 반박: 삭제됨)", "(Red rebuttal in the margin: erased)"), bi("재필사 완료.", "Re-copy complete.")],
@@ -4733,13 +5221,18 @@ const EVIDENCE = {
   bell: { name: bi("종지기의 증언", "The bell-keeper's word"), shows: bi("종줄이 끊긴 시각", "When the bell rope was cut"), has: f => f.includes("keeper") },
   addressee: { name: bi("편지의 수신인", "The letters' addressee"), shows: bi("편지는 소금여울로 가는 것이었다", "The letters were bound for Saltmarsh"), has: f => f.includes("f_addressee") },
   keytag: { name: bi("열쇠 꼬리표의 글씨", "The writing on the key tag"), shows: bi("열쇠 꼬리표와 같은 글씨 — 세온의 손", "Same hand as the key tag — Seon's"), has: f => f.includes("f_hand_match") },
-  bundle: { name: bi("증거 편지 뭉치", "The bundle of evidence letters"), shows: bi("편지 뭉치에 촌장의 봉인", "The chief's seal on the bundle"), has: f => f.includes("chase3") }
+  bundle: { name: bi("증거 편지 뭉치", "The bundle of evidence letters"), shows: bi("편지 뭉치에 촌장의 봉인", "The chief's seal on the bundle"), has: f => f.includes("chase3") },
+  powder: { name: bi("지우개 가루 주문서", "The eraser-powder order"), shows: bi("필사소가 지울 가루를 열 통씩 산다", "The scriptorium buys erasing powder by the ten tins"), has: f => f.includes("c2f_powder") },
+  fee: { name: bi("정서비 장부", "The clean-copy ledger"), shows: bi("깨끗한 기록에 돈이 오갔다", "Money changed hands for clean records"), has: f => f.includes("c2f_pay") },
+  scraper: { name: bi("붉은 가루 묻은 긁개", "The red-dusted scraper"), shows: bi("밤마다 붉은 글씨만 긁어냈다", "Only the red writing was scraped, every night"), has: f => f.includes("c2f_scraper") },
+  inkroom: { name: bi("이레의 붉은 방", "Ire's red room"), shows: bi("지워진 반박을 누군가 다시 쓴다", "Someone writes the erased rebuttals back"), has: f => f.includes("c2f_ire") }
 };
 // 장마다 거짓 문장(공식 기록 lines의 번호)과 그것을 뒤집는 증거.
 const REBUTTALS = {
   1: { line: 1, proof: ["gear", "testimony", "receipt", "window"] },
   2: { line: 1, proof: ["ledger", "letters", "hands", "receipt", "window"] },
-  3: { line: 1, proof: ["addressee", "keytag", "bundle", "ledger", "window", "receipt"] }
+  3: { line: 1, proof: ["addressee", "keytag", "bundle", "ledger", "window", "receipt"] },
+  6: { line: 1, proof: ["powder", "fee", "scraper"] }
 };
 function heldEvidence(flags, lore) {
   const all = [...flags, ...(lore || [])];
@@ -5650,7 +6143,7 @@ const css = `
 .crpg {
   --ink:#121110; --panel:#1b1917; --panel2:#23201d; --line:#3d3731;
   --text:#e6dfd1; --dim:#8e867a; --gold:#cdb68b; --red:#c0392b;
-  --good:#7fbf7f; --bad:#d96a5f; --accent:#b3aa9c;
+  --good:#7fbf7f; --bad:#d96a5f; --accent:#b3aa9c; --redText:#e0604f;
   min-height:100vh; background:var(--ink); color:var(--text);
   font-family:'Noto Serif KR',serif; display:flex; flex-direction:column; align-items:center; padding:0 16px 48px;
 }
@@ -5658,17 +6151,17 @@ const css = `
 .crpg header { display:flex; justify-content:space-between; align-items:baseline; gap:10px;
   padding:18px 4px 12px; border-bottom:1px solid var(--line); margin-bottom:14px; }
 .crpg h1 { font-weight:900; font-size:21px; letter-spacing:.2em; color:var(--gold); }
-.crpg h1 span { color:var(--dim); font-weight:400; font-size:11px; letter-spacing:.08em; margin-left:10px; }
-.crpg .hctrl { display:flex; gap:8px; align-items:center; font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--dim); }
+.crpg h1 span { color:var(--dim); font-weight:400; font-size:12px; letter-spacing:.08em; margin-left:10px; }
+.crpg .hctrl { display:flex; gap:8px; align-items:center; font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--dim); }
 .crpg .hctrl select, .crpg .hctrl button { background:var(--panel); color:var(--gold); border:1px solid var(--line);
-  border-radius:4px; padding:4px 9px; font-family:inherit; font-size:11px; cursor:pointer; }
+  border-radius:4px; padding:4px 9px; font-family:inherit; font-size:12px; cursor:pointer; }
 .crpg .lhscene { display:block; width:100%; border:1px solid var(--line); border-radius:10px; margin-bottom:16px; background:#0f0e0d; }
 .crpg .artimg { display:block; width:100%; border:1px solid var(--gold); border-radius:10px; margin-bottom:4px; }
-.crpg .artcredit { font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:var(--dim); text-align:right; margin-bottom:12px; }
+.crpg .artcredit { font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--dim); text-align:right; margin-bottom:12px; }
 .crpg .sheet { display:flex; gap:14px; flex-wrap:wrap; align-items:center; background:var(--panel);
   border:1px solid var(--line); border-radius:8px; padding:10px 14px; margin-bottom:16px; font-size:13px; }
 .crpg .sheet .nm { font-weight:600; color:var(--gold); }
-.crpg .sheet .cls { font-style:normal; font-size:11px; color:var(--dim); margin-left:4px; }
+.crpg .sheet .cls { font-style:normal; font-size:12px; color:var(--dim); margin-left:4px; }
 .crpg .health { flex:1 1 160px; min-width:110px; }
 .crpg .healthLabel { display:flex; justify-content:space-between; gap:12px; margin-bottom:5px; font-size:12px; }
 .crpg .hpbar { height:8px; background:#0d0c0b; border-radius:4px; overflow:hidden; }
@@ -5680,7 +6173,7 @@ const css = `
 .crpg .recordScope strong { color:var(--text); }
 .crpg .recordScope p { margin:4px 0; }
 .crpg .actionHelp { display:block; margin-top:6px; color:var(--dim); font-size:12px; line-height:1.5; }
-.crpg .ab { font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--dim); }
+.crpg .ab { font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--dim); }
 .crpg .scene { animation:fadeIn .6s ease; }
 .crpg .narr { white-space:pre-wrap; line-height:2.05; font-size:17px; margin-bottom:10px; letter-spacing:.01em; }
 .crpg .tut { border:1px solid var(--gold); border-radius:10px; background:var(--panel); padding:16px 18px; margin:16px 0; animation:fadeIn .4s ease; }
@@ -5709,15 +6202,15 @@ const css = `
 .crpg .diceMeta { font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--dim); line-height:1.9; flex:1; }
 .crpg .diceMeta b { font-size:16px; }
 .crpg .diceMeta b.good { color:var(--good); } .crpg .diceMeta b.bad { color:var(--bad); }
-.crpg .calcToggle { background:none; border:none; color:var(--accent); font-family:inherit; font-size:11px;
-  cursor:pointer; padding:2px 0; text-decoration:underline dotted; }
+.crpg .calcToggle { background:none; border:none; color:var(--accent); font-family:inherit; font-size:12px;
+  cursor:pointer; padding:10px 0; min-height:40px; text-decoration:underline dotted; }
 .crpg .jump { margin-top:8px; min-width:180px; }
 .crpg .track { position:relative; height:10px; background:#0d0c0b; border-radius:5px; }
 .crpg .track .fill { position:absolute; left:0; top:0; bottom:0; border-radius:5px; transition:width .5s ease; }
 .crpg .track .fill.good { background:linear-gradient(90deg,#3e6e3e,var(--good)); }
 .crpg .track .fill.bad { background:linear-gradient(90deg,#7a3a34,var(--bad)); }
 .crpg .track .dcMark { position:absolute; top:-4px; bottom:-4px; width:2px; background:var(--gold); }
-.crpg .jlbl { display:block; font-size:10.5px; color:var(--dim); margin-top:5px; }
+.crpg .jlbl { display:block; font-size:12px; color:var(--dim); margin-top:5px; }
 .crpg .combat { border:1px solid var(--line); border-radius:10px; padding:16px; margin-top:16px; background:var(--panel); }
 .crpg .combat h3 { font-size:14px; letter-spacing:.1em; color:var(--bad); margin-bottom:10px; }
 .crpg .clog { font-size:13.5px; line-height:2; max-height:220px; overflow-y:auto; margin:10px 0; }
@@ -5735,17 +6228,17 @@ const css = `
 .crpg .card:hover { border-color:var(--gold); transform:translateY(-3px); }
 .crpg .card .ci { font-size:26px; } .crpg .card h2 { font-size:17px; margin:8px 0 6px; color:var(--gold); }
 .crpg .card p { font-size:13px; color:var(--dim); line-height:1.7; }
-.crpg .card .st { font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:var(--accent); margin-top:10px; }
+.crpg .card .st { font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--accent); margin-top:10px; }
 .crpg .nameLb { display:block; font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--gold); letter-spacing:.1em; margin:18px 0 8px; }
 .crpg .nameIn { width:100%; max-width:340px; background:var(--panel2); color:var(--text); border:1px solid var(--line);
   border-radius:8px; padding:11px 14px; font-family:inherit; font-size:16px; }
 .crpg .nameIn:focus { outline:none; border-color:var(--gold); }
 .crpg .badges { display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; }
-.crpg .badge { font-family:'IBM Plex Mono',monospace; font-size:11px; border:1px solid var(--line);
+.crpg .badge { font-family:'IBM Plex Mono',monospace; font-size:12px; border:1px solid var(--line);
   border-radius:20px; padding:5px 12px; color:var(--dim); }
 .crpg .badge.on { border-color:var(--gold); color:var(--gold); }
 .crpg .badge.new { animation:popIn .4s ease; box-shadow:0 0 12px rgba(205,182,139,.45); }
-.crpg .bcount { font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--accent); margin-top:16px; }
+.crpg .bcount { font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--accent); margin-top:16px; }
 .crpg .sgToggle { margin-top:26px; background:none; border:1px dashed var(--line); color:var(--dim);
   border-radius:8px; padding:9px 14px; font-family:inherit; font-size:13px; cursor:pointer; }
 .crpg .sgToggle:hover { border-color:var(--gold); color:var(--gold); }
@@ -5775,7 +6268,7 @@ const css = `
   border:1.5px solid var(--line); border-radius:8px; padding:2px 8px; }
 .crpg .chipDie.good { border-color:var(--good); color:var(--good); }
 .crpg .chipDie.bad { border-color:var(--bad); color:var(--bad); }
-.crpg .chipMore { margin-left:auto; font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--dim); }
+.crpg .chipMore { margin-left:auto; font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--dim); }
 .crpg .resDetail { border:1px solid var(--line); border-top:none; border-radius:0 0 8px 8px;
   padding:10px 12px; font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--dim); line-height:1.9; }
 .crpg .divider { text-align:center; color:var(--line); font-size:10px; margin:18px 0; letter-spacing:.5em; }
@@ -5784,7 +6277,7 @@ const css = `
   background:linear-gradient(180deg, rgba(205,182,139,.07), transparent); animation:fadeIn .6s ease; }
 .crpg .teaser p { font-size:13.5px; line-height:1.9; color:var(--text); margin-top:10px; font-style:italic; }
 .crpg footer { margin-top:34px; padding-top:14px; border-top:1px solid var(--line);
-  font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:var(--dim); line-height:1.9; }
+  font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--dim); line-height:1.9; }
 .crpg .titleArt { display:block; width:100%; max-height:440px; object-fit:cover; object-position:50% 26%;
   border:1px solid var(--line); border-radius:10px; margin-bottom:16px; }
 .crpg .bell { transform-origin:512px 88px; }
@@ -5824,7 +6317,7 @@ const css = `
 .crpg .daily { display:flex; flex-direction:column; gap:4px; margin:18px 0 6px; padding:12px 14px;
   border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:8px; background:var(--panel); }
 .crpg .daily.done { border-left-color:var(--good); }
-.crpg .daily .daily-h { font-size:11px; letter-spacing:.18em; color:var(--accent); font-weight:600; }
+.crpg .daily .daily-h { font-size:12px; letter-spacing:.18em; color:var(--accent); font-weight:600; }
 .crpg .daily.done .daily-h { color:var(--good); }
 .crpg .daily .daily-l { font-size:15px; color:var(--text); }
 .crpg .daily .daily-s { font-size:12px; color:var(--dim); }
@@ -5845,7 +6338,7 @@ const css = `
 .crpg .choice .tag.artifact { border:1px solid var(--gold); color:var(--gold); background:rgba(205,182,139,.16); }
 .crpg .artifact-get { margin:10px 0 4px; padding:11px 14px; border-radius:8px; text-align:center; font-weight:600; color:var(--gold); border:1px solid var(--gold); background:linear-gradient(180deg, rgba(205,182,139,.16), rgba(205,182,139,.04)); animation:popIn .4s ease; }
 .crpg .intent { display:flex; flex-direction:column; gap:3px; margin:10px 0; padding:10px 12px; border-radius:8px; border:1px solid var(--line); background:var(--panel2); animation:fadeIn .3s ease; }
-.crpg .intent-h { font-size:11px; letter-spacing:.15em; color:var(--dim); font-weight:600; }
+.crpg .intent-h { font-size:12px; letter-spacing:.15em; color:var(--dim); font-weight:600; }
 .crpg .intent-t { font-size:14px; color:var(--text); }
 .crpg .intent.hook { border-color:var(--bad); background:rgba(217,106,95,.12); }
 .crpg .intent.hook .intent-h { color:var(--bad); }
@@ -5858,7 +6351,7 @@ const css = `
 .crpg .stageWrap.mood-dawn::after { background:rgba(255,200,120,.10); }
 .crpg .locCard { position:absolute; left:8px; bottom:6px; max-width:78%; z-index:22; display:flex; flex-direction:column; gap:0; padding:4px 9px; border-radius:6px; background:linear-gradient(90deg, rgba(8,12,20,.78), rgba(8,12,20,.25)); animation:fadeIn .5s ease; pointer-events:none; }
 .crpg .locPlace { font-size:15px; font-weight:700; color:#f0d48a; text-shadow:0 1px 3px #000; }
-.crpg .locCh { font-size:11px; color:#c9b88a; opacity:.85; }
+.crpg .locCh { font-size:12px; color:#c9b88a; opacity:.85; }
 .crpg .locDoing { font-size:12px; color:#fff; text-shadow:0 1px 3px #000; overflow-wrap:anywhere; }
 .crpg .stageWrap.mood-danger .locPlace { color:#ff9c8a; }
 .crpg .expandBtn { display:block; margin:-4px 0 12px; padding:4px 0; border:0; background:transparent; color:#c7bfb1; font-size:13px; cursor:pointer; }
@@ -5888,7 +6381,7 @@ const css = `
 .crpg .goal { margin:2px 0; color:var(--dim); }
 .crpg .goal.done { color:var(--text); }
 .crpg .objection { margin:12px 0 16px; padding:10px 14px; border:1px solid var(--red); border-radius:8px; background:rgba(192,57,43,.07); }
-.crpg .objection h4 { margin:0 0 6px; color:var(--red); letter-spacing:.06em; }
+.crpg .objection h4 { margin:0 0 6px; color:var(--redText); letter-spacing:.06em; }
 .crpg .objection .objAsk { font-size:14px; margin:4px 0 8px; }
 .crpg .objection .objResult { font-size:15px; line-height:1.6; }
 .crpg .objection.won .objResult { color:#e8b4aa; }
@@ -5918,7 +6411,7 @@ const css = `
 .crpg .choice.walked .tag.path { border-color:var(--line); color:inherit; }
 .crpg .pathNote { font-size:13px; opacity:.75; margin:4px 0 8px; }
 .crpg .noteCard { display:flex; flex-direction:column; gap:2px; margin:0 0 8px; padding:7px 11px; border-left:3px solid #b0281c; background:rgba(176,40,28,.10); border-radius:4px; font-size:13.5px; overflow-wrap:anywhere; }
-.crpg .noteFrom { font-size:11.5px; color:#d47a6a; }
+.crpg .noteFrom { font-size:12px; color:#d47a6a; }
 .crpg .noteText { color:#f0d9d4; font-style:italic; }
 .crpg .noteBtn { display:block; margin:0 0 10px; padding:4px 0; border:0; background:transparent; color:#d47a6a; font-size:13px; cursor:pointer; }
 .crpg .notePick { display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin:0 0 12px; padding:8px; border:1px dashed #b0281c; border-radius:6px; }
@@ -5931,7 +6424,7 @@ const css = `
 .crpg .recSign { margin-top:10px; font-size:12px; color:#6b5d44; text-align:right; }
 .crpg .recStamp { position:absolute; top:12px; right:12px; padding:2px 8px; border:2px solid #8a2e22; color:#8a2e22; font-weight:700; font-size:12px; transform:rotate(-6deg); opacity:.85; }
 .crpg .redhand { margin-top:10px; color:#b0281c; font-size:19px; font-weight:700; font-style:italic; transform:rotate(-2deg); animation:fadeIn 1.2s ease .9s both; }
-.crpg .shareRec { display:block; margin:12px 0 0 auto; padding:5px 10px; font-size:12px; border:1px solid #8a7a5a; border-radius:4px; background:transparent; color:#4a3f2c; cursor:pointer; }
+.crpg .shareRec { display:block; margin:12px 0 0 auto; min-height:40px; padding:8px 12px; font-size:13px; border:1px solid #8a7a5a; border-radius:4px; background:transparent; color:#4a3f2c; cursor:pointer; }
 .crpg .opening .choices { margin-top:6px; }
 .crpg .choice.primaryChoice { border-color:var(--gold); }
 .crpg .lastRun { margin:0 0 10px; font-size:14px; color:#c9a35a; font-style:italic; }
@@ -5962,13 +6455,13 @@ const css = `
 .crpg .ledgerRow.kept .ledgerMark { color:#7fbf7f; }
 .crpg .ledgerRow.lost .ledgerMark { color:#d47a6a; }
 .crpg .echoBanner { display:flex; flex-direction:column; gap:3px; margin:2px 0 14px; padding:10px 13px; border-radius:8px; border:1px solid #8a2e22; border-left:3px solid #c0392b; background:rgba(192,57,43,.12); animation:fadeIn .4s ease; }
-.crpg .echo-h { font-size:11px; letter-spacing:.15em; color:#e08a7c; font-weight:600; }
+.crpg .echo-h { font-size:12px; letter-spacing:.15em; color:#e08a7c; font-weight:600; }
 .crpg .echo-t { font-size:14px; color:var(--text); font-style:italic; }
 .crpg .choice .tag.echo { border:1px solid #c0392b; color:#e08a7c; background:rgba(192,57,43,.16); }
 .crpg .fbModal { position:fixed; inset:0; z-index:100; background:rgba(8,12,20,.82); display:flex; align-items:flex-start; justify-content:center; overflow-y:auto; padding:24px 12px; }
 .crpg .fbCard { width:100%; max-width:560px; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:18px; margin:auto; }
 .crpg .fbCard h3 { color:var(--gold); font-size:17px; margin-bottom:4px; }
-.crpg .fbBuild { font-size:11px; color:var(--dim); font-weight:400; font-family:'IBM Plex Mono',monospace; }
+.crpg .fbBuild { font-size:12px; color:var(--dim); font-weight:400; font-family:'IBM Plex Mono',monospace; }
 .crpg .fbIntro { font-size:13px; color:var(--text); line-height:1.7; margin-bottom:12px; }
 .crpg .fbField { display:flex; flex-direction:column; gap:4px; margin-bottom:10px; }
 .crpg .fbField span { font-size:13px; color:var(--dim); }
@@ -5977,7 +6470,7 @@ const css = `
 .crpg .fbOpt { display:flex; align-items:center; gap:6px; padding:6px 10px; border:1px solid var(--line); border-radius:8px; background:var(--panel2); cursor:pointer; font-size:13px; color:var(--text); }
 .crpg .fbOpt.on { border-color:var(--gold); color:var(--gold); }
 .crpg .fbOpt input { accent-color:var(--gold); }
-.crpg .fbMetaNote { font-size:11.5px; color:var(--dim); line-height:1.6; margin:6px 0 10px; }
+.crpg .fbMetaNote { font-size:12px; color:var(--dim); line-height:1.6; margin:6px 0 10px; }
 .crpg .fbStatus { font-size:13px; padding:8px 10px; border-radius:6px; margin-bottom:10px; line-height:1.6; }
 .crpg .fbStatus.sent { color:var(--good); border:1px solid var(--good); }
 .crpg .fbStatus.fail { color:var(--bad); border:1px solid var(--bad); }
@@ -5999,10 +6492,11 @@ const css = `
 .crpg .duelTimer .timerBar { flex:1 1 120px; height:4px; background:rgba(255,255,255,.08); border-radius:2px; overflow:hidden; }
 .crpg .duelTimer .timerBar i { display:block; height:100%; background:var(--red, #c0392b); transition:width 1s linear; }
 .crpg .duelTimer.urgent .timerText { color:var(--red, #c0392b); font-weight:bold; }
-.crpg .duelTimer .timerToggle { background:none; border:1px solid rgba(255,255,255,.15); color:inherit; font-size:.85em; padding:2px 8px; border-radius:4px; cursor:pointer; }
+.crpg .duelTimer .timerToggle { background:none; border:1px solid rgba(255,255,255,.15); color:inherit; font-size:13px; min-height:40px; padding:6px 12px; border-radius:4px; cursor:pointer; }
 @keyframes inkIn { from { opacity:0; visibility:hidden; filter:blur(2px); } to { opacity:1; visibility:visible; filter:none; } }
 @media (prefers-reduced-motion: reduce) { .crpg .narr .para, .crpg .choices[data-stage] { animation:none; } }
-.crpg .redhand { color:var(--red); }
+.crpg .redhand { color:var(--redText); }
+.crpg .recordCard .redhand { color:var(--red); }
 .crpg .portrait { width:64px; height:64px; object-fit:cover; border-radius:6px; border:1px solid var(--line); margin-right:10px; flex:none; }
 .crpg .castChip { display:inline-flex; align-items:center; border-radius:10px; padding:4px 12px 4px 4px; }
 `;
@@ -6114,7 +6608,8 @@ function CRPG() {
   const visibleChoices = (scene?.choices || []).filter(ch => (!ch.classOnly || pc && ch.classOnly === pc.classKey) && (!ch.loreReq || lore.includes(ch.loreReq)) && (!ch.artifactReq || artifacts.includes(ch.artifactReq)) && (!ch.echoReq || flags.includes(ch.echoReq)) && (!ch.flagNot || !flags.includes(ch.flagNot)) && (!ch.caseMin || !lore.includes(ch.frag) || caseState(lore).found.filter(id => id !== ch.frag).length >= ch.caseMin) && (!ch.wrongNot || !verdict?.wrong) && (!ch.wrongReq || !!verdict?.wrong));
   // 잠금: 결정적 조각(needFrags) 또는 조각 개수(caseMin). caseMin 선택지는 숨기지 않고 '조각 n/t'로 잠가 보여 준다(1000명 인터뷰: 숨기면 막다른 길).
   const caseMinHave = ch => caseState(lore).found.filter(id => id !== ch.frag).length;
-  const lockedBy = ch => ch.needFrags ? ch.needFrags.filter(f => !lore.includes(f)) : ch.caseMin && caseMinHave(ch) < ch.caseMin ? Array(ch.caseMin - caseMinHave(ch)).fill("frag") : [];
+  const caseReadyNow = caseState(lore).ready || !!deduce.solved;
+  const lockedBy = ch => ch.needFrags ? ch.needFrags.filter(f => !lore.includes(f)) : ch.caseMin && caseMinHave(ch) < ch.caseMin ? Array(ch.caseMin - caseMinHave(ch)).fill("frag") : ch.caseReady && !caseReadyNow ? ["case"] : [];
   const narrativeId = choice => sceneKey + ":" + scene.choices.indexOf(choice);
   // 지난 회차에 와 본 장면에서만 표시한다: 안 간 길은 위로, 간 길은 아래로.
   const runIndex = runNo ? runNo - RECORD_FIRST : 99;
@@ -6147,6 +6642,7 @@ function CRPG() {
   const difficulty = ch => { const v = pct(ch); return v >= 70 ? "diffEasy" : v >= 40 ? "diffEven" : "diffHard"; };
   const primaryTag = ch => ch.needFrags ? ui("retrialNeed", { n: ch.needFrags.length - lockedBy(ch).length, t: ch.needFrags.length })
     : ch.caseMin && lockedBy(ch).length ? ui("caseMinNeed", { n: caseMinHave(ch), t: ch.caseMin })
+    : ch.caseReady && lockedBy(ch).length ? ui("caseReadyNeed")
     : ch.echo ? "\uD83E\uDD8B " + tx(ch.echo)
     : ch.artifactReq ? "\u25C8 " + tx(ARTIFACTS[ch.artifactReq] ? ARTIFACTS[ch.artifactReq].name : { ko: "유물", en: "Relic" })
     : ch.loreReq ? ui("loreTag")
@@ -6461,8 +6957,9 @@ function CRPG() {
         setEnemyIntent(rollLooterIntent(e.maxHp, e.maxHp));
       }
     }
-    if (key === "c2_intro") {
-      try { store.set("aduventure_chstart", { ...(store.get("aduventure_chstart") || {}), c2_intro: flags.filter(f => !/^rebut/.test(f)) }); } catch (e) {}
+    if (key === "c2_intro" || key === "c2_day" || key === "c2_night") {
+      try { store.set("aduventure_chstart", { ...(store.get("aduventure_chstart") || {}), [key]: flags.filter(f => !/^rebut/.test(f)) }); } catch (e) {}
+      if (key === "c2_night") setFate(flags.includes("rebut6") ? 2 : 1);
     }
     if (key === "intro2" || key === "intro3") {
       // 장 시작 시점의 기록(앞 장에서 한 일)을 남겨 둔다 — '다른 선택으로 이 장 다시' 때 앞 장의 메아리가 사라지지 않게.
@@ -7001,7 +7498,7 @@ function CRPG() {
   const combatRange = profile => rules.damageRange(profile).join("–");
   const riposteText = { riposte: rules.scaleEffect(4) };
   const specialTag = pc && tx(SPECIALS[pc.classKey].tag).replace("{damage}", combatRange(pc.classKey === "wizard" ? { die: 8, bonus: 2 } : { die: 6 }));
-  const chapterTitle = chapter === 5 ? ui("c2ch1") : chapter === 4 ? ui("ch4") : chapter === 3 ? ui("ch3") : chapter === 2 ? ui("ch2") : ui("ch1");
+  const chapterTitle = chapter === 7 ? ui("c2ch3") : chapter === 6 ? ui("c2ch2") : chapter === 5 ? ui("c2ch1") : chapter === 4 ? ui("ch4") : chapter === 3 ? ui("ch3") : chapter === 2 ? ui("ch2") : ui("ch1");
   const cs = caseState(lore);
   // 베른의 진술은 조각 3개 이상을 알고 2장 아침에 물어야 나온다(intro2의 caseMin).
   const bernAskable = cs.found.filter(id => id !== "f_bern_lied").length >= 3;
@@ -7177,7 +7674,7 @@ function CRPG() {
     title: lang === "en" ? "Resume your saved run" : "\uC800\uC7A5\uB41C \uBAA8\uD5D8\uC744 \uC774\uC5B4\uC11C \uD55C\uB2E4"
   }, lang === "en" ? "\u21BB Continue" : "\u21BB \uC774\uC5B4\uC11C \uD558\uAE30", /*#__PURE__*/React.createElement("span", {
     className: "cont-meta"
-  }, (SCENES[savedGame.sceneKey]?.ch === 5 ? ui("c2ch1") : SCENES[savedGame.sceneKey]?.ch === 3 ? (lang === "en" ? "Ch.3" : "\uC81C3\uC7A5") : SCENES[savedGame.sceneKey]?.ch === 2 ? (lang === "en" ? "Ch.2" : "\uC81C2\uC7A5") : (lang === "en" ? "Ch.1" : "\uC81C1\uC7A5")) + " \xB7 " + savedGame.pc.name + " (" + tx(CLASSES[savedGame.pc.classKey] ? CLASSES[savedGame.pc.classKey].name : "\uC6A9\uC0AC") + ")")), /*#__PURE__*/React.createElement("label", {
+  }, (SCENES[savedGame.sceneKey]?.ch === 7 ? ui("c2ch3") : SCENES[savedGame.sceneKey]?.ch === 6 ? ui("c2ch2") : SCENES[savedGame.sceneKey]?.ch === 5 ? ui("c2ch1") : SCENES[savedGame.sceneKey]?.ch === 3 ? (lang === "en" ? "Ch.3" : "\uC81C3\uC7A5") : SCENES[savedGame.sceneKey]?.ch === 2 ? (lang === "en" ? "Ch.2" : "\uC81C2\uC7A5") : (lang === "en" ? "Ch.1" : "\uC81C1\uC7A5")) + " \xB7 " + savedGame.pc.name + " (" + tx(CLASSES[savedGame.pc.classKey] ? CLASSES[savedGame.pc.classKey].name : "\uC6A9\uC0AC") + ")")), /*#__PURE__*/React.createElement("label", {
     className: "nameLb"
   }, ui("nameRecord")), /*#__PURE__*/React.createElement("input", {
     className: "nameIn",
@@ -7532,7 +8029,7 @@ function CRPG() {
     className: "nextStep"
   }, React.createElement("b", null, ui("nextStepH"), " · "), cs.ready ? ui("caseReady") : ui("caseLocked", { n: cs.found.length, total: Object.keys(FRAGMENTS).length }) + cs.missing.map(k => ui(k)).join(" · ")), /*#__PURE__*/React.createElement("p", {
     className: "narr"
-  }, fmt(tx(scene.ending === 1 ? buildEnding1(flags) : scene.ending === 2 ? buildEnding2(flags) : scene.ending === 4 ? buildEnding4(flags) : scene.ending === 5 ? buildEnding5(flags) : buildEnding3(flags)), pc)), React.createElement(RecordCard, {
+  }, fmt(tx(scene.ending === 1 ? buildEnding1(flags) : scene.ending === 2 ? buildEnding2(flags) : scene.ending === 4 ? buildEnding4(flags) : scene.ending === 5 ? buildEnding5(flags) : scene.ending === 6 ? buildEnding6(flags) : scene.ending === 7 ? buildEnding7(flags) : buildEnding3(flags)), pc)), React.createElement(RecordCard, {
     record: (() => {
       const rec = officialRecord(scene.ending, flags, runNo);
       if (!rec || !REBUTTALS[scene.ending]) return rec;
@@ -7611,8 +8108,23 @@ function CRPG() {
   }, ui("ch3next")), /*#__PURE__*/React.createElement("button", {
     className: "restart",
     onClick: () => restart("intro2")
-  }, ui("ch2again"))) : scene.ending === 5 ? React.createElement(React.Fragment, null, React.createElement("p", { className: "caseStatus" }, ui("c2More")), React.createElement("button", {
+  }, ui("ch2again"))) : scene.ending === 5 ? React.createElement(React.Fragment, null, React.createElement("button", {
     className: "restart primary",
+    onClick: () => goto("c2_day")
+  }, ui("c2Next2")), React.createElement("button", {
+    className: "restart",
+    onClick: () => restart("c2_intro")
+  }, ui("c2Again1"))) : scene.ending === 6 ? React.createElement(React.Fragment, null, React.createElement("button", {
+    className: "restart primary",
+    onClick: () => goto("c2_night")
+  }, ui("c2Next3")), React.createElement("button", {
+    className: "restart",
+    onClick: () => restart("c2_day")
+  }, ui("c2Again2"))) : scene.ending === 7 ? React.createElement(React.Fragment, null, React.createElement("p", { className: "caseStatus" }, ui("c2Done")), React.createElement("button", {
+    className: "restart primary",
+    onClick: () => restart("c2_night")
+  }, ui("c2Again3")), React.createElement("button", {
+    className: "restart",
     onClick: () => restart()
   }, ui("fromStart"))) : scene.ending === 4 ? React.createElement(React.Fragment, null, React.createElement("button", {
     className: "restart primary",
@@ -7623,22 +8135,23 @@ function CRPG() {
   }, ui("caseBtn")), React.createElement("button", {
     className: "restart",
     onClick: () => restart()
-  }, ui("fromStart"))) : /*#__PURE__*/React.createElement(React.Fragment, null, cs.ready ? React.createElement("button", {
+  }, ui("fromStart"))) : /*#__PURE__*/React.createElement(React.Fragment, null, React.createElement("button", {
+    // pt32: 첫 판에도 결론을 낼 수 있다(1000명 인터뷰: "한 번 쭉 하면 판결, 반복은 더 좋은 결말용").
+    // 증거가 모자라면 판결 장면에서 [고발]만 잠긴다 — 진실은 더 모아 와야 한다.
     className: "restart primary",
     onClick: () => { if (recordDecision("case:accuse")) goto("accuse"); }
-  }, ui("accuseGo")) : React.createElement("p", {
+  }, cs.ready ? ui("accuseGo") : ui("accuseGoEarly")), !cs.ready && React.createElement("p", {
     className: "caseStatus"
-  }, ui("caseLocked", { n: cs.found.length, total: Object.keys(FRAGMENTS).length }), cs.missing.map(k => ui(k)).join(" · ")), !cs.ready && !cs.confession && !bernAskable && React.createElement("p", {
+  }, ui("caseTruthNeeds"), cs.missing.map(k => ui(k)).join(" · ")), !cs.ready && !cs.confession && !bernAskable && React.createElement("p", {
     className: "caseStatus"
   }, ui("caseBernLater", { n: cs.found.length })), !cs.ready && !cs.confession && bernAskable && React.createElement("button", {
-    className: "restart primary",
+    className: "restart",
     onClick: () => restart("intro2")
   }, ui("caseGoCh2")), /*#__PURE__*/React.createElement("button", {
-    // 베른에게 물을 수 있으면(조각 3개+) 2장 아침이 강조되고, 아니면 다른 조각을 줄 3장 다시가 강조된다.
-    className: "restart" + (cs.ready || (!cs.confession && bernAskable) || ch3Both ? "" : " primary"),
+    className: "restart",
     onClick: () => restart("intro3")
   }, ui("ch3again")), /*#__PURE__*/React.createElement("button", {
-    className: "restart" + (!cs.ready && !(!cs.confession && bernAskable) && ch3Both ? " primary" : ""),
+    className: "restart",
     onClick: () => restart()
   }, ui("fromStart"))), /*#__PURE__*/React.createElement(SuggestBox, {
     sceneKey: sceneKey,

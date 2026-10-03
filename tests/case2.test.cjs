@@ -55,7 +55,7 @@ function game({sceneKey = 'intro', flags = [], verdict = null, classKey = 'fight
   return {render, buttons, run: c => vm.runInContext(c, ctx), state: () => { render(); return ctx.api; }};
 }
 const g0 = game();
-const C2 = ['c2_intro', 'c2_gate', 'c2_duel', 'c2_hall', 'c2_reader'];
+const C2 = ['c2_intro', 'c2_gate', 'c2_duel', 'c2_hall', 'c2_reader', 'c2_day', 'c2_day2', 'c2_master', 'c2_night', 'c2_scrape', 'c2_ire', 'c2_verdict'];
 
 test('after the verdict, the epilogue leads on to Case 2', () => {
   const g = game({sceneKey: 'ending4', flags: ['accuseSeon']});
@@ -80,10 +80,10 @@ test('every Case 2 path ends the chapter; each class has its own road at the gat
   const ends = new Set();
   for (const k of C2) for (const c of scenes[k].choices) for (const b of [c.success, c.fail, c.result, c.goto ? {goto: c.goto} : null].filter(Boolean)) {
     ends.add(b.goto);
-    assert.ok(C2.includes(b.goto) || b.goto === 'c2_end', k + ' -> ' + b.goto);
+    assert.ok(C2.includes(b.goto) || ['c2_end', 'c2_end2', 'c2_end3'].includes(b.goto), k + ' -> ' + b.goto);
     if (b.damage) assert.equal(b.ifDown, 'gameover');
   }
-  assert.ok(ends.has('c2_end'));
+  assert.ok(ends.has('c2_end') && ends.has('c2_end2') && ends.has('c2_end3'));
   for (const cls of ['fighter', 'rogue', 'wizard']) assert.ok(scenes.c2_gate.choices.some(c => c.classOnly === cls && c.stake), cls);
   assert.equal(g0.run('SCENES.c2_end.ending'), 5);
   assert.equal(g0.run('SCENES.c2_intro.ch'), 5);
@@ -104,7 +104,7 @@ test('the chapter ending, record, ledger and badge exist and say the red hand is
   assert.equal(g.run(`chapterLedger(5, ['c2_ownCopy']).length`), 3);
   assert.equal(g.run(`badgeId(5, [])`), '5');
   const t = text(game({sceneKey: 'c2_end'}).render());
-  assert.ok(t.includes('Case 2 continues in a future update.'));
+  assert.ok(t.includes('Continue to Case 2 · Ch.2'), 'Case 2 now goes on');
 });
 
 test('all Case 2 text is bilingual', () => {

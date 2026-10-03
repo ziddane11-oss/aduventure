@@ -83,12 +83,10 @@ test('next record you may check again; all three right confirms it for good', ()
   assert.equal(JSON.parse(g.data.get('aduventure_deduce')).solved, true);
 });
 
-test('a confirmed deduction opens the verdict even with fragments missing', () => {
-  const g = game({sceneKey: 'ending3', lore: ['f_receipt', 'f_window'], deduce: {solved: true}});
-  const primary = nodes(g.render()).filter(n => n.type === 'button' && n.props.className === 'restart primary');
-  assert.ok(primary.some(b => /reach a verdict/.test(text(b))), primary.map(text).join(' | '));
-  const no = game({sceneKey: 'ending3', lore: ['f_receipt', 'f_window']});
-  assert.ok(!nodes(no.render()).some(n => n.type === 'button' && /reach a verdict/.test(text(n))));
+test('a confirmed deduction unlocks the true accusation even with fragments missing', () => {
+  const accuse = deduce => nodes(game({sceneKey: 'accuse', lore: ['f_receipt', 'f_window'], deduce}).render()).find(n => n.type === 'button' && /^\[Accuse\]/.test(text(n)));
+  assert.equal(accuse({solved: true}).props.disabled, false);
+  assert.equal(accuse(undefined).props.disabled, true);
 });
 
 test('replaying a chapter is a new run: the deduction may be checked again', () => {
