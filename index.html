@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>어두밴처 v0.7.3-pt33</title>
+<title>어두밴처 v0.7.3-pt34</title>
 <style>body{margin:0;background:#0e1420}</style>
 </head>
 <body>
@@ -318,7 +318,7 @@ function(a,b,c){if(!Vd(b))throw Error(n(200));return Wd(null,a,b,!1,c)};Q.unmoun
    GAS 피드백 파이프 — v0.7 재구현 (제안/신호/텔레메트리)
    ============================================================ */
 /* 플레이테스트 빌드 태그 — 테스트 중 버전 구분용. 수정할 때마다 뒤 번호를 올린다. */
-const BUILD = "v0.7.3-pt33";
+const BUILD = "v0.7.3-pt34";
 const GAS_URL = "https://script.google.com/macros/s/AKfycbxFx_m5rhCZmqGoy3JcUUNqEgiObMWNHe9hx-LnZrhzIkfwa9-yJGBWP0lVulptnNQeCQ/exec";
 function gasPost(payload, options = {}) {
   return fetch(GAS_URL, {
@@ -786,7 +786,7 @@ const UI = {
   thisRunClues: { ko: "이번 모험의 단서: ", en: "Clues this run: " },
   none: { ko: "없음", en: "none" },
   ruleLabel: { ko: "룰: ", en: "Rules: " },
-  newRecord: { ko: "★ 개인 최고 기록! 이 브라우저에서 달성한 이 엔딩의 최고 기록입니다.", en: "★ Personal best! Your best mark for this ending in this browser." },
+  newRecord: { ko: "★ 개인 최고 기록!", en: "★ Personal best!" },
   artGet: { ko: "◈ 유물 획득 — ", en: "◈ Artifact gained — " },
   ch2next: { ko: "2장 「검은 코트」 계속 →", en: "Continue to Ch.2 “The Black Coat” →" },
   ch1again: { ko: "다른 선택으로 1장 다시", en: "Replay Ch.1 with other choices" },
@@ -885,6 +885,7 @@ const UI = {
   objH: { ko: "✒ 이의 있음", en: "✒ Objection" },
   goalsH: { ko: "이번 기록의 의뢰", en: "This record's commission" },
   goalsDone: { ko: "의뢰 {n}/3 완수", en: "Commission {n}/3 done" },
+  endMoreH: { ko: "📜 이번 장 정리", en: "📜 Chapter summary" },
   objStart: { ko: "✒ 이의 있음 — 거짓 문장을 짚는다", en: "✒ Objection — point at the lie" },
   objPickLine: { ko: "어느 줄이 거짓인가? (실수는 한 번까지)", en: "Which line is the lie? (You may slip once)" },
   objMissLine: { ko: "세온이 미소 짓는다. \"그 줄은 사실일세.\" — 이제 실수할 여유가 없다.", en: "Seon smiles. \"That line is true.\" — You have no slips left." },
@@ -5815,7 +5816,8 @@ function ObjectionPanel({ ch, flags, lore, pc, lang, ui, tx, objection, setObjec
     return box(React.createElement("p", { className: "objResult" }, msg), mine.result === "wrongEvidence" && EVIDENCE[mine.evidence] && React.createElement("p", { className: "objMiss" }, ui("objWhy", { s: tx(EVIDENCE[mine.evidence].shows) })));
   }
   if (won || lost || !record) return null;
-  if (!mine) return box(React.createElement("button", { className: "choice objStart", onClick: () => setObjection({ ch, step: "line" }) }, ui("objStart")));
+  // pt34: 시작 전엔 제목 없이 버튼 하나(제목과 버튼 글자가 겹쳐 화면만 길어졌다).
+  if (!mine) return React.createElement("div", { className: "objection idle" }, React.createElement("button", { className: "choice objStart", onClick: () => setObjection({ ch, step: "line" }) }, ui("objStart")));
   if (mine.step === "line") return box(mine.lineMiss && React.createElement("p", { className: "objMiss" }, ui("objMissLine")), React.createElement("p", { className: "objAsk" }, ui("objPickLine")),
     record.lines.map((l, i) => React.createElement("button", { key: i, className: "choice objLine", onClick: () => decide(i, null) }, t(l))),
     React.createElement("button", { className: "restart", onClick: () => setObjection(null) }, ui("objWithdraw")));
@@ -6336,6 +6338,10 @@ const css = `
 .crpg .artifactitem { font-size:12px; padding:5px 9px; border-radius:6px; border:1px solid var(--line); color:var(--dim); background:var(--panel); }
 .crpg .artifactitem.on { border-color:var(--gold); color:var(--gold); background:rgba(205,182,139,.1); }
 .crpg .choice .tag.artifact { border:1px solid var(--gold); color:var(--gold); background:rgba(205,182,139,.16); }
+.crpg .endMore { margin:18px 0 6px; border:1px solid var(--line); border-radius:8px; background:var(--panel); }
+.crpg .endMore > summary { min-height:44px; display:flex; align-items:center; flex-wrap:wrap; gap:2px; padding:8px 14px; cursor:pointer; color:var(--dim); font-size:14px; }
+.crpg .endMore[open] > summary { border-bottom:1px solid var(--line); color:var(--gold); }
+.crpg .endMore > :not(summary) { margin-left:12px; margin-right:12px; }
 .crpg .artifact-get { margin:10px 0 4px; padding:11px 14px; border-radius:8px; text-align:center; font-weight:600; color:var(--gold); border:1px solid var(--gold); background:linear-gradient(180deg, rgba(205,182,139,.16), rgba(205,182,139,.04)); animation:popIn .4s ease; }
 .crpg .intent { display:flex; flex-direction:column; gap:3px; margin:10px 0; padding:10px 12px; border-radius:8px; border:1px solid var(--line); background:var(--panel2); animation:fadeIn .3s ease; }
 .crpg .intent-h { font-size:12px; letter-spacing:.15em; color:var(--dim); font-weight:600; }
@@ -6381,6 +6387,8 @@ const css = `
 .crpg .goal { margin:2px 0; color:var(--dim); }
 .crpg .goal.done { color:var(--text); }
 .crpg .objection { margin:12px 0 16px; padding:10px 14px; border:1px solid var(--red); border-radius:8px; background:rgba(192,57,43,.07); }
+.crpg .objection.idle { padding:0; border:none; background:none; }
+.crpg .objection.idle button.choice.objStart { margin:0; border-color:var(--red); color:var(--redText); }
 .crpg .objection h4 { margin:0 0 6px; color:var(--redText); letter-spacing:.06em; }
 .crpg .objection .objAsk { font-size:14px; margin:4px 0 8px; }
 .crpg .objection .objResult { font-size:15px; line-height:1.6; }
@@ -8073,28 +8081,13 @@ function CRPG() {
       try { if (sfxOn) { if (won) { SFX.good(); SFX.cue("pen"); } else SFX.bad(); } } catch (e) {}
       emitTelemetry("objection", telemetryRun, { scene_id: sceneKey, chapter: scene.ending, result: verdict, line, evidence: evidence || null, lang });
     }
-  }), runNo && [1, 2, 3, 4].includes(scene.ending) && React.createElement(GoalBox, { ids: goalsFor(runNo), flags, ui, tx }), React.createElement("div", {
-    className: "ledger"
-  }, React.createElement("h4", null, ui("ledgerH")), chapterLedger(scene.ending, flags).map((r, i) => React.createElement("div", {
-    key: "ledger" + i,
-    className: "ledgerRow " + (r.kept === true ? "kept" : r.kept === false ? "lost" : "mixed")
-  }, React.createElement("span", { className: "ledgerMark", "aria-hidden": "true" }, r.kept === true ? "\u2713" : r.kept === false ? "\u2717" : "\u25CB"), React.createElement("span", null, tx(r.text), r.next && React.createElement("small", null, "\u2192 " + tx(r.next)))))), newBadge && /*#__PURE__*/React.createElement("div", {
+  }), newBadge && /*#__PURE__*/React.createElement("div", {
     className: "badges"
   }, /*#__PURE__*/React.createElement("span", {
     className: "badge on new"
-  }, ui("newBadge"), tx(BADGES.find(b => b.id === newBadge)?.name), BADGES.find(b => b.id === newBadge)?.first ? " (" + ui("creditLabel") + " — " + tx(BADGES.find(b => b.id === newBadge)?.first) + ")" : "")), React.createElement(RecordScope, { ui }), /*#__PURE__*/React.createElement("p", {
-    className: "bcount"
-  }, ui("badgeCount"), " ", badges.length, "/", BADGES.length), allBadges && /*#__PURE__*/React.createElement("div", {
-    className: "teaser"
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "badge on new"
-  }, ui("teaserTitle")), /*#__PURE__*/React.createElement("p", null, tx(TEASER))), /*#__PURE__*/React.createElement("p", {
-    className: "stats"
-  }, ui("heroLine"), ": ", pc.name, " (", tx(CLASSES[pc.classKey].name), ") \xB7 ", ui("checksWord"), " ", stats.rolls, " \xB7 ", ui("successWord"), " ", stats.success, /*#__PURE__*/React.createElement("br", null), ui("thisRunClues"), flags.filter(f => CLUES[f]).map(f => tx(CLUES[f])).join(" · ") || ui("none"), /*#__PURE__*/React.createElement("br", null), ui("ruleLabel"), tx(rules.name)), recordFlash && /*#__PURE__*/React.createElement("div", {
+  }, ui("newBadge"), tx(BADGES.find(b => b.id === newBadge)?.name), BADGES.find(b => b.id === newBadge)?.first ? " (" + ui("creditLabel") + " — " + tx(BADGES.find(b => b.id === newBadge)?.first) + ")" : "")), recordFlash && /*#__PURE__*/React.createElement("div", {
     className: "record new"
-  }, ui("newRecord")), /*#__PURE__*/React.createElement("div", {
-    className: "daily-res" + (dailyDone ? " done" : "")
-  }, ui("dailyH"), " \u2014 ", tx(daily.label), " \xB7 ", dailyDone ? ui("dailyDone") : ui("dailyTodo")), artifactFlash && artifactFlash.length && /*#__PURE__*/React.createElement("div", {
+  }, ui("newRecord")), artifactFlash && artifactFlash.length && /*#__PURE__*/React.createElement("div", {
     className: "artifact-get"
   }, ui("artGet") + artifactFlash.map(id => tx(ARTIFACTS[id].name)).join(", ")), scene.ending === 1 ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("button", {
     className: "restart primary",
@@ -8153,7 +8146,22 @@ function CRPG() {
   }, ui("ch3again")), /*#__PURE__*/React.createElement("button", {
     className: "restart",
     onClick: () => restart()
-  }, ui("fromStart"))), /*#__PURE__*/React.createElement(SuggestBox, {
+  }, ui("fromStart"))), /* pt34: 장 끝 화면 — 이어 가기 버튼을 위로, 정리(의뢰·지킨 것·기록·통계)는 접어 둔다(펼친 상태는 기억). */ React.createElement("details", { className: "endMore", open: !!store.get("aduventure_endmore") || undefined, onToggle: e => { try { store.set("aduventure_endmore", !!(e && e.target && e.target.open)); } catch (x) {} } }, React.createElement("summary", null, ui("endMoreH"), " \u2014 ", (() => { const L = chapterLedger(scene.ending, flags); return "\u2713" + L.filter(r => r.kept === true).length + " \u00B7 \u2717" + L.filter(r => r.kept === false).length; })(), runNo && [1, 2, 3, 4].includes(scene.ending) ? " \u00B7 " + ui("goalsDone", { n: goalsFor(runNo).filter(id => GOALS[id].done(flags)).length }) : "", " \u00B7 " + ui("badgeCount") + " " + badges.length + "/" + BADGES.length), runNo && [1, 2, 3, 4].includes(scene.ending) && React.createElement(GoalBox, { ids: goalsFor(runNo), flags, ui, tx }), React.createElement("div", {
+    className: "ledger"
+  }, React.createElement("h4", null, ui("ledgerH")), chapterLedger(scene.ending, flags).map((r, i) => React.createElement("div", {
+    key: "ledger" + i,
+    className: "ledgerRow " + (r.kept === true ? "kept" : r.kept === false ? "lost" : "mixed")
+  }, React.createElement("span", { className: "ledgerMark", "aria-hidden": "true" }, r.kept === true ? "\u2713" : r.kept === false ? "\u2717" : "\u25CB"), React.createElement("span", null, tx(r.text), r.next && React.createElement("small", null, "\u2192 " + tx(r.next)))))), React.createElement(RecordScope, { ui }), /*#__PURE__*/React.createElement("p", {
+    className: "bcount"
+  }, ui("badgeCount"), " ", badges.length, "/", BADGES.length), allBadges && /*#__PURE__*/React.createElement("div", {
+    className: "teaser"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "badge on new"
+  }, ui("teaserTitle")), /*#__PURE__*/React.createElement("p", null, tx(TEASER))), /*#__PURE__*/React.createElement("p", {
+    className: "stats"
+  }, ui("heroLine"), ": ", pc.name, " (", tx(CLASSES[pc.classKey].name), ") \xB7 ", ui("checksWord"), " ", stats.rolls, " \xB7 ", ui("successWord"), " ", stats.success, /*#__PURE__*/React.createElement("br", null), ui("thisRunClues"), flags.filter(f => CLUES[f]).map(f => tx(CLUES[f])).join(" · ") || ui("none"), /*#__PURE__*/React.createElement("br", null), ui("ruleLabel"), tx(rules.name)), /*#__PURE__*/React.createElement("div", {
+    className: "daily-res" + (dailyDone ? " done" : "")
+  }, ui("dailyH"), " \u2014 ", tx(daily.label), " \xB7 ", dailyDone ? ui("dailyDone") : ui("dailyTodo"))), /*#__PURE__*/React.createElement(SuggestBox, {
     sceneKey: sceneKey,
     pc: pc,
     lang: lang,
