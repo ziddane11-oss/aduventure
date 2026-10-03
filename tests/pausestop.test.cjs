@@ -60,7 +60,7 @@ function game({sceneKey = 'ending', flags = [], lore = [], lang = 'en', runNo = 
 }
 
 const saved = g => JSON.parse(g.data.get('aduventure_save') || 'null');
-for (const sceneKey of ['ending', 'ending2', 'ending3', 'c2_end', 'c2_end2']) {
+for (const sceneKey of ['ending', 'ending2', 'ending3', 'c2_end', 'c2_end2', 'c2_end3']) {
   test(`${sceneKey}: 장 끝에 도달해도 이어하기 저장이 남고, 그 자리(장 끝)를 가리킨다`, () => {
     const g = game({sceneKey, runNo: 113});
     g.render(); g.render();
@@ -69,7 +69,7 @@ for (const sceneKey of ['ending', 'ending2', 'ending3', 'c2_end', 'c2_end2']) {
     assert.equal(s.sceneKey, sceneKey);
   });
 }
-for (const sceneKey of ['ending4', 'c2_end3']) {
+for (const sceneKey of ['ending4', 'fin_end']) {
   test(`${sceneKey}: 마지막 엔딩에선 예전처럼 이어하기 저장을 비운다`, () => {
     const g = game({sceneKey, runNo: 113});
     g.render(); g.render();
