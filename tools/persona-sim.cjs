@@ -39,7 +39,9 @@ const ARCHETYPES = [
   { id: 'speed',    ko: '스피드러너(글 대충)',      read: [18, 28], patience: 0.25, risk: 0.60, curiosity: 0.30, deduction: 0.30, goal: 0.40, story: 0.10, replay: 0.45, budget: [10, 20], lang: 'ko' },
   { id: 'english',  ko: '영어권 RPG 팬',            read: [14, 20], patience: 0.60, risk: 0.50, curiosity: 0.60, deduction: 0.55, goal: 0.45, story: 0.60, replay: 0.50, budget: [20, 40], lang: 'en' },
   { id: 'student',  ko: '고등학생(수업 중)',         read: [7, 11],  patience: 0.40, risk: 0.55, curiosity: 0.50, deduction: 0.40, goal: 0.50, story: 0.40, replay: 0.45, budget: [10, 18], lang: 'ko' },
-  { id: 'veteran',  ko: '텍스트 RPG 베테랑',        read: [10, 14], patience: 0.85, risk: 0.50, curiosity: 0.75, deduction: 0.75, goal: 0.60, story: 0.75, replay: 0.80, budget: [30, 60], lang: 'ko' }
+  { id: 'veteran',  ko: '텍스트 RPG 베테랑',        read: [10, 14], patience: 0.85, risk: 0.50, curiosity: 0.75, deduction: 0.75, goal: 0.60, story: 0.75, replay: 0.80, budget: [30, 60], lang: 'ko' },
+  { id: 'steamcritic', ko: '깐깐한 스팀 리뷰어',     read: [12, 18], patience: 0.45, risk: 0.55, curiosity: 0.60, deduction: 0.60, goal: 0.50, story: 0.50, replay: 0.35, budget: [20, 45], lang: 'en' },
+  { id: 'ifcritic', ko: '인터랙티브 픽션 비평가',     read: [9, 13],  patience: 0.80, risk: 0.45, curiosity: 0.85, deduction: 0.80, goal: 0.30, story: 0.95, replay: 0.55, budget: [30, 60], lang: 'en' }
 ];
 const CLASSES = ['fighter', 'rogue', 'wizard'];
 function makePersonas(n, seed) {
