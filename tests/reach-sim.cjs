@@ -119,7 +119,7 @@ const report = {
     'reunionEligible is peaceful or caughtRen (the Ch.2 bond choice opens), not an observed Chapter 2 reunion.',
     'sabotageClues counts the sabotage flag; the simulator refuses to run if any branch grants it without the displayed wording.',
     'pt11: losing to Ren continues to the beacon ending (lostToRen/beaconEndings); death follows the gameover scene only.',
-    'pt15: the Ren fight is a two-beat narrative duel (duel1/duel2); the policy takes the first visible duel choice; 0 HP follows ifDown to the beacon.',
+    'pt15/pt35: the Ren fight is a one-beat narrative duel (duel1; duel2 only for old saves); the policy takes the first visible duel choice; 0 HP follows ifDown to the beacon.',
     'The repair policy only compares checked choices, so the no-check wire repair is never chosen; wireRepairs stays 0 by design.',
     'No metric is required to reach 100%; optional scenes are expected to differ by path.'
   ], results

@@ -78,22 +78,24 @@ test('every duel branch ends at the railing, the lantern room, or the beacon —
   const g = game();
   const targets = g.run(`['duel1','duel2'].flatMap(k => SCENES[k].choices.flatMap(c => [c.success, c.fail, c.result].filter(Boolean).map(b => [k, b.goto, b.ifDown || null])))`);
   for (const [scene, to, down] of targets) {
-    assert.ok(scene === 'duel1' ? ['duel2', 'top'].includes(to) : ['railing', 'top'].includes(to), scene + ' -> ' + to);
+    // pt34: 1장 결투는 한 박자 — duel1에서 바로 난간·등실로. duel2는 예전 저장용으로만 남아 있다.
+    assert.ok(['railing', 'top'].includes(to), scene + ' -> ' + to);
     if (down) assert.equal(down, 'signal');
   }
   assert.ok(g.run(`['duel1','duel2'].every(k => SCENES[k].choices.every(c => c.stake && c.stake.ko && c.stake.en))`), 'Every duel choice states its stake');
 });
 
-test('duel beat one: winning the exchange opens an easier finishing move', () => {
+test('pt34: the Ren duel is one beat — winning goes straight to the railing, and nothing leads to duel2 any more', () => {
   const g = game();
   g.state().goto('duel1');
-  g.click('[Athletics] Catch the hook head-on');
-  const s = g.state();
-  assert.equal(s.sceneKey, 'duel2');
-  assert.ok(s.flags.includes('duelEdge'));
-  assert.ok(choices(g.render()).some(n => text(n).startsWith('[Athletics] Press the opening')));
-  g.click('[Athletics] Press the opening');
+  g.click('[Athletics] Catch the hook and drive');
   assert.equal(g.state().sceneKey, 'railing');
+  const into = g.run(`Object.entries(SCENES).filter(([k]) => k !== 'duel2').flatMap(([k, v]) => (v.choices || []).flatMap(c => [c.goto, c.success?.goto, c.fail?.goto, c.result?.goto]).filter(t => t === 'duel2').map(() => k))`);
+  assert.deepEqual([...into], []);
+  // 예전 저장이 duel2에서 멈춰 있어도 이어 할 수 있다.
+  const old = game();
+  old.state().goto('duel2');
+  assert.ok(choices(old.render()).length > 0);
 });
 
 test('only the wizard sees the frost option', () => {
@@ -107,7 +109,7 @@ test('only the wizard sees the frost option', () => {
 test('falling to 0 HP in the duel goes to the beacon at 1 HP instead of game over', () => {
   const g = game({success: false, hp: 1});
   g.state().goto('duel1');
-  g.click('[Athletics] Catch the hook head-on');
+  g.click('[Athletics] Catch the hook and drive');
   const s = g.state();
   assert.equal(s.sceneKey, 'signal');
 });
@@ -119,7 +121,7 @@ test('talking or threatening can end the duel without the railing', () => {
   assert.equal(talk.state().sceneKey, 'top');
   assert.ok(talk.state().flags.includes('peaceful'));
   const threat = game();
-  threat.state().goto('duel2');
+  threat.state().goto('duel1');
   threat.click('[Intimidate]');
   assert.equal(threat.state().sceneKey, 'top');
   assert.ok(threat.state().flags.includes('f_ren_keeper'));
@@ -127,12 +129,12 @@ test('talking or threatening can end the duel without the railing', () => {
 
 test('the wire can win the duel once, and is then gone for the repair', () => {
   const g = game({flags: ['sawTrap']});
-  g.state().goto('duel2');
+  g.state().goto('duel1');
   g.click('[Wire]');
   assert.equal(g.state().sceneKey, 'railing');
   assert.ok(g.state().flags.includes('wireUsed'));
   const spent = game({flags: ['sawTrap', 'wireUsed']});
-  spent.state().goto('duel2');
+  spent.state().goto('duel1');
   assert.equal(choices(spent.render()).some(n => text(n).startsWith('[Wire]')), false);
 });
 
@@ -144,7 +146,7 @@ test('the location card says where you are and what you are doing, tinted by the
   assert.match(wrap.props.className, /mood-danger/);
   const card = nodes(wrap).find(n => n.props.className === 'locCard');
   assert.ok(text(card).includes('Duel with Ren'));
-  assert.ok(text(card).includes('Fighting Ren — the hook goes up'));
+  assert.ok(text(card).includes('Fighting Ren — one move ends it'));
   g.state().goto('railing');
   assert.match(nodes(g.render()).find(n => /^stageWrap/.test(n.props.className || '')).props.className, /mood-hush/);
 });
@@ -211,7 +213,7 @@ test('scene sounds play once per scene only while sound is on, and never throw',
 test('the duel raises the tension drone like a fight', () => {
   const g = game();
   const mood = k => g.run(`bgmMood({sceneKey: ${JSON.stringify(k)}, chapter: 1, hp: 12, maxHp: 12})`);
-  assert.equal(mood('duel1').tension, 0.8);
+  assert.equal(mood('duel1').tension, 1);
   assert.equal(mood('duel2').tension, 1);
   assert.equal(mood('top').tension, 0);
 });
@@ -317,4 +319,15 @@ test('all pt16 duel text is bilingual', () => {
     assert.ok(s.ko && s.en, JSON.stringify(s));
     assert.equal(HANGUL.test(s.en), false, s.en);
   }
+});
+
+test('pt35: the one-beat Ren duel stays short — each class sees at most four moves (one is its own)', () => {
+  for (const cls of ['fighter', 'rogue', 'wizard']) {
+    const g = game({classKey: cls});
+    g.state().goto('duel1');
+    const cs = choices(g.render());
+    assert.ok(cs.length <= 4, cls + ' sees ' + cs.length);
+  }
+  const rogue = game({classKey: 'rogue'}); rogue.state().goto('duel1');
+  assert.ok(choices(rogue.render()).some(n => text(n).startsWith('[Stealth]')));
 });

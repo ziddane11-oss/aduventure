@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>어두밴처 v0.7.3-pt34</title>
+<title>어두밴처 v0.7.3-pt35</title>
 <style>body{margin:0;background:#0e1420}</style>
 </head>
 <body>
@@ -318,7 +318,7 @@ function(a,b,c){if(!Vd(b))throw Error(n(200));return Wd(null,a,b,!1,c)};Q.unmoun
    GAS 피드백 파이프 — v0.7 재구현 (제안/신호/텔레메트리)
    ============================================================ */
 /* 플레이테스트 빌드 태그 — 테스트 중 버전 구분용. 수정할 때마다 뒤 번호를 올린다. */
-const BUILD = "v0.7.3-pt34";
+const BUILD = "v0.7.3-pt35";
 const GAS_URL = "https://script.google.com/macros/s/AKfycbxFx_m5rhCZmqGoy3JcUUNqEgiObMWNHe9hx-LnZrhzIkfwa9-yJGBWP0lVulptnNQeCQ/exec";
 function gasPost(payload, options = {}) {
   return fetch(GAS_URL, {
@@ -886,6 +886,7 @@ const UI = {
   goalsH: { ko: "이번 기록의 의뢰", en: "This record's commission" },
   goalsDone: { ko: "의뢰 {n}/3 완수", en: "Commission {n}/3 done" },
   endMoreH: { ko: "📜 이번 장 정리", en: "📜 Chapter summary" },
+  pauseOk: { ko: "☕ 여기서 멈춰도 된다 — 다음에 열면 「이어서 하기」로 이 장 끝부터 이어진다.", en: "☕ Fine to stop here — next time, “Continue” picks up right at this chapter's end." },
   objStart: { ko: "✒ 이의 있음 — 거짓 문장을 짚는다", en: "✒ Objection — point at the lie" },
   objPickLine: { ko: "어느 줄이 거짓인가? (실수는 한 번까지)", en: "Which line is the lie? (You may slip once)" },
   objMissLine: { ko: "세온이 미소 짓는다. \"그 줄은 사실일세.\" — 이제 실수할 여유가 없다.", en: "Seon smiles. \"That line is true.\" — You have no slips left." },
@@ -1580,35 +1581,38 @@ const SCENES = {
   },
   /* ---------- 렌과의 결투 — 숫자 전투 대신 2박자 서사 결투(pt15). 매 박자 다른 딜레마, 말로 끝낼 길도 있다 ----------
      HP가 0이 되면 ifDown으로 봉화 경로에 간다. 기존 combat 장면은 시뮬레이터·호환을 위해 남겨 둔다. */
+  // pt34: 첫 판을 짧게 — 렌과의 결투는 한 박자로 끝난다(이전 2박자의 두 번째 수 '철사'·'위협'을 여기로 합침).
+  // duel2는 예전 저장(그 장면에서 멈춘 판)을 이어 하도록 남겨 둔다. 두 박자 결투와 시간 제한은 2·3장에서 처음 나온다.
   duel1: {
     ch: 1,
     text: {
-      ko: `렌이 갈고리를 높이 치켜든다. 어깨에 힘이 들어간다 — 크게 내리칠 기세다.\n\n그의 발치, 렌즈 자루가 계단 끝에 걸려 흔들린다.`,
-      en: `Ren raises the hook high. His shoulder tenses — he's winding up for a big swing.\n\nAt his feet, the lens sack teeters on the edge of the stairs.`
+      ko: `렌이 갈고리를 높이 치켜든다. 어깨에 힘이 들어간다 — 크게 내리칠 기세다.\n\n발밑은 쏟아진 기름으로 번들거리고, 렌즈 자루는 계단 끝에 걸려 흔들린다.\n\n한 수로 끝난다.`,
+      en: `Ren raises the hook high. His shoulder tenses — he's winding up for a big swing.\n\nThe floor gleams with spilled oil, and the lens sack teeters on the edge of the stairs.\n\nOne move ends it.`
     },
     choices: [{
-      label: { ko: "[운동] 갈고리를 정면으로 받아낸다", en: "[Athletics] Catch the hook head-on" },
-      stake: { ko: "성공하면 다음 수가 쉬워진다 · 실패하면 크게 다친다", en: "Success makes the next move easier · failure hurts badly" },
-      check: { ability: "STR", skill: "athletics", dc: 11, label: "운동" },
+      label: { ko: "[운동] 갈고리를 받아내고 그대로 밀어붙인다", en: "[Athletics] Catch the hook and drive straight through" },
+      stake: { ko: "성공하면 렌을 몰아낸다 · 실패하면 크게 다친다", en: "Success drives him off · failure hurts badly" },
+      check: { ability: "STR", skill: "athletics", dc: 12, label: "운동" },
       success: {
-        text: { ko: `쇠와 쇠가 부딪친다. 받아낸 갈고리를 비틀자 렌이 휘청인다. 지금이 기회다.`, en: `Steel rings on steel. You twist the caught hook and Ren staggers. This is your opening.` },
-        flags: ["duelEdge"], goto: "duel2"
+        text: { ko: `쇠와 쇠가 부딪친다. 받아낸 갈고리를 비틀어 밀어붙이자 렌이 뒷걸음질 치다 기름을 밟는다.\n\n자루와 함께 — 난간 너머로 기운다.`, en: `Steel rings on steel. You twist the caught hook and drive forward; Ren stumbles back into the oil.\n\nHe and the sack tip over the railing together.` },
+        goto: "railing"
       },
       fail: {
-        text: { ko: `막았지만 힘에서 밀린다. 갈고리 끝이 어깨를 긋는다.`, en: `You block, but he's stronger. The hook's tip rakes your shoulder.` },
-        damage: [2, 4], ifDown: "signal", goto: "duel2"
+        text: { ko: `막았지만 힘에서 밀린다. 갈고리 끝이 어깨를 긋는다.\n\n다시 치켜들던 렌의 발이 기름에 미끄러진다 — 자루와 함께 난간 쪽으로.`, en: `You block, but he's stronger. The hook's tip rakes your shoulder.\n\nWinding up again, Ren's foot skids on the oil — he and the sack lurch toward the railing.` },
+        damage: [2, 4], ifDown: "signal", goto: "railing"
       }
     }, {
-      label: { ko: "[은신] 내리치는 순간 옆으로 빠져 등 뒤를 잡는다", en: "[Stealth] Slip aside as it falls and get behind him" },
-      stake: { ko: "성공하면 렌의 등 뒤 · 실패하면 무방비로 맞는다", en: "Success puts you behind him · failure leaves you wide open" },
+      classOnly: "rogue",
+      label: { ko: "[은신] 내리치는 순간 옆으로 빠져 등을 떠민다", en: "[Stealth] Slip aside as it falls and shove him from behind" },
+      stake: { ko: "성공하면 렌을 몰아낸다 · 실패하면 무방비로 맞는다", en: "Success drives him off · failure leaves you wide open" },
       check: { ability: "DEX", skill: "stealth", dc: 12, label: "은신" },
       success: {
-        text: { ko: `갈고리가 허공을 가르는 사이, 그림자처럼 등 뒤로 돈다. 렌이 돌아보기도 전에.`, en: `While the hook cuts empty air, you slide behind him like a shadow — before he can even turn.` },
-        flags: ["duelEdge"], goto: "duel2"
+        text: { ko: `갈고리가 허공을 가르는 사이, 그림자처럼 등 뒤로 돌아 떠민다. 렌이 기름 위로 미끄러진다.\n\n자루와 함께 — 난간 너머로 기운다.`, en: `While the hook cuts empty air, you slide behind him like a shadow and shove. Ren skids across the oil.\n\nHe and the sack tip over the railing together.` },
+        goto: "railing"
       },
       fail: {
-        text: { ko: `한 박자 늦었다. 갈고리 등이 옆구리를 후려친다.`, en: `A beat too slow. The back of the hook slams into your side.` },
-        damage: [3, 4], ifDown: "signal", goto: "duel2"
+        text: { ko: `한 박자 늦었다. 갈고리 등이 옆구리를 후려친다.\n\n그 반동에 렌의 발이 기름에 미끄러진다 — 자루와 함께 난간 쪽으로.`, en: `A beat too slow. The back of the hook slams into your side.\n\nThe swing carries Ren onto the oil — he and the sack lurch toward the railing.` },
+        damage: [3, 4], ifDown: "signal", goto: "railing"
       }
     }, {
       classOnly: "wizard",
@@ -1616,15 +1620,25 @@ const SCENES = {
       stake: { ko: "성공하면 렌이 무기를 놓친다 · 실패하면 주문 대신 갈고리를 맞는다", en: "Success makes him lose his grip · failure means the hook lands first" },
       check: { ability: "INT", skill: "arcana", dc: 11, label: "비전학" },
       success: {
-        text: { ko: `서리가 쇠를 타고 번진다. 렌이 비명을 지르며 갈고리를 놓칠 뻔한다.`, en: `Frost races along the steel. Ren yelps and nearly drops the hook.` },
-        flags: ["duelEdge"], goto: "duel2"
+        text: { ko: `서리가 쇠를 타고 번진다. 갈고리를 놓친 렌이 주우려다 기름을 밟는다.\n\n자루와 함께 — 난간 너머로 기운다.`, en: `Frost races along the steel. Ren drops the hook, lunges for it, and steps in the oil.\n\nHe and the sack tip over the railing together.` },
+        goto: "railing"
       },
       fail: {
-        text: { ko: `주문이 완성되기 전에 갈고리가 먼저 닿는다.`, en: `The hook lands before the spell is done.` },
-        damage: [2, 4], ifDown: "signal", goto: "duel2"
+        text: { ko: `주문이 완성되기 전에 갈고리가 먼저 닿는다.\n\n휘두른 기세에 렌도 기름에 미끄러진다 — 자루와 함께 난간 쪽으로.`, en: `The hook lands before the spell is done.\n\nThe swing carries Ren onto the oil too — he and the sack lurch toward the railing.` },
+        damage: [2, 4], ifDown: "signal", goto: "railing"
       }
     }, {
-      label: { ko: `[설득] 무기를 내리고 다시 묻는다. "그 렌즈, 누구한테 가져가는 거지?"`, en: `[Persuade] Lower your weapon and ask again. "Who are you taking that lens to?"` },
+      echoReq: "sawTrap",
+      flagNot: "wireUsed",
+      echo: { ko: "입구 계단에서 찾아낸 철사", en: "The wire you found on the entrance stairs" },
+      label: { ko: "[철사] 쏟긴 기름과 철사 쪽으로 몬다", en: "[Wire] Drive him into the spilled oil and the wire" },
+      stake: { ko: "확실히 이긴다 · 철사를 써 버려 수리에 못 쓴다", en: "A sure win · the wire is spent and can't fix the light" },
+      result: {
+        text: { ko: `렌의 발이 철사에 걸린다. 기름 위로 미끄러진 사내와 자루가 함께 난간 너머로 기운다.\n\n팽팽하던 철사는 끊어졌다.`, en: `Ren's foot catches the wire. He skids across the oil and he and the sack tip over the railing together.\n\nThe taut wire has snapped.` },
+        flags: ["wireUsed"], goto: "railing"
+      }
+    }, {
+      label: { ko: `[설득] 무기를 내리고 묻는다. "그 렌즈, 누구한테 가져가는 거지?"`, en: `[Persuade] Lower your weapon and ask. "Who are you taking that lens to?"` },
       stake: { ko: "성공하면 피 없이 끝난다 · 실패하면 맨몸으로 맞는다", en: "Success ends it without blood · failure means taking the hit unguarded" },
       check: { ability: "CHA", skill: "persuasion", dc: 13, label: "설득" },
       success: {
@@ -1632,8 +1646,20 @@ const SCENES = {
         flags: ["peaceful"], goto: "top"
       },
       fail: {
-        text: { ko: `"말은 끝났다니까!" 갈고리가 그대로 떨어진다.`, en: `"I said we're done talking!" The hook comes down anyway.` },
-        damage: [3, 4], ifDown: "signal", goto: "duel2"
+        text: { ko: `"말은 끝났다니까!" 갈고리가 그대로 떨어진다.\n\n휘두른 기세에 렌의 발이 기름에 미끄러진다 — 자루와 함께 난간 쪽으로.`, en: `"I said we're done talking!" The hook comes down anyway.\n\nThe swing carries Ren onto the oil — he and the sack lurch toward the railing.` },
+        damage: [3, 4], ifDown: "signal", goto: "railing"
+      }
+    }, {
+      label: { ko: `[위협] "누가 보냈는지 말하면 보내 주지."`, en: `[Intimidate] "Tell me who sent you, and you walk."` },
+      stake: { ko: "성공하면 이름 하나를 듣고 끝난다 · 실패하면 옆구리가 열린다", en: "Success gets you a name and ends it · failure opens your side" },
+      check: { ability: "CHA", skill: "intimidation", dc: 12, label: "위협" },
+      success: {
+        text: { ko: `렌의 눈이 흔들린다. "…베른 영감이야. 렌즈를 가져오면 값을 쳐주겠다고."\n\n갈고리를 떨어뜨리고, 자루를 발로 밀어 준다. 그리고 빗속으로.`, en: `Ren's eyes waver. "…Old Bern. Said he'd pay if I brought the lens."\n\nHe drops the hook, nudges the sack over with his foot, and goes out into the rain.` },
+        flags: ["peaceful", "f_ren_keeper"], goto: "top"
+      },
+      fail: {
+        text: { ko: `"협박은 내 쪽이 잘하지." 갈고리가 옆구리를 긋는다. 자루를 잡으려던 렌이 기름에 미끄러진다.`, en: `"I'm better at threats." The hook slices your side. Lunging for the sack, Ren slips on the oil.` },
+        damage: [2, 4], ifDown: "signal", goto: "railing"
       }
     }]
   },
@@ -4822,6 +4848,8 @@ const CASE_NEED = 4;
 // 사건이 늘어나도 기록관에게 남는 성장이므로 사건별로 나누지 않고 하나의 저장소(aduventure_scars)에 둔다.
 const SCAR_MAX = 2;
 // 장치는 한 번에 하나씩 드러난다: 2번째 기록 발자국, 3번째 흉터, 4번째 붉은 쪽지.
+// 이야기가 이어지는 장 끝(마지막 판결·사건 완결이 아닌 것) — 여기서 멈춰도 이어서 할 수 있다.
+const MID_ENDINGS = [1, 2, 3, 5, 6];
 const UNLOCK_AT = { paths: 1, scars: 2, notes: 3, timer: 1 };
 // 장마다 시작 장면(쓰러지면 그 장 처음부터 다시 쓸 수 있다 — 1000명 인터뷰: 2·3장에서 죽으면 1장부터라 그만둠).
 const CHAPTER_START = { 1: "intro", 2: "intro2", 3: "intro3", 5: "c2_intro", 6: "c2_day", 7: "c2_night" };
@@ -4865,7 +4893,7 @@ const SCENE_DOING = {
   intro: bi("촌장에게 등대 열쇠를 받는다", "Taking the lighthouse key from the chief"),
   door: bi("어둠 속 계단 앞", "At the foot of the dark stairs"),
   stairs: bi("렌즈를 훔치는 사내와 마주쳤다", "Face to face with a lens thief"),
-  duel1: bi("렌과 싸우는 중 — 갈고리가 올라간다", "Fighting Ren — the hook goes up"),
+  duel1: bi("렌과 싸우는 중 — 한 수로 끝난다", "Fighting Ren — one move ends it"),
   duel2: bi("렌과 싸우는 중 — 마지막 한 수", "Fighting Ren — one last move"),
   combat: bi("렌과 싸우는 중", "Fighting Ren"),
   railing: bi("손은 하나 — 사람인가, 렌즈인가", "One hand — the man or the lens"),
@@ -4903,7 +4931,7 @@ const TIMER_READ_CPS = 10, TIMER_READ_MAX = 30;
 function timerBudget(resultChars, sceneChars, seenBefore) {
   return TIMER_SEC + Math.min(TIMER_READ_MAX, Math.ceil(((resultChars || 0) + (seenBefore ? 0 : sceneChars || 0)) / TIMER_READ_CPS));
 }
-const DUEL_TENSION = { duel1: 0.8, duel2: 1, scully1: 0.8, scully2: 1, monk1: 0.8, monk2: 1 };
+const DUEL_TENSION = { duel1: 1, duel2: 1, scully1: 0.8, scully2: 1, monk1: 0.8, monk2: 1 };
 function stageMood(sceneKey, scene) {
   if (DUEL_SCENES.includes(sceneKey)) return "danger";
   if (BGM_HUSH.includes(sceneKey)) return "hush";
@@ -6338,6 +6366,7 @@ const css = `
 .crpg .artifactitem { font-size:12px; padding:5px 9px; border-radius:6px; border:1px solid var(--line); color:var(--dim); background:var(--panel); }
 .crpg .artifactitem.on { border-color:var(--gold); color:var(--gold); background:rgba(205,182,139,.1); }
 .crpg .choice .tag.artifact { border:1px solid var(--gold); color:var(--gold); background:rgba(205,182,139,.16); }
+.crpg .pauseOk { margin:10px 0 0; color:var(--dim); font-size:13px; line-height:1.6; }
 .crpg .endMore { margin:18px 0 6px; border:1px solid var(--line); border-radius:8px; background:var(--panel); }
 .crpg .endMore > summary { min-height:44px; display:flex; align-items:center; flex-wrap:wrap; gap:2px; padding:8px 14px; cursor:pointer; color:var(--dim); font-size:14px; }
 .crpg .endMore[open] > summary { border-bottom:1px solid var(--line); color:var(--gold); }
@@ -6786,10 +6815,11 @@ function CRPG() {
     }));
   }, [sfxOn, sceneKey, chapter, pc?.hp, pc?.maxHp, enemyIntent, enemy?.done, enemy?.playerDown]);
   // 자동 저장 — 안정적인 서사 장면에서만 진행 상태를 보관한다.
-  // (전투·판정 중·엔딩·게임오버·첫 인트로는 제외 → 복원 시 항상 선택지 화면으로 복귀)
+  // (전투·판정 중·마지막 엔딩·게임오버·첫 인트로는 제외 → 복원 시 선택지 화면이나 장 끝 화면으로 복귀)
+  // pt35: 장 끝(1·2·3장, 사건 2의 1·2장)은 저장한다 — 한 장씩 끊어 하고 다음에 「이어서 하기」로 그 자리에서 잇는다.
   useEffect(() => {
     if (!pc || !scene) return;
-    if (scene.combat || scene.ending || scene.gameover) return;
+    if (scene.combat || scene.gameover || scene.ending && !MID_ENDINGS.includes(scene.ending)) return;
     if (rolling || pending || sceneKey === "intro") return;
     const snapshot = {
       v: 1,
@@ -6820,8 +6850,10 @@ function CRPG() {
       const sum = runSummary(flags, runNo, !!scene.gameover);
       store.set("aduventure_lastrun", sum);
       setLastRun(sum);
-      store.remove(SAVE_KEY);
-      setSavedGame(null);
+      if (scene.gameover || !MID_ENDINGS.includes(scene.ending)) {
+        store.remove(SAVE_KEY);
+        setSavedGame(null);
+      }
     }
   }, [sceneKey, pc]);
   // 엔딩 도달 시 — 이 엔딩의 최고 기록(성공률 우선, 동률이면 최소 판정)을 갱신하고 오늘의 도전 달성을 판정한다.
@@ -8146,7 +8178,7 @@ function CRPG() {
   }, ui("ch3again")), /*#__PURE__*/React.createElement("button", {
     className: "restart",
     onClick: () => restart()
-  }, ui("fromStart"))), /* pt34: 장 끝 화면 — 이어 가기 버튼을 위로, 정리(의뢰·지킨 것·기록·통계)는 접어 둔다(펼친 상태는 기억). */ React.createElement("details", { className: "endMore", open: !!store.get("aduventure_endmore") || undefined, onToggle: e => { try { store.set("aduventure_endmore", !!(e && e.target && e.target.open)); } catch (x) {} } }, React.createElement("summary", null, ui("endMoreH"), " \u2014 ", (() => { const L = chapterLedger(scene.ending, flags); return "\u2713" + L.filter(r => r.kept === true).length + " \u00B7 \u2717" + L.filter(r => r.kept === false).length; })(), runNo && [1, 2, 3, 4].includes(scene.ending) ? " \u00B7 " + ui("goalsDone", { n: goalsFor(runNo).filter(id => GOALS[id].done(flags)).length }) : "", " \u00B7 " + ui("badgeCount") + " " + badges.length + "/" + BADGES.length), runNo && [1, 2, 3, 4].includes(scene.ending) && React.createElement(GoalBox, { ids: goalsFor(runNo), flags, ui, tx }), React.createElement("div", {
+  }, ui("fromStart"))), /* pt35: 첫 판엔 장 끝마다 "여기서 멈춰도 된다" — 휴대폰으로 한 장씩 끊어 하는 걸 공식 방식으로. */ runIndex < 1 && MID_ENDINGS.includes(scene.ending) && React.createElement("p", { className: "pauseOk" }, ui("pauseOk")), /* pt34: 장 끝 화면 — 이어 가기 버튼을 위로, 정리(의뢰·지킨 것·기록·통계)는 접어 둔다(펼친 상태는 기억). */ React.createElement("details", { className: "endMore", open: !!store.get("aduventure_endmore") || undefined, onToggle: e => { try { store.set("aduventure_endmore", !!(e && e.target && e.target.open)); } catch (x) {} } }, React.createElement("summary", null, ui("endMoreH"), " \u2014 ", (() => { const L = chapterLedger(scene.ending, flags); return "\u2713" + L.filter(r => r.kept === true).length + " \u00B7 \u2717" + L.filter(r => r.kept === false).length; })(), runNo && [1, 2, 3, 4].includes(scene.ending) ? " \u00B7 " + ui("goalsDone", { n: goalsFor(runNo).filter(id => GOALS[id].done(flags)).length }) : "", " \u00B7 " + ui("badgeCount") + " " + badges.length + "/" + BADGES.length), runNo && [1, 2, 3, 4].includes(scene.ending) && React.createElement(GoalBox, { ids: goalsFor(runNo), flags, ui, tx }), React.createElement("div", {
     className: "ledger"
   }, React.createElement("h4", null, ui("ledgerH")), chapterLedger(scene.ending, flags).map((r, i) => React.createElement("div", {
     key: "ledger" + i,
