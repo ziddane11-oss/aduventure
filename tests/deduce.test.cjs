@@ -71,7 +71,7 @@ test('the deduction opens after two fragments and tells only how many of three a
   const g = game({sceneKey: 'intro', lore: ['f_receipt', 'f_window']});
   pick(g, 'seon', 'sell', 'ship');
   assert.match(text(board(g)), /2 of three are right\. The record won't say which/);
-  assert.match(text(board(g)), /You already checked this run/);
+  assert.match(text(board(g)), /You already checked in this chapter/);
   assert.equal(nodes(board(g)).find(n => n.type === 'button' && /Check the deduction/.test(text(n))), undefined, 'once per record');
   assert.equal(JSON.parse(g.data.get('aduventure_deduce')).solved, false);
 });
@@ -94,7 +94,7 @@ test('a confirmed deduction opens the verdict even with fragments missing', () =
 test('replaying a chapter is a new run: the deduction may be checked again', () => {
   const g = game({sceneKey: 'ending2', lore: ['f_receipt', 'f_window']});
   pick(g, 'seon', 'sell', 'ship');
-  assert.match(text(board(g)), /You already checked this run/);
+  assert.match(text(board(g)), /You already checked in this chapter/);
   g.state().setCaseOpen(false);
   nodes(g.render()).find(n => n.type === 'button' && /Replay Ch\.2/.test(text(n))).props.onClick();
   assert.ok(nodes(board(g)).some(n => n.type === 'button' && /Check the deduction/.test(text(n))), 'a fresh chance after replaying the chapter');

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>어두밴처 v0.7.3-pt30</title>
+<title>어두밴처 v0.7.3-pt31</title>
 <style>body{margin:0;background:#0e1420}</style>
 </head>
 <body>
@@ -318,7 +318,7 @@ function(a,b,c){if(!Vd(b))throw Error(n(200));return Wd(null,a,b,!1,c)};Q.unmoun
    GAS 피드백 파이프 — v0.7 재구현 (제안/신호/텔레메트리)
    ============================================================ */
 /* 플레이테스트 빌드 태그 — 테스트 중 버전 구분용. 수정할 때마다 뒤 번호를 올린다. */
-const BUILD = "v0.7.3-pt30";
+const BUILD = "v0.7.3-pt31";
 const GAS_URL = "https://script.google.com/macros/s/AKfycbxFx_m5rhCZmqGoy3JcUUNqEgiObMWNHe9hx-LnZrhzIkfwa9-yJGBWP0lVulptnNQeCQ/exec";
 function gasPost(payload, options = {}) {
   return fetch(GAS_URL, {
@@ -836,6 +836,7 @@ const UI = {
   caseLocked: { ko: "사건 기록장 {n}/{total} · 결론까지 필요: ", en: "Case board {n}/{total} · still needed: " },
   needDecisive: { ko: "결정적 증거 1개(3장 수문)", en: "1 decisive proof (Ch.3, the sluice)" },
   needBern: { ko: "베른의 진술(2장 아침)", en: "Bern's statement (Ch.2, morning)" },
+  caseBernLater: { ko: "베른에게 물으려면 조각이 3개 필요하다(지금 {n}개). 조각이 어디서 나오는지는 🔎 사건 기록장에 적혀 있다.", en: "To question Bern you need 3 fragments (you have {n}). The 🔎 case board says where each one turns up." },
   caseGoCh2: { ko: "2장 아침으로 — 베른에게 묻는다", en: "Back to Ch.2 morning — ask Bern" },
   needCount: { ko: "조각 4개 이상", en: "4+ fragments" },
   fragNew: { ko: "◇ 아직 못 본 조각", en: "◇ unseen fragment" },
@@ -852,11 +853,11 @@ const UI = {
   deduceWhat: { ko: "무엇을", en: "What" },
   deduceWhy: { ko: "왜", en: "Why" },
   deducePick: { ko: "— 고른다 —", en: "— choose —" },
-  deduceCheck: { ko: "추론을 확인한다 (한 판에 한 번)", en: "Check the deduction (once per run)" },
+  deduceCheck: { ko: "추론을 확인한다 (장마다 한 번)", en: "Check the deduction (once per chapter)" },
   deduceScore: { ko: "셋 중 {n}개가 맞다. 어느 칸인지는 기록이 말해 주지 않는다.", en: "{n} of three are right. The record won't say which." },
   deduceSolved: { ko: "추론 확정 — 세온이 등대 불을 끄게 했다. 밀수선을 들여 마을의 겨울을 사려고. 조각이 모자라도 결론을 내릴 수 있다.", en: "Deduction confirmed — Seon had the light put out, to bring the ship in and buy the village its winter. You can reach a verdict even with fragments missing." },
   deduceLocked: { ko: "조각을 2개 이상 모으면 추론할 수 있다.", en: "Gather two or more fragments to start deducing." },
-  deduceWait: { ko: "이번 판의 추론은 이미 확인했다. 다음 판에서 다시(장을 다시 해도 된다).", en: "You already checked this run. Try again next run (replaying a chapter counts)." },
+  deduceWait: { ko: "이 장에서는 이미 확인했다. 다음 장(또는 장을 다시 할 때) 다시.", en: "You already checked in this chapter. Try again next chapter (or when you replay one)." },
   resultSeen: { ko: "▸ 전에도 이렇게 됐다 — 처음부터 읽기", en: "▸ It went this way before — read it all" },
   forkStairs: { ko: "⤳ 갈림길로: 렌과 마주치는 계단부터", en: "⤳ Jump to the fork: the stairs where you meet Ren" },
   forkRescue: { ko: "⤳ 갈림길로: 3장 수문 앞부터", en: "⤳ Jump to the fork: Ch.3, at the sluice" },
@@ -881,6 +882,7 @@ const UI = {
   objWon: { ko: "붉은 잉크가 그 줄을 긋는다 — '{e}'. 이 한 장이면 충분하다. (다음 장 운명 주사위 +1)", en: "Red ink strikes the line — '{e}'. One page is enough. (+1 fate die next chapter)" },
   objWrongLine: { ko: "그 줄은 사실이다. 세온이 찻잔을 내려놓는다. \"기록관은 증거로 말하는 법이지.\" 기록이 확정된다.", en: "That line is true. Seon sets down his cup. \"An archivist speaks with evidence.\" The record stands." },
   objWrongEvidence: { ko: "그건 이 줄을 뒤집지 못한다. 세온의 미소가 조금 더 반듯해진다. 기록이 확정된다.", en: "That doesn't overturn this line. Seon's smile grows a little more practiced. The record stands." },
+  objWhy: { ko: "'{s}' — 그건 이 줄과 부딪치지 않는다.", en: "'{s}' — that doesn't contradict this line." },
   objStamp: { ko: "정정", en: "Corrected" },
   objSealed: { ko: "확정", en: "Sealed" },
   diffEasy: { ko: "쉬움", en: "easy" },
@@ -896,6 +898,7 @@ const UI = {
   timerOn: { ko: "▶ 켜기", en: "▶ Turn it on" },
   timerHesitate: { ko: "— 망설이는 사이, 상대가 먼저 움직였다. —", en: "— You hesitated, and they moved first. —" },
   retrialNeed: { ko: "결정적 단서 {n}/{t}", en: "decisive fragments {n}/{t}" },
+  caseMinNeed: { ko: "🔒 조각 {n}/{t} — 더 모아 오면 열린다", en: "🔒 fragments {n}/{t} — gather more to open" },
   wrongH: { ko: "⚖ 오판 기록", en: "⚖ Wrongful verdict" },
   wrongHint: { ko: "재심하려면 결정적 단서 두 개(편지의 수신인, 열쇠 꼬리표)가 모두 필요하다.", en: "A retrial needs both decisive fragments (the letters' addressee, the key tag)." },
   scarNew: { ko: "🩹 흉터가 남았다 — {s} {d}. 다음 기록부터 {s}의 장애물이 1 낮아진다.", en: "🩹 A scar remains — {s} {d}. From your next record, {s} checks get 1 easier." },
@@ -915,6 +918,9 @@ const UI = {
   recordBelieve: { ko: "기록을 믿는다", en: "I believe the record" },
   nameRecord: { ko: "기록에 남을 이름은?", en: "What name goes on the record?" },
   rewrite: { ko: "이 기록을 다시 쓴다", en: "Rewrite this record" },
+  rewriteChapter: { ko: "이 장 처음부터 다시 쓴다", en: "Rewrite from the start of this chapter" },
+  rewriteAll: { ko: "처음부터 새 기록으로", en: "Start a new record from the beginning" },
+  nextStepH: { ko: "다음 할 일", en: "What to do next" },
   archive: { ko: "기록 보관소 — 도감·지식·유물", en: "Archive — endings, lore, artifacts" },
   recNo: { ko: "기록 제{n}호", en: "Record No. {n}" },
   caseSub: { ko: "공식 기록에 맞서 당신이 쓰는 반박 기록", en: "Your rebuttal to the official record" }
@@ -4363,7 +4369,9 @@ const CASE_NEED = 4;
 // 사건이 늘어나도 기록관에게 남는 성장이므로 사건별로 나누지 않고 하나의 저장소(aduventure_scars)에 둔다.
 const SCAR_MAX = 2;
 // 장치는 한 번에 하나씩 드러난다: 2번째 기록 발자국, 3번째 흉터, 4번째 붉은 쪽지.
-const UNLOCK_AT = { paths: 1, scars: 2, notes: 3 };
+const UNLOCK_AT = { paths: 1, scars: 2, notes: 3, timer: 1 };
+// 장마다 시작 장면(쓰러지면 그 장 처음부터 다시 쓸 수 있다 — 1000명 인터뷰: 2·3장에서 죽으면 1장부터라 그만둠).
+const CHAPTER_START = { 1: "intro", 2: "intro2", 3: "intro3", 5: "c2_intro" };
 const ui_bi = k => UI[k];
 const UNLOCK_LINES = {
   1: bi("이번 기록부터 — 발자국. 지난번에 간 길은 흐리게, 안 가 본 길은 금색으로 보인다.", "From this record on — footprints. Roads you took last time fade; roads not taken glow gold."),
@@ -5311,7 +5319,7 @@ function ObjectionPanel({ ch, flags, lore, pc, lang, ui, tx, objection, setObjec
   const box = (...kids) => React.createElement("div", { className: "objection" + (won ? " won" : lost ? " lost" : "") }, React.createElement("h4", null, ui("objH")), ...kids);
   if (mine && mine.step === "done") {
     const msg = mine.result === "won" ? ui("objWon", { e: tx(EVIDENCE[mine.evidence].name) }) : mine.result === "wrongLine" ? ui("objWrongLine") : ui("objWrongEvidence");
-    return box(React.createElement("p", { className: "objResult" }, msg));
+    return box(React.createElement("p", { className: "objResult" }, msg), mine.result === "wrongEvidence" && EVIDENCE[mine.evidence] && React.createElement("p", { className: "objMiss" }, ui("objWhy", { s: tx(EVIDENCE[mine.evidence].shows) })));
   }
   if (won || lost || !record) return null;
   if (!mine) return box(React.createElement("button", { className: "choice objStart", onClick: () => setObjection({ ch, step: "line" }) }, ui("objStart")));
@@ -5320,7 +5328,7 @@ function ObjectionPanel({ ch, flags, lore, pc, lang, ui, tx, objection, setObjec
     React.createElement("button", { className: "restart", onClick: () => setObjection(null) }, ui("objWithdraw")));
   const held = heldEvidence(flags, lore).filter(id => !(mine.tried || []).includes(id));
   return box(React.createElement("p", { className: "objLie" }, "\u201C" + t(record.lines[REBUTTALS[ch].line]) + "\u201D"),
-    mine.tried && mine.tried.length > 0 && React.createElement("p", { className: "objMiss" }, ui("objMiss")),
+    mine.tried && mine.tried.length > 0 && React.createElement("p", { className: "objMiss" }, ui("objMiss"), EVIDENCE[mine.tried[0]] ? " " + ui("objWhy", { s: tx(EVIDENCE[mine.tried[0]].shows) }) : ""),
     React.createElement("p", { className: "objAsk" }, ui("objPickEvidence")),
     held.length ? held.map(id => React.createElement("button", { key: id, className: "choice objEvidence", onClick: () => decide(REBUTTALS[ch].line, id) }, "\uD83D\uDCC4 " + tx(EVIDENCE[id].name), React.createElement("span", { className: "stake" }, tx(EVIDENCE[id].shows))))
       : React.createElement("p", { className: "objAsk" }, ui("objNoEvidence")),
@@ -5872,6 +5880,7 @@ const css = `
 .crpg .deduceRow select { flex:1; min-width:0; padding:6px; background:var(--panel2); color:var(--text); border:1px solid var(--line); border-radius:6px; }
 .crpg .deduceSolved { color:#e8b4aa; }
 .crpg .deduceScore { font-size:14px; }
+.crpg .nextStep { border:1px solid var(--gold); border-radius:8px; padding:8px 12px; margin:0 0 12px; font-size:14px; color:var(--gold); }
 .crpg .pickShare { font-size:13px; color:var(--dim); font-style:italic; margin:6px 0 0; }
 .crpg .goals { margin:8px 0 12px; padding:8px 12px; border:1px dashed var(--line); border-radius:8px; font-size:14px; }
 .crpg .goals h4 { margin:0 0 4px; font-size:13px; color:var(--gold); letter-spacing:.05em; }
@@ -6099,9 +6108,13 @@ function CRPG() {
   }, [lang]);
   const scene = SCENES[sceneKey];
   const chapter = scene?.ch || 1;
+  const lastChRef = useRef(1);
+  if (scene?.ch) lastChRef.current = scene.ch;
   const hasCheckChoices = scene?.choices?.some(c => c.check);
-  const visibleChoices = (scene?.choices || []).filter(ch => (!ch.classOnly || pc && ch.classOnly === pc.classKey) && (!ch.loreReq || lore.includes(ch.loreReq)) && (!ch.artifactReq || artifacts.includes(ch.artifactReq)) && (!ch.echoReq || flags.includes(ch.echoReq)) && (!ch.flagNot || !flags.includes(ch.flagNot)) && (!ch.caseMin || caseState(lore).found.filter(id => id !== ch.frag).length >= ch.caseMin) && (!ch.wrongNot || !verdict?.wrong) && (!ch.wrongReq || !!verdict?.wrong));
-  const lockedBy = ch => ch.needFrags ? ch.needFrags.filter(f => !lore.includes(f)) : [];
+  const visibleChoices = (scene?.choices || []).filter(ch => (!ch.classOnly || pc && ch.classOnly === pc.classKey) && (!ch.loreReq || lore.includes(ch.loreReq)) && (!ch.artifactReq || artifacts.includes(ch.artifactReq)) && (!ch.echoReq || flags.includes(ch.echoReq)) && (!ch.flagNot || !flags.includes(ch.flagNot)) && (!ch.caseMin || !lore.includes(ch.frag) || caseState(lore).found.filter(id => id !== ch.frag).length >= ch.caseMin) && (!ch.wrongNot || !verdict?.wrong) && (!ch.wrongReq || !!verdict?.wrong));
+  // 잠금: 결정적 조각(needFrags) 또는 조각 개수(caseMin). caseMin 선택지는 숨기지 않고 '조각 n/t'로 잠가 보여 준다(1000명 인터뷰: 숨기면 막다른 길).
+  const caseMinHave = ch => caseState(lore).found.filter(id => id !== ch.frag).length;
+  const lockedBy = ch => ch.needFrags ? ch.needFrags.filter(f => !lore.includes(f)) : ch.caseMin && caseMinHave(ch) < ch.caseMin ? Array(ch.caseMin - caseMinHave(ch)).fill("frag") : [];
   const narrativeId = choice => sceneKey + ":" + scene.choices.indexOf(choice);
   // 지난 회차에 와 본 장면에서만 표시한다: 안 간 길은 위로, 간 길은 아래로.
   const runIndex = runNo ? runNo - RECORD_FIRST : 99;
@@ -6133,6 +6146,7 @@ function CRPG() {
   // 덜어내기(pt23): 기본은 꼬리표 하나 + 쉬움/반반/어려움. '숫자 보기'를 켜면 예전처럼 전부 보인다.
   const difficulty = ch => { const v = pct(ch); return v >= 70 ? "diffEasy" : v >= 40 ? "diffEven" : "diffHard"; };
   const primaryTag = ch => ch.needFrags ? ui("retrialNeed", { n: ch.needFrags.length - lockedBy(ch).length, t: ch.needFrags.length })
+    : ch.caseMin && lockedBy(ch).length ? ui("caseMinNeed", { n: caseMinHave(ch), t: ch.caseMin })
     : ch.echo ? "\uD83E\uDD8B " + tx(ch.echo)
     : ch.artifactReq ? "\u25C8 " + tx(ARTIFACTS[ch.artifactReq] ? ARTIFACTS[ch.artifactReq].name : { ko: "유물", en: "Relic" })
     : ch.loreReq ? ui("loreTag")
@@ -6142,7 +6156,7 @@ function CRPG() {
     : null;
   // 판정 없는 선택은 '걸린 것' 한 줄이 곧 꼬리표다(🦋 단서 길이면 앞에 나비만 붙인다).
   const simpleTags = ch => {
-    if (!ch.check && ch.stake) return React.createElement("span", { key: "stake", className: "stake" + (ch.needFrags ? " lock" : "") }, ch.needFrags ? primaryTag(ch) + " \xB7 " : ch.echo ? "\uD83E\uDD8B " : "", ui("stakeLabel"), tx(ch.stake));
+    if (!ch.check && ch.stake) return React.createElement("span", { key: "stake", className: "stake" + (ch.needFrags || lockedBy(ch).length ? " lock" : "") }, ch.needFrags || lockedBy(ch).length ? primaryTag(ch) + " \xB7 " : ch.echo ? "\uD83E\uDD8B " : "", ui("stakeLabel"), tx(ch.stake));
     const parts = [primaryTag(ch), ch.check ? ui(difficulty(ch)) : null].filter(Boolean);
     return parts.length > 0 && React.createElement("span", { key: "one", className: "tag one" + (ch.check ? " " + difficulty(ch) : "") }, parts.join(" \xB7 "));
   };
@@ -6447,6 +6461,9 @@ function CRPG() {
         setEnemyIntent(rollLooterIntent(e.maxHp, e.maxHp));
       }
     }
+    if (key === "c2_intro") {
+      try { store.set("aduventure_chstart", { ...(store.get("aduventure_chstart") || {}), c2_intro: flags.filter(f => !/^rebut/.test(f)) }); } catch (e) {}
+    }
     if (key === "intro2" || key === "intro3") {
       // 장 시작 시점의 기록(앞 장에서 한 일)을 남겨 둔다 — '다른 선택으로 이 장 다시' 때 앞 장의 메아리가 사라지지 않게.
       try { store.set("aduventure_chstart", { ...(store.get("aduventure_chstart") || {}), [key]: flags.filter(f => !/^rebut/.test(f)) }); } catch (e) {}
@@ -6477,7 +6494,9 @@ function CRPG() {
     let next = branch.goto;
     const gained = [branch.flag, ...(branch.flags || [])].filter(Boolean);
     if (branch.damage) {
-      const dmg = d(branch.damage[1]) + branch.damage[0] - 1;
+      let dmg = d(branch.damage[1]) + branch.damage[0] - 1;
+      // 시간 초과(망설임)로는 쓰러지지 않는다 — 읽는 속도로 판을 잃게 하지 않는다.
+      if (branch.noKill && pc) dmg = Math.max(0, Math.min(dmg, pc.hp - 1));
       // 서사 결투에서 쓰러지면 회차를 끝내지 않고 지정된 장면(봉화)으로 간다.
       if (branch.ifDown && pc && pc.hp - dmg <= 0) next = branch.ifDown;
       setPc(p => ({
@@ -6594,11 +6613,12 @@ function CRPG() {
     setPending(null);
     setScarNote(null);
     SFX.bad();
-    applyBranch({ ...ch.fail, text: bi(UI.timerHesitate.ko + "\n\n" + ch.fail.text.ko, UI.timerHesitate.en + "\n\n" + ch.fail.text.en) }, null, null);
+    applyBranch({ ...ch.fail, noKill: true, text: bi(UI.timerHesitate.ko + "\n\n" + ch.fail.text.ko, UI.timerHesitate.en + "\n\n" + ch.fail.text.en) }, null, null);
   }
   const hesitateRef = useRef(null);
   hesitateRef.current = hesitate;
-  const timedNow = timerOn && !!pc && TIMED_SCENES.includes(sceneKey) && !rolling && !pending;
+  const timerUnlocked = runIndex >= UNLOCK_AT.timer;
+  const timedNow = timerOn && timerUnlocked && !!pc && TIMED_SCENES.includes(sceneKey) && !rolling && !pending;
   // 읽을 시간: 결과는 지금 보이는 길이(접혔으면 접힌 길이), 장면 몫은 본문 전체(인물 대사·여파 줄도 함께 뜨므로 넉넉히).
   const timerSceneText = TIMED_SCENES.includes(sceneKey) && scene?.text ? fmt((scene.text[lang] || scene.text.ko || scene.text), pc || {}) : "";
   const timerTotal = timerSceneText ? timerBudget(lastResult ? String((lastResult.short && resultOpen !== lastResult.rid ? lastResult.short : lastResult.text) || "").length : 0, timerSceneText.length, false) : TIMER_SEC;
@@ -6983,9 +7003,13 @@ function CRPG() {
   const specialTag = pc && tx(SPECIALS[pc.classKey].tag).replace("{damage}", combatRange(pc.classKey === "wizard" ? { die: 8, bonus: 2 } : { die: 6 }));
   const chapterTitle = chapter === 5 ? ui("c2ch1") : chapter === 4 ? ui("ch4") : chapter === 3 ? ui("ch3") : chapter === 2 ? ui("ch2") : ui("ch1");
   const cs = caseState(lore);
+  // 베른의 진술은 조각 3개 이상을 알고 2장 아침에 물어야 나온다(intro2의 caseMin).
+  const bernAskable = cs.found.filter(id => id !== "f_bern_lied").length >= 3;
+  // 3장 조각 둘을 이미 다 가졌으면 3장 다시로는 새 조각이 없다 → 처음부터를 강조.
+  const ch3Both = lore.includes("f_addressee") && lore.includes("f_hand_match");
   // 추론이 확정되면 조각이 모자라도 결론을 내릴 수 있다(추리를 노가다보다 먼저 보상).
   if (deduce.solved && !cs.ready) { cs.ready = true; cs.viaDeduction = true; }
-  const deduceRunKey = (telemetryRun && telemetryRun.id) || runNo;
+  const deduceRunKey = ((telemetryRun && telemetryRun.id) || runNo) + ":" + lastChRef.current;
   const deduceState = deduceOpen(deduce, cs.found.length, deduceRunKey);
   function checkDeduction() {
     if (deduceState !== "open" || !deducePick.who || !deducePick.what || !deducePick.why) return;
@@ -7366,7 +7390,7 @@ function CRPG() {
     className: "choices",
     "data-stage": revealed === sceneKey || collapsed ? "instant" : "staged",
     style: { animationDelay: Math.min(((collapsed ? 1 : fmt(tx(scene.text), pc).split("\n\n").length) - 1) * 0.8 + 0.6 + (sceneKey === "c2_hall" && !collapsed ? 1.4 : 0), 5) + "s" }
-  }, pc && TIMED_SCENES.includes(sceneKey) && React.createElement("div", {
+  }, pc && timerUnlocked && TIMED_SCENES.includes(sceneKey) && React.createElement("div", {
     className: "duelTimer" + (timerOn && timeLeft != null && timeLeft <= 4 ? " urgent" : "")
   }, timerOn ? [React.createElement("span", { key: "t", className: "timerText" }, ui("timerLeft", { n: timeLeft == null ? timerTotal : Math.max(0, timeLeft) })), React.createElement("span", { key: "b", className: "timerBar" }, React.createElement("i", { style: { width: (timeLeft == null ? 100 : Math.max(0, timeLeft) / timerTotal * 100) + "%" } }))] : React.createElement("span", { className: "timerText" }, ui("timerOffNote")), React.createElement("button", {
     className: "timerToggle",
@@ -7376,7 +7400,7 @@ function CRPG() {
     className: "choice" + (pathMark(ch) ? " " + pathMark(ch) : ""),
     disabled: lockedBy(ch).length > 0,
     onClick: () => { if (!lockedBy(ch).length) doChoice(ch); }
-  }, tx(ch.label), numbersOn ? [ch.needFrags && React.createElement("span", {
+  }, tx(ch.label), numbersOn ? [!ch.needFrags && lockedBy(ch).length > 0 && React.createElement("span", { key: "cmin", className: "tag lock" }, primaryTag(ch)), ch.needFrags && React.createElement("span", {
     className: "tag lock"
   }, ui("retrialNeed", { n: ch.needFrags.length - lockedBy(ch).length, t: ch.needFrags.length })), ch.classOnly && CLASSES[ch.classOnly] && React.createElement("span", {
     className: "tag cls"
@@ -7503,7 +7527,10 @@ function CRPG() {
     onClick: () => goto(scene.defeat.goto)
   }, "\u2026"))))), pc && scene?.ending && !rolling && !pending && /*#__PURE__*/React.createElement("div", {
     className: "scene epi"
-  }, /*#__PURE__*/React.createElement("p", {
+  }, scene.ending === 3 && React.createElement("p", {
+    // 1000명 인터뷰: 엔딩 화면이 길어 '결론까지 무엇이 빠졌나'를 못 봤다 → 맨 위에 한 줄.
+    className: "nextStep"
+  }, React.createElement("b", null, ui("nextStepH"), " · "), cs.ready ? ui("caseReady") : ui("caseLocked", { n: cs.found.length, total: Object.keys(FRAGMENTS).length }) + cs.missing.map(k => ui(k)).join(" · ")), /*#__PURE__*/React.createElement("p", {
     className: "narr"
   }, fmt(tx(scene.ending === 1 ? buildEnding1(flags) : scene.ending === 2 ? buildEnding2(flags) : scene.ending === 4 ? buildEnding4(flags) : scene.ending === 5 ? buildEnding5(flags) : buildEnding3(flags)), pc)), React.createElement(RecordCard, {
     record: (() => {
@@ -7601,15 +7628,17 @@ function CRPG() {
     onClick: () => { if (recordDecision("case:accuse")) goto("accuse"); }
   }, ui("accuseGo")) : React.createElement("p", {
     className: "caseStatus"
-  }, ui("caseLocked", { n: cs.found.length, total: Object.keys(FRAGMENTS).length }), cs.missing.map(k => ui(k)).join(" · ")), !cs.ready && !cs.confession && React.createElement("button", {
+  }, ui("caseLocked", { n: cs.found.length, total: Object.keys(FRAGMENTS).length }), cs.missing.map(k => ui(k)).join(" · ")), !cs.ready && !cs.confession && !bernAskable && React.createElement("p", {
+    className: "caseStatus"
+  }, ui("caseBernLater", { n: cs.found.length })), !cs.ready && !cs.confession && bernAskable && React.createElement("button", {
     className: "restart primary",
     onClick: () => restart("intro2")
   }, ui("caseGoCh2")), /*#__PURE__*/React.createElement("button", {
-    // 빠진 게 베른의 진술(2장에서만 얻는다)이면 3장 다시는 강조하지 않는다.
-    className: "restart" + (cs.ready || !cs.confession ? "" : " primary"),
+    // 베른에게 물을 수 있으면(조각 3개+) 2장 아침이 강조되고, 아니면 다른 조각을 줄 3장 다시가 강조된다.
+    className: "restart" + (cs.ready || (!cs.confession && bernAskable) || ch3Both ? "" : " primary"),
     onClick: () => restart("intro3")
   }, ui("ch3again")), /*#__PURE__*/React.createElement("button", {
-    className: "restart",
+    className: "restart" + (!cs.ready && !(!cs.confession && bernAskable) && ch3Both ? " primary" : ""),
     onClick: () => restart()
   }, ui("fromStart"))), /*#__PURE__*/React.createElement(SuggestBox, {
     sceneKey: sceneKey,
@@ -7624,7 +7653,15 @@ function CRPG() {
     record: officialRecord("gameover", flags, runNo),
     pc,
     lang
-  }), /*#__PURE__*/React.createElement("button", {
+  }), CHAPTER_START[lastChRef.current] && lastChRef.current !== 1 ? [React.createElement("button", {
+    key: "ch",
+    className: "restart primary",
+    onClick: () => restart(CHAPTER_START[lastChRef.current])
+  }, ui("rewriteChapter")), React.createElement("button", {
+    key: "all",
+    className: "restart",
+    onClick: () => restart()
+  }, ui("rewriteAll"))] : /*#__PURE__*/React.createElement("button", {
     className: "restart primary",
     onClick: () => restart()
   }, ui("rewrite"))), /*#__PURE__*/React.createElement("footer", null, ui("footer1"), /*#__PURE__*/React.createElement("br", null), ui("footer2"), /*#__PURE__*/React.createElement("br", null), ui("footer3"), BUILD, /*#__PURE__*/React.createElement("br", null), ui("footer4"))));
