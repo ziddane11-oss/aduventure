@@ -174,33 +174,27 @@ test('replaying a chapter clears the last objection, so it can be raised again',
   assert.match(text(g.panel()), /Objection — point at the lie/, 'a fresh objection, not last run\'s result');
 });
 
-// pt29 — 100명 시뮬레이션에서 발견: 베른의 진술(2장)만 빠졌는데 3장 끝의 강조 버튼이 '3장 다시'라 판결에 못 가던 고리.
-test('at the end of Ch.3 the highlighted road leads to what is actually missing', () => {
+// pt29→pt32: 3장 끝 — 강조 버튼은 늘 '결론을 낸다'(첫 판에도). 진실에 필요한 것과 그걸 얻는 길은 아래에.
+test('at the end of Ch.3 you can always reach a verdict; the road to the truth is listed below', () => {
   const noBern = game({sceneKey: 'ending3', lore: ['f_addressee', 'f_receipt', 'f_window', 'f_fund']});
-  const primary = () => nodes(noBern.render()).filter(n => n.type === 'button' && n.props.className === 'restart primary');
-  assert.equal(primary().length, 1);
-  assert.match(text(primary()[0]), /Back to Ch\.2 morning — ask Bern/);
-  assert.match(text(noBern.render()), /Bern's statement \(Ch\.2, morning\)/);
-  primary()[0].props.onClick();
+  const btn = () => nodes(noBern.render()).filter(n => n.type === 'button' && /^restart/.test(n.props.className));
+  const primary = btn().filter(b => b.props.className === 'restart primary');
+  assert.equal(primary.length, 1);
+  assert.match(text(primary[0]), /Reach a verdict with what you have/);
+  assert.match(text(noBern.render()), /To accuse Seon \(the true ending\) you still need: Bern's statement \(Ch\.2, morning\)/);
+  btn().find(b => /Back to Ch\.2 morning — ask Bern/.test(text(b))).props.onClick();
   assert.equal(noBern.state().sceneKey, 'intro2');
-  const noProof = game({sceneKey: 'ending3', lore: ['f_bern_lied', 'f_receipt', 'f_window', 'f_fund']});
-  const p2 = nodes(noProof.render()).filter(n => n.type === 'button' && n.props.className === 'restart primary');
-  assert.equal(p2.length, 1);
-  assert.match(text(p2[0]), /Replay Ch\.3/);
 });
 
 // pt31 — 1000명 인터뷰: 조각 3개 미만인데 「2장 아침으로 — 베른에게 묻는다」가 떠서 막다른 길로 보냈다.
 test('with fewer than three fragments the ending does not send you to ask Bern; it says why', () => {
   const g = game({sceneKey: 'ending3', lore: ['f_addressee', 'f_receipt']});
-  const primary = nodes(g.render()).filter(n => n.type === 'button' && n.props.className === 'restart primary');
-  assert.equal(primary.length, 1);
-  assert.match(text(primary[0]), /Replay Ch\.3/);
   assert.ok(!nodes(g.render()).some(n => n.type === 'button' && /ask Bern/.test(text(n))));
   assert.match(text(g.render()), /To question Bern you need 3 fragments \(you have 2\)/);
-  const both = game({sceneKey: 'ending3', lore: ['f_addressee', 'f_hand_match']});
-  const p2 = nodes(both.render()).filter(n => n.type === 'button' && n.props.className === 'restart primary');
-  assert.equal(p2.length, 1);
-  assert.match(text(p2[0]), /From the beginning/, 'both Ch.3 fragments in hand: Ch.3 has nothing new, so start over');
+  const primary = nodes(g.render()).filter(n => n.type === 'button' && n.props.className === 'restart primary');
+  assert.equal(primary.length, 1);
+  primary[0].props.onClick();
+  assert.equal(g.state().sceneKey, 'accuse', 'even a first record can reach the verdict');
 });
 
 test('a wrong piece of evidence says why it fails', () => {

@@ -842,6 +842,9 @@ const UI = {
   fragNew: { ko: "◇ 아직 못 본 조각", en: "◇ unseen fragment" },
   fragSeen: { ko: "◆ 이미 본 조각", en: "◆ fragment already seen" },
   accuseGo: { ko: "소금여울로 돌아가 결론을 내린다 →", en: "Return to Saltmarsh and reach a verdict →" },
+  accuseGoEarly: { ko: "지금 가진 것만으로 결론을 내린다 →", en: "Reach a verdict with what you have →" },
+  caseTruthNeeds: { ko: "세온을 고발하려면(진실의 결말) 더 필요하다: ", en: "To accuse Seon (the true ending) you still need: " },
+  caseReadyNeed: { ko: "🔒 증거가 모자라다 — 사건 기록장을 채우거나 추론을 확정하라", en: "🔒 Not enough proof — fill the case board or confirm the deduction" },
   shareRec: { ko: "📋 이 기록 복사하기 (공유)", en: "📋 Copy this record (share)" },
   shareDone: { ko: "복사됨 — 붙여넣어 공유하세요", en: "Copied — paste it anywhere" },
   shareFail: { ko: "복사 실패 — 화면을 캡처해 주세요", en: "Couldn't copy — take a screenshot instead" },
@@ -3904,6 +3907,7 @@ const SCENES = {
     },
     choices: [{
       wrongNot: true,
+      caseReady: true,
       label: { ko: "[고발] 세온이 S다 — 관헌에 넘긴다", en: "[Accuse] Seon is S — hand him to the law" },
       stake: { ko: "진실이 밝혀진다 · 이번 겨울의 곡식과 약이 끊긴다", en: "The truth comes out · this winter's grain and medicine stop" },
       result: {
@@ -3950,7 +3954,6 @@ const SCENES = {
         goto: "ending4"
       }
     }, {
-      wrongReq: true,
       label: { ko: "[보류] 아직이다 — 증거를 더 모아 다시 오겠다", en: "[Withdraw] Not yet — I'll come back with more evidence" },
       stake: { ko: "판결은 그대로 남는다 · 다음 기록에서 다시 이 서재에 설 수 있다", en: "The verdict stands for now · you can stand in this study again next record" },
       result: {
@@ -6114,7 +6117,8 @@ function CRPG() {
   const visibleChoices = (scene?.choices || []).filter(ch => (!ch.classOnly || pc && ch.classOnly === pc.classKey) && (!ch.loreReq || lore.includes(ch.loreReq)) && (!ch.artifactReq || artifacts.includes(ch.artifactReq)) && (!ch.echoReq || flags.includes(ch.echoReq)) && (!ch.flagNot || !flags.includes(ch.flagNot)) && (!ch.caseMin || !lore.includes(ch.frag) || caseState(lore).found.filter(id => id !== ch.frag).length >= ch.caseMin) && (!ch.wrongNot || !verdict?.wrong) && (!ch.wrongReq || !!verdict?.wrong));
   // 잠금: 결정적 조각(needFrags) 또는 조각 개수(caseMin). caseMin 선택지는 숨기지 않고 '조각 n/t'로 잠가 보여 준다(1000명 인터뷰: 숨기면 막다른 길).
   const caseMinHave = ch => caseState(lore).found.filter(id => id !== ch.frag).length;
-  const lockedBy = ch => ch.needFrags ? ch.needFrags.filter(f => !lore.includes(f)) : ch.caseMin && caseMinHave(ch) < ch.caseMin ? Array(ch.caseMin - caseMinHave(ch)).fill("frag") : [];
+  const caseReadyNow = caseState(lore).ready || !!deduce.solved;
+  const lockedBy = ch => ch.needFrags ? ch.needFrags.filter(f => !lore.includes(f)) : ch.caseMin && caseMinHave(ch) < ch.caseMin ? Array(ch.caseMin - caseMinHave(ch)).fill("frag") : ch.caseReady && !caseReadyNow ? ["case"] : [];
   const narrativeId = choice => sceneKey + ":" + scene.choices.indexOf(choice);
   // 지난 회차에 와 본 장면에서만 표시한다: 안 간 길은 위로, 간 길은 아래로.
   const runIndex = runNo ? runNo - RECORD_FIRST : 99;
@@ -6147,6 +6151,7 @@ function CRPG() {
   const difficulty = ch => { const v = pct(ch); return v >= 70 ? "diffEasy" : v >= 40 ? "diffEven" : "diffHard"; };
   const primaryTag = ch => ch.needFrags ? ui("retrialNeed", { n: ch.needFrags.length - lockedBy(ch).length, t: ch.needFrags.length })
     : ch.caseMin && lockedBy(ch).length ? ui("caseMinNeed", { n: caseMinHave(ch), t: ch.caseMin })
+    : ch.caseReady && lockedBy(ch).length ? ui("caseReadyNeed")
     : ch.echo ? "\uD83E\uDD8B " + tx(ch.echo)
     : ch.artifactReq ? "\u25C8 " + tx(ARTIFACTS[ch.artifactReq] ? ARTIFACTS[ch.artifactReq].name : { ko: "유물", en: "Relic" })
     : ch.loreReq ? ui("loreTag")
@@ -7623,22 +7628,23 @@ function CRPG() {
   }, ui("caseBtn")), React.createElement("button", {
     className: "restart",
     onClick: () => restart()
-  }, ui("fromStart"))) : /*#__PURE__*/React.createElement(React.Fragment, null, cs.ready ? React.createElement("button", {
+  }, ui("fromStart"))) : /*#__PURE__*/React.createElement(React.Fragment, null, React.createElement("button", {
+    // pt32: 첫 판에도 결론을 낼 수 있다(1000명 인터뷰: "한 번 쭉 하면 판결, 반복은 더 좋은 결말용").
+    // 증거가 모자라면 판결 장면에서 [고발]만 잠긴다 — 진실은 더 모아 와야 한다.
     className: "restart primary",
     onClick: () => { if (recordDecision("case:accuse")) goto("accuse"); }
-  }, ui("accuseGo")) : React.createElement("p", {
+  }, cs.ready ? ui("accuseGo") : ui("accuseGoEarly")), !cs.ready && React.createElement("p", {
     className: "caseStatus"
-  }, ui("caseLocked", { n: cs.found.length, total: Object.keys(FRAGMENTS).length }), cs.missing.map(k => ui(k)).join(" · ")), !cs.ready && !cs.confession && !bernAskable && React.createElement("p", {
+  }, ui("caseTruthNeeds"), cs.missing.map(k => ui(k)).join(" · ")), !cs.ready && !cs.confession && !bernAskable && React.createElement("p", {
     className: "caseStatus"
   }, ui("caseBernLater", { n: cs.found.length })), !cs.ready && !cs.confession && bernAskable && React.createElement("button", {
-    className: "restart primary",
+    className: "restart",
     onClick: () => restart("intro2")
   }, ui("caseGoCh2")), /*#__PURE__*/React.createElement("button", {
-    // 베른에게 물을 수 있으면(조각 3개+) 2장 아침이 강조되고, 아니면 다른 조각을 줄 3장 다시가 강조된다.
-    className: "restart" + (cs.ready || (!cs.confession && bernAskable) || ch3Both ? "" : " primary"),
+    className: "restart",
     onClick: () => restart("intro3")
   }, ui("ch3again")), /*#__PURE__*/React.createElement("button", {
-    className: "restart" + (!cs.ready && !(!cs.confession && bernAskable) && ch3Both ? " primary" : ""),
+    className: "restart",
     onClick: () => restart()
   }, ui("fromStart"))), /*#__PURE__*/React.createElement(SuggestBox, {
     sceneKey: sceneKey,

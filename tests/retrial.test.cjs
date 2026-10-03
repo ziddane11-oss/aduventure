@@ -69,10 +69,17 @@ test('a wrong verdict sticks; a right one replaces it only through a retrial', (
 });
 
 test('without a wrongful verdict, the accuse scene is unchanged', () => {
-  const labels = game().choices().map(text);
-  assert.equal(labels.length, 3);
+  // pt32: [보류]는 늘 있고, [고발]은 증거가 모자라면 잠겨 보인다(첫 판에도 판결 장면엔 들어올 수 있다).
+  const btns = game().choices();
+  const labels = btns.map(text);
+  assert.equal(labels.length, 4);
   assert.ok(labels[0].startsWith('[Accuse]'));
+  assert.equal(btns[0].props.disabled, true, 'no proof yet: the true accusation is locked');
+  assert.match(labels[0], /Not enough proof/);
+  assert.ok(labels.some(l => l.startsWith('[Withdraw]')));
   assert.equal(labels.some(l => l.startsWith('[Retrial]')), false);
+  const ready = game({lore: ['f_addressee', 'f_bern_lied', 'f_receipt', 'f_window']}).choices();
+  assert.equal(ready[0].props.disabled, false, 'with the case ready, Seon can be accused');
 });
 
 test('after a wrongful verdict, plain accusation is gone and the retrial needs both decisive fragments', () => {

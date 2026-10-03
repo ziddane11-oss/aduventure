@@ -243,7 +243,7 @@ test('all current narrative payloads fit the legacy extra field and use original
   const keys = base.run('Object.keys(SCENES).filter(k => SCENES[k].choices?.length)');
   for (const sceneKey of keys) {
     const g = game({sceneKey, flags: ['ledger', 'grip', 'ren_tip', 'sawTrap']});
-    const choice = choices(g.render())[0];
+    const choice = choices(g.render()).find(b => !b.props.disabled);
     if (!choice) continue;
     choice.props.onClick();
     const event = g.events('choice')[0];
