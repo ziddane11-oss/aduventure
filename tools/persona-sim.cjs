@@ -206,6 +206,7 @@ function play(persona) {
       if (scene && scene.ch) out.maxChapter = Math.max(out.maxChapter, scene.ch === 5 ? 4 : scene.ch);
       if (key.startsWith('c2_')) out.sawCase2 = true;
       if (key === 'c2_end3') out.c2done = true;
+      if (key === 'fin_end') out.finDone = true;
       // 읽기: 서사 + 결과 + 대사. 이미 본 장면은 접혀 있어 조금만 읽는다.
       const narr = all(tree).filter(n => ['narr', 'result good', 'result bad', 'result ', 'banter', 'pickShare', 'echoBanner'].includes(cls(n))).map(text).join(' ');
       const skim = persona.story < 0.3 ? 0.5 : 1;
@@ -316,7 +317,7 @@ function play(persona) {
       const primary = bsNow.find(b => cls(b) === 'restart primary');
       const others = bsNow.filter(b => cls(b) === 'restart');
       // 앞으로 가는 버튼(다음 장·판결하러·사건 2)이 있으면 이어 간다. 없으면 한 판이 끝난 것.
-      const forward = primary && /계속 →|Continue to|결론을 내린다|reach a verdict|사건 2|Case 2/.test(text(primary)) ? primary : null;
+      const forward = primary && /계속 →|Continue to|결론을 내린다|reach a verdict|사건 2|Case 2|피날레 「|Finale “/.test(text(primary)) ? primary : null;
       const wantsMore = forward && (minutes < persona.budgetMin || r() < persona.patience * 0.5);
       if (forward && wantsMore) { think(2); click(forward, '다음으로: ' + text(forward).slice(0, 20)); continue; }
       const isFinal = true;
@@ -399,7 +400,7 @@ const summary = {
   over15min: pctOf(ok, r => r.totalMin >= 15),
   replayed: pctOf(ok, r => r.runs.length >= 2),
   avgRuns: +avg(ok, r => r.runs.length).toFixed(2),
-  reach: { ch1end: pctOf(ok, r => r.runs.some(x => x.endings.includes(1))), ch2end: pctOf(ok, r => r.runs.some(x => x.endings.includes(2))), ch3end: pctOf(ok, r => r.runs.some(x => x.endings.includes(3))), verdict: pctOf(ok, r => r.runs.some(x => x.endings.includes(4))), case2: pctOf(ok, r => r.sawCase2), case2end: pctOf(ok, r => r.c2done), firstRunVerdict: pctOf(ok, r => r.runs[0] && (r.runs[0].endings.includes(4))) },
+  reach: { ch1end: pctOf(ok, r => r.runs.some(x => x.endings.includes(1))), ch2end: pctOf(ok, r => r.runs.some(x => x.endings.includes(2))), ch3end: pctOf(ok, r => r.runs.some(x => x.endings.includes(3))), verdict: pctOf(ok, r => r.runs.some(x => x.endings.includes(4))), case2: pctOf(ok, r => r.sawCase2), case2end: pctOf(ok, r => r.c2done), finale: pctOf(ok, r => r.finDone), firstRunVerdict: pctOf(ok, r => r.runs[0] && (r.runs[0].endings.includes(4))) },
   diedAtLeastOnce: pctOf(ok, r => r.runs.some(x => x.deaths > 0)),
   failRate: Math.round(avg(ok.flatMap(r => r.runs).filter(x => x.checks), x => x.fails / x.checks) * 100),
   timeouts: { people: pctOf(ok, r => r.timeouts > 0), total: ok.reduce((a, r) => a + r.timeouts, 0), turnedOff: pctOf(ok, r => r.timerOffBy && r.timerOffBy !== 'next') },
