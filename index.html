@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>어두밴처 v0.7.3-pt37</title>
+<title>어두밴처 v0.7.3-pt38</title>
 <style>body{margin:0;background:#0e1420}</style>
 </head>
 <body>
@@ -318,7 +318,7 @@ function(a,b,c){if(!Vd(b))throw Error(n(200));return Wd(null,a,b,!1,c)};Q.unmoun
    GAS 피드백 파이프 — v0.7 재구현 (제안/신호/텔레메트리)
    ============================================================ */
 /* 플레이테스트 빌드 태그 — 테스트 중 버전 구분용. 수정할 때마다 뒤 번호를 올린다. */
-const BUILD = "v0.7.3-pt37";
+const BUILD = "v0.7.3-pt38";
 const GAS_URL = "https://script.google.com/macros/s/AKfycbxFx_m5rhCZmqGoy3JcUUNqEgiObMWNHe9hx-LnZrhzIkfwa9-yJGBWP0lVulptnNQeCQ/exec";
 function gasPost(payload, options = {}) {
   return fetch(GAS_URL, {
@@ -897,10 +897,12 @@ const UI = {
   eyeStamp: { ko: "기록됨", en: "Recorded" },
   eyeSeal: { ko: "기록", en: "REC" },
   pauseOk: { ko: "☕ 여기서 멈춰도 된다 — 다음에 열면 「이어서 하기」로 이 장 끝부터 이어진다.", en: "☕ Fine to stop here — next time, “Continue” picks up right at this chapter's end." },
-  objStart: { ko: "✒ 이의 있음 — 거짓 문장을 짚는다", en: "✒ Objection — point at the lie" },
+  objStart: { ko: "✒ 이의 있음 — 증거로 거짓을 뒤집는다", en: "✒ Objection — overturn the lie with evidence" },
+  objHow: { ko: "공식 기록의 거짓 문장 하나를, 당신이 모은 증거 하나로 뒤집는다. 성공하면 다음 장 운명 주사위 +1.", en: "Overturn one false sentence in the official record with one piece of evidence you gathered. Succeed and you get +1 fate die next chapter." },
+  objNeed: { ko: "아직 뒤집을 증거가 없다. 이 가운데 하나만 있으면 된다: {list}", en: "No evidence to overturn it yet. Any one of these would do: {list}" },
   objPickLine: { ko: "어느 줄이 거짓인가? (실수는 한 번까지)", en: "Which line is the lie? (You may slip once)" },
   objMissLine: { ko: "세온이 미소 짓는다. \"그 줄은 사실일세.\" — 이제 실수할 여유가 없다.", en: "Seon smiles. \"That line is true.\" — You have no slips left." },
-  objPickEvidence: { ko: "무엇으로 뒤집을 것인가? 이 줄과 맞부딪치는 것을 고른다.", en: "What will you overturn it with? Pick what contradicts this line." },
+  objPickEvidence: { ko: "이 문장이 틀렸다는 걸 보여 주는 증거를 고른다. (한 번은 틀려도 된다)", en: "Pick the evidence that proves this sentence wrong. (You may miss once.)" },
   objMiss: { ko: "세온이 고개를 젓는다. \"그게 이 줄과 무슨 상관인가?\" — 한 번 더 내밀 수 있다.", en: "Seon shakes his head. \"What has that to do with this line?\" — You may try once more." },
   objNoEvidence: { ko: "내밀 증거가 없다. 다음 기록에서 더 모아 오자.", en: "You have nothing to lay down. Gather more next record." },
   objWithdraw: { ko: "물러선다", en: "Back down" },
@@ -6109,7 +6111,15 @@ function ObjectionPanel({ ch, flags, lore, pc, lang, ui, tx, objection, setObjec
   }
   if (won || lost || !record) return null;
   // pt34: 시작 전엔 제목 없이 버튼 하나(제목과 버튼 글자가 겹쳐 화면만 길어졌다).
-  if (!mine) return React.createElement("div", { className: "objection idle" }, React.createElement("button", { className: "choice objStart", onClick: () => setObjection({ ch, step: "line" }) }, ui("objStart")));
+  // pt38: "뭘 해야 할지 모르겠다" → 거짓 문장 고르기 단계를 없애고 바로 증거 고르기로. 뒤집을 증거가 하나도 없으면
+  // 들어가 봐야 실패뿐이니 버튼을 잠그고, 어떤 증거가 있으면 되는지 보여 준다.
+  if (!mine) {
+    const proof = REBUTTALS[ch].proof;
+    const ready = heldEvidence(flags, lore).some(id => proof.includes(id));
+    return React.createElement("div", { className: "objection idle" },
+      React.createElement("button", { className: "choice objStart", disabled: !ready, onClick: ready ? () => setObjection({ ch, step: "evidence", tried: [], misses: 0 }) : undefined }, ui("objStart")),
+      React.createElement("p", { className: "objHow" }, ready ? ui("objHow") : ui("objNeed", { list: proof.map(id => tx(EVIDENCE[id].name)).join(" · ") })));
+  }
   if (mine.step === "line") return box(mine.lineMiss && React.createElement("p", { className: "objMiss" }, ui("objMissLine")), React.createElement("p", { className: "objAsk" }, ui("objPickLine")),
     record.lines.map((l, i) => React.createElement("button", { key: i, className: "choice objLine", onClick: () => decide(i, null) }, t(l))),
     React.createElement("button", { className: "restart", onClick: () => setObjection(null) }, ui("objWithdraw")));
@@ -6698,6 +6708,8 @@ const css = `
 .crpg .goal.done { color:var(--text); }
 .crpg .objection { margin:12px 0 16px; padding:10px 14px; border:1px solid var(--red); border-radius:8px; background:rgba(192,57,43,.07); }
 .crpg .objection.idle { padding:0; border:none; background:none; }
+.crpg .objection .objHow { margin:6px 2px 0; color:var(--dim); font-size:13px; line-height:1.6; }
+.crpg .objection.idle button.choice.objStart:disabled { opacity:.6; }
 .crpg .objection.idle button.choice.objStart { margin:0; border-color:var(--red); color:var(--redText); }
 .crpg .objection h4 { margin:0 0 6px; color:var(--redText); letter-spacing:.06em; }
 .crpg .objection .objAsk { font-size:14px; margin:4px 0 8px; }
