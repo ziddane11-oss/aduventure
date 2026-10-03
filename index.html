@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>어두밴처 v0.7.3-pt29</title>
+<title>어두밴처 v0.7.3-pt30</title>
 <style>body{margin:0;background:#0e1420}</style>
 </head>
 <body>
@@ -318,7 +318,7 @@ function(a,b,c){if(!Vd(b))throw Error(n(200));return Wd(null,a,b,!1,c)};Q.unmoun
    GAS 피드백 파이프 — v0.7 재구현 (제안/신호/텔레메트리)
    ============================================================ */
 /* 플레이테스트 빌드 태그 — 테스트 중 버전 구분용. 수정할 때마다 뒤 번호를 올린다. */
-const BUILD = "v0.7.3-pt29";
+const BUILD = "v0.7.3-pt30";
 const GAS_URL = "https://script.google.com/macros/s/AKfycbxFx_m5rhCZmqGoy3JcUUNqEgiObMWNHe9hx-LnZrhzIkfwa9-yJGBWP0lVulptnNQeCQ/exec";
 function gasPost(payload, options = {}) {
   return fetch(GAS_URL, {
@@ -845,6 +845,19 @@ const UI = {
   shareDone: { ko: "복사됨 — 붙여넣어 공유하세요", en: "Copied — paste it anywhere" },
   shareFail: { ko: "복사 실패 — 화면을 캡처해 주세요", en: "Couldn't copy — take a screenshot instead" },
   seenExpand: { ko: "▸ 이미 기록한 장면 — 펼쳐 읽기", en: "▸ Already on record — read it again" },
+  moreChoices: { ko: "▾ 다른 방법 {n}개 더", en: "▾ {n} more ways" },
+  moreChoice1: { ko: "▾ 다른 방법 1개 더", en: "▾ 1 more way" },
+  deduceH: { ko: "추론 — 등대 사건: 누가 · 무엇을 · 왜", en: "Deduction — the lighthouse night: who · what · why" },
+  deduceWho: { ko: "누가 시켰나", en: "Who ordered it" },
+  deduceWhat: { ko: "무엇을", en: "What" },
+  deduceWhy: { ko: "왜", en: "Why" },
+  deducePick: { ko: "— 고른다 —", en: "— choose —" },
+  deduceCheck: { ko: "추론을 확인한다 (한 판에 한 번)", en: "Check the deduction (once per run)" },
+  deduceScore: { ko: "셋 중 {n}개가 맞다. 어느 칸인지는 기록이 말해 주지 않는다.", en: "{n} of three are right. The record won't say which." },
+  deduceSolved: { ko: "추론 확정 — 세온이 등대 불을 끄게 했다. 밀수선을 들여 마을의 겨울을 사려고. 조각이 모자라도 결론을 내릴 수 있다.", en: "Deduction confirmed — Seon had the light put out, to bring the ship in and buy the village its winter. You can reach a verdict even with fragments missing." },
+  deduceLocked: { ko: "조각을 2개 이상 모으면 추론할 수 있다.", en: "Gather two or more fragments to start deducing." },
+  deduceWait: { ko: "이번 판의 추론은 이미 확인했다. 다음 판에서 다시(장을 다시 해도 된다).", en: "You already checked this run. Try again next run (replaying a chapter counts)." },
+  resultSeen: { ko: "▸ 전에도 이렇게 됐다 — 처음부터 읽기", en: "▸ It went this way before — read it all" },
   forkStairs: { ko: "⤳ 갈림길로: 렌과 마주치는 계단부터", en: "⤳ Jump to the fork: the stairs where you meet Ren" },
   forkRescue: { ko: "⤳ 갈림길로: 3장 수문 앞부터", en: "⤳ Jump to the fork: Ch.3, at the sluice" },
   forkTag: { ko: "다른 쪽을 골라 볼 곳", en: "where you can choose differently" },
@@ -4415,6 +4428,7 @@ const DUEL_SCENES = ["duel1", "duel2", "scully1", "scully2", "monk1", "monk2", "
 // 서사 결투의 긴장 저음: 첫 박 0.8, 마지막 박 1
 // 결투의 마지막 수에만 시간 제한(끌 수 있음). 시간이 다 되면 첫 판정 선택지의 실패로 흘러간다.
 const TIMED_SCENES = ["duel2", "scully2", "monk2"];
+const CHOICE_CAP = 4;
 const TIMER_SEC = 16;
 // 읽을 시간은 따로 준다: 바로 위의 결과 문단(+처음 보는 장면이면 본문) 10자당 1초, 최대 30초. (100명 시뮬: 시간 초과의 70%가 첫 방문, 원인은 직전 결과 문단 읽기)
 const TIMER_READ_CPS = 10, TIMER_READ_MAX = 30;
@@ -4537,6 +4551,28 @@ function banterFor(scene, flags, no) {
   let h = Number(no) || RECORD_FIRST;
   for (const c of scene) h = (h * 31 + c.charCodeAt(0)) % 9973;
   return pool[h % pool.length];
+}
+// 사건판 추론(pt30) — 누가 / 무엇을 / 왜. 셋 다 맞아야 「추론 확정」. 한 판에 한 번만 확인하고, 몇 칸이 맞았는지만 알려 준다.
+// (Return of the Obra Dinn의 '묶어서 확정'에서 빌려 왔다. 찍기로는 풀리지 않게, 조각을 읽고 좁혀 가게 한다.)
+const DEDUCE = {
+  who: { seon: bi("촌장 세온", "Chief Seon"), bern: bi("등대지기 베른", "Keeper Bern"), ren: bi("도굴꾼 렌", "Ren the grave-robber"), scully: bi("심부름꾼 스컬리", "Scully the errand man") },
+  // 보기는 '등대 사건 그날 밤'에 한정한다. 이야기 속 다른 사실(반출 확인서·종탑 등)과 겹쳐 억울한 오답이 되지 않게.
+  // 내레이션이 한때 '사고'라고 단정하는 보기(수리 실수·사고)는 억울한 오답이 되므로 넣지 않는다.
+  // 미끼는 이야기 속에서 거짓으로 밝혀지는 것(베른이 지어낸 '검은 코트 습격')이나 근거가 없는 것만.
+  what: { dark: bi("등대 불을 끄게 했다", "had the lighthouse put out"), raid: bi("검은 코트를 보내 등대를 습격하게 했다", "sent the black coat to raid the lighthouse"), sell: bi("렌즈를 팔아 돈을 챙기려 했다", "meant to sell the lens for money"), oust: bi("등대지기를 쫓아내려 했다", "tried to drive the keeper out") },
+  why: { ship: bi("밀수선을 어둠 속에 들여 — 마을 겨울 곡식 값을 대려고", "to bring the smuggling ship in under darkness — and pay for the village's winter grain"), debt: bi("자기 빚을 갚으려고", "to pay off his own debt"), post: bi("등대지기 자리를 차지하려고", "to take the keeper's post"), revenge: bi("베른에게 앙갚음하려고", "to get back at Bern") },
+  answer: { who: "seon", what: "dark", why: "ship" }
+};
+function deduceScore(pick) {
+  return ["who", "what", "why"].filter(k => pick && pick[k] === DEDUCE.answer[k]).length;
+}
+// 확인할 수 있는가: 조각 2개 이상, 이번 기록에서 아직 확인 안 함, 아직 못 풂.
+function deduceOpen(state, foundCount, runNo) {
+  const d = state || {};
+  if (d.solved) return "solved";
+  if (foundCount < 2) return "locked";
+  if (runNo && (d.tried || []).includes(runNo)) return "waitNext";
+  return "open";
 }
 // 사건 기록장의 상태 — 순수 함수(테스트 대상). lore에 든 조각만 센다.
 function caseState(lore) {
@@ -5827,6 +5863,15 @@ const css = `
 .crpg .banter .banterWho { font-style:normal; color:var(--dim); font-size:12px; }
 .crpg .objection .objLie { font-family:inherit; font-style:italic; color:var(--text); border-left:3px solid var(--red); padding-left:10px; margin:6px 0; }
 .crpg .objection .objMiss { color:var(--bad); font-size:14px; }
+.crpg .moreChoices { display:block; background:none; border:1px dashed var(--line); color:var(--dim); border-radius:8px; padding:8px 12px; margin:4px 0 8px; cursor:pointer; font-size:14px; width:100%; text-align:left; }
+.crpg .deduce { margin:12px 0; padding:10px 12px; border:1px solid var(--line); border-radius:8px; }
+.crpg .deduce.solved { border-color:var(--red); background:rgba(192,57,43,.08); }
+.crpg .deduce h4 { margin:0 0 8px; }
+.crpg .deduceRow { display:flex; align-items:center; gap:8px; margin:6px 0; }
+.crpg .deduceRow span { width:52px; flex:none; color:var(--dim); font-size:14px; }
+.crpg .deduceRow select { flex:1; min-width:0; padding:6px; background:var(--panel2); color:var(--text); border:1px solid var(--line); border-radius:6px; }
+.crpg .deduceSolved { color:#e8b4aa; }
+.crpg .deduceScore { font-size:14px; }
 .crpg .pickShare { font-size:13px; color:var(--dim); font-style:italic; margin:6px 0 0; }
 .crpg .goals { margin:8px 0 12px; padding:8px 12px; border:1px dashed var(--line); border-radius:8px; font-size:14px; }
 .crpg .goals h4 { margin:0 0 4px; font-size:13px; color:var(--gold); letter-spacing:.05em; }
@@ -6009,6 +6054,11 @@ function CRPG() {
   const [noteDraft, setNoteDraft] = useState({ s: "ren", v: "doubt", r: "none" });
   const [notedScenes, setNotedScenes] = useState([]);
   const [expanded, setExpanded] = useState(null);
+  // 선택지가 많으면 4개만 먼저 보이고 나머지는 접는다(펼친 장면 키).
+  const [moreOpen, setMoreOpen] = useState(null);
+  const [resultOpen, setResultOpen] = useState(null);
+  const [deduce, setDeduce] = useState(() => store.get("aduventure_deduce") || {});
+  const [deducePick, setDeducePick] = useState({ who: "", what: "", why: "" });
   const [met, setMet] = useState(() => store.get("aduventure_met") || []);
   const [reached, setReached] = useState([]);
   const startedRef = useRef(Date.now());
@@ -6059,6 +6109,27 @@ function CRPG() {
   const pathBeen = seenAtRun.includes(sceneKey) || takenAtRun.some(id => id.startsWith(sceneKey + ":"));
   const pathMark = ch => !pc || runIndex < UNLOCK_AT.paths || !pathBeen || visibleChoices.length < 2 ? null : takenAtRun.includes(narrativeId(ch)) ? "walked" : "fresh";
   const pathOrdered = [...visibleChoices.filter(ch => pathMark(ch) !== "walked"), ...visibleChoices.filter(ch => pathMark(ch) === "walked")];
+  // 정보 과밀 줄이기(pt30, 100명 시뮬·리뷰: confront에 선택지 7개). 4개를 넘으면
+  // 지난 판에서 얻은 것으로 열린 길·안 가 본 길을 먼저 보이고 나머지는 「다른 방법 n개 더」로 접는다.
+  // 탐문 거점(lead가 있는 장면)은 고르는 것 자체가 설계라 접지 않는다.
+  // 순위(pt30 재평가 반영): 탐문에서 약속받은 길(lead 메아리)·판정 없이 확정되는 결과를 가장 먼저,
+  // 그다음 지난 판에서 얻은 길·직업의 길, 안 가 본 길. 그리고 조건 없는 기본 길(대화 우선) 한 자리는 늘 남긴다.
+  const isPlain = ch => !(ch.echoReq || ch.loreReq || ch.artifactReq || ch.classOnly || ch.caseMin || ch.needFrags);
+  const isTalk = ch => /설득|위협|기만|Persuasion|Intimidat|Decept|"/.test(ch.label ? (ch.label.ko || "") + (ch.label.en || "") : "");
+  const choiceRank = ch => (typeof ch.echoReq === "string" && ch.echoReq.startsWith("lead") ? 3 : 0) + (ch.result && !ch.check ? 1 : 0) + (isPlain(ch) ? 0 : 2) + (pathMark(ch) === "fresh" ? 1 : pathMark(ch) === "walked" ? -1 : 0) - (lockedBy(ch).length ? 3 : 0);
+  const choicesCapped = pathOrdered.length > CHOICE_CAP && !pathOrdered.some(ch => ch.lead) && moreOpen !== sceneKey;
+  const shownKeep = (() => {
+    if (!choicesCapped) return null;
+    const ranked = [...pathOrdered].sort((a, b) => choiceRank(b) - choiceRank(a));
+    const keep = ranked.slice(0, CHOICE_CAP);
+    if (!keep.some(isPlain)) {
+      const plains = ranked.filter(isPlain);
+      const plain = plains.find(isTalk) || plains[0];
+      if (plain) keep[keep.length - 1] = plain;
+    }
+    return new Set(keep);
+  })();
+  const shownChoices = choicesCapped ? pathOrdered.filter(ch => shownKeep.has(ch)) : pathOrdered;
   // 덜어내기(pt23): 기본은 꼬리표 하나 + 쉬움/반반/어려움. '숫자 보기'를 켜면 예전처럼 전부 보인다.
   const difficulty = ch => { const v = pct(ch); return v >= 70 ? "diffEasy" : v >= 40 ? "diffEven" : "diffHard"; };
   const primaryTag = ch => ch.needFrags ? ui("retrialNeed", { n: ch.needFrags.length - lockedBy(ch).length, t: ch.needFrags.length })
@@ -6377,6 +6448,8 @@ function CRPG() {
       }
     }
     if (key === "intro2" || key === "intro3") {
+      // 장 시작 시점의 기록(앞 장에서 한 일)을 남겨 둔다 — '다른 선택으로 이 장 다시' 때 앞 장의 메아리가 사라지지 않게.
+      try { store.set("aduventure_chstart", { ...(store.get("aduventure_chstart") || {}), [key]: flags.filter(f => !/^rebut/.test(f)) }); } catch (e) {}
       setPc(p => ({
         ...p,
         hp: p.maxHp
@@ -6421,10 +6494,22 @@ function CRPG() {
         if (FRAGMENTS[g]) extra += (lang === "en" ? `\n\n✎ Rebuttal recorded — ${tx(FRAGMENTS[g].text)}` : `\n\n✎ 반박 기록 — ${tx(FRAGMENTS[g].text)}`);
       }
     }
+    // 다시 하기 피로 줄이기(pt30): 전에 읽은 결과는 마지막 문단(어떻게 됐는지)만 보이고 펼칠 수 있다. 피해·단서 같은 새 정보(extra)는 늘 다 보인다.
+    const body = fmt(tx(branch.text), pc);
+    const rid = sceneKey + ":" + String((branch.text && (branch.text.ko || branch.text)) || "").slice(0, 32);
+    let seenBefore = false;
+    try {
+      const rs = store.get("aduventure_rseen") || [];
+      seenBefore = rs.includes(rid);
+      if (!seenBefore) store.set("aduventure_rseen", [...rs, rid].slice(-600));
+    } catch (e) {}
+    const paras = body.split("\n\n");
     setLastResult({
       dice: res,
       label,
-      text: fmt(tx(branch.text), pc) + extra,
+      text: body + extra,
+      short: seenBefore && paras.length > 1 ? "… " + paras[paras.length - 1] + extra : null,
+      rid,
       kind: !res || res.success ? "good" : "bad"
     });
     goto(next, gained);
@@ -6514,7 +6599,9 @@ function CRPG() {
   const hesitateRef = useRef(null);
   hesitateRef.current = hesitate;
   const timedNow = timerOn && !!pc && TIMED_SCENES.includes(sceneKey) && !rolling && !pending;
-  const timerTotal = TIMED_SCENES.includes(sceneKey) && scene?.text ? timerBudget(lastResult ? String(lastResult.text || "").length : 0, fmt((scene.text[lang] || scene.text.ko || scene.text), pc || {}).length, seenAtRun.includes(sceneKey)) : TIMER_SEC;
+  // 읽을 시간: 결과는 지금 보이는 길이(접혔으면 접힌 길이), 장면 몫은 본문 전체(인물 대사·여파 줄도 함께 뜨므로 넉넉히).
+  const timerSceneText = TIMED_SCENES.includes(sceneKey) && scene?.text ? fmt((scene.text[lang] || scene.text.ko || scene.text), pc || {}) : "";
+  const timerTotal = timerSceneText ? timerBudget(lastResult ? String((lastResult.short && resultOpen !== lastResult.rid ? lastResult.short : lastResult.text) || "").length : 0, timerSceneText.length, false) : TIMER_SEC;
   useEffect(() => {
     if (!timedNow) { setTimeLeft(null); return; }
     // 선택지가 번져 나온 뒤부터 센다. 글을 눌러 다 보이게 했으면 바로.
@@ -6813,7 +6900,16 @@ function CRPG() {
     // 지난 판의 반박 결과가 다음 판으로 새지 않게(같은 장을 다시 할 때 반박을 못 하던 문제).
     setObjection(null);
     setPickShare(null);
-    setFlags([]);
+    // 새 판의 기준을 다시 잡는다(pt30): 2·3장부터 다시 할 때도 지난 판에 본 장면은 접히고, 간 길 표시·흉터가 최신이 된다.
+    setSeenAtRun(store.get("aduventure_seen") || []);
+    setTakenAtRun(store.get("aduventure_taken") || []);
+    setScarsAtRun(store.get("aduventure_scars") || {});
+    setScarredThisRun([]);
+    setExpanded(null);
+    setMoreOpen(null);
+    setResultOpen(null);
+    // 장을 다시 할 때는 앞 장에서 한 일(장 시작 때의 기록)을 남긴다. 처음부터면 비운다.
+    setFlags(toScene && (store.get("aduventure_chstart") || {})[toScene] || []);
     setStats({
       rolls: 0,
       success: 0
@@ -6887,6 +6983,19 @@ function CRPG() {
   const specialTag = pc && tx(SPECIALS[pc.classKey].tag).replace("{damage}", combatRange(pc.classKey === "wizard" ? { die: 8, bonus: 2 } : { die: 6 }));
   const chapterTitle = chapter === 5 ? ui("c2ch1") : chapter === 4 ? ui("ch4") : chapter === 3 ? ui("ch3") : chapter === 2 ? ui("ch2") : ui("ch1");
   const cs = caseState(lore);
+  // 추론이 확정되면 조각이 모자라도 결론을 내릴 수 있다(추리를 노가다보다 먼저 보상).
+  if (deduce.solved && !cs.ready) { cs.ready = true; cs.viaDeduction = true; }
+  const deduceRunKey = (telemetryRun && telemetryRun.id) || runNo;
+  const deduceState = deduceOpen(deduce, cs.found.length, deduceRunKey);
+  function checkDeduction() {
+    if (deduceState !== "open" || !deducePick.who || !deducePick.what || !deducePick.why) return;
+    const n = deduceScore(deducePick);
+    const next = { ...deduce, tried: [...(deduce.tried || []), deduceRunKey || 0].slice(-50), last: { n }, solved: n === 3 };
+    store.set("aduventure_deduce", next);
+    setDeduce(next);
+    try { if (sfxOn) { if (n === 3) { SFX.good(); SFX.cue("pen"); } else SFX.bad(); } } catch (e) {}
+    emitTelemetry("deduction", telemetryRun, { scene_id: sceneKey, right: n, lang });
+  }
   const collapsed = !!pc && !!scene?.text && seenAtRun.includes(sceneKey) && expanded !== sceneKey;
   const forks = sceneKey === "intro" ? ["stairs", "rescue"].filter(k => seenAtRun.includes(k)) : [];
   const disruptMove = pc && looterDisruptFor(pc.classKey);
@@ -6908,7 +7017,18 @@ function CRPG() {
     className: "frag " + (cs.found.includes(id) ? "got" : "unseen")
   }, cs.found.includes(id) ? "\u25C6 " + tx(f.text) + (f.decisive ? " " + ui("decisiveTag") : "") : "\u25C7 " + ui("fragHint") + tx(f.where))), React.createElement("p", {
     className: "caseStatus " + (cs.ready ? "ready" : "")
-  }, cs.ready ? ui("caseReady") : ui("caseNeed") + cs.missing.map(k => ui(k)).join(" · ")), React.createElement("p", { className: "pathNote" }, ui("pathLeft", { n: untakenCrossroads(store.get("aduventure_seen") || [], store.get("aduventure_taken") || []) })), verdict && verdict.wrong && React.createElement("div", { className: "wrongBox" }, React.createElement("h4", null, ui("wrongH")), React.createElement("p", null, tx(wrongLine(verdict.wrong))), React.createElement("p", { className: "pathNote" }, ui("wrongHint"))), React.createElement("h4", null, ui("scarH")), (() => {
+  }, cs.ready ? ui("caseReady") : ui("caseNeed") + cs.missing.map(k => ui(k)).join(" · ")), React.createElement("div", {
+    className: "deduce" + (deduce.solved ? " solved" : "")
+  }, React.createElement("h4", null, ui("deduceH")), deduceState === "solved" ? React.createElement("p", { className: "deduceSolved" }, ui("deduceSolved")) : deduceState === "locked" ? React.createElement("p", { className: "pathNote" }, ui("deduceLocked")) : [["who", "deduceWho"], ["what", "deduceWhat"], ["why", "deduceWhy"]].map(([k, label]) => React.createElement("label", { key: k, className: "deduceRow" }, React.createElement("span", null, ui(label)), React.createElement("select", {
+    value: deducePick[k],
+    disabled: deduceState !== "open",
+    "aria-label": ui(label),
+    onChange: e => setDeducePick(d => ({ ...d, [k]: e.target.value }))
+  }, React.createElement("option", { value: "" }, ui("deducePick")), Object.keys(DEDUCE[k]).map(id => React.createElement("option", { key: id, value: id }, tx(DEDUCE[k][id])))))), deduceState === "open" && React.createElement("button", {
+    className: "restart primary deduceBtn",
+    disabled: !deducePick.who || !deducePick.what || !deducePick.why,
+    onClick: checkDeduction
+  }, ui("deduceCheck")), deduceState !== "solved" && deduce.last && React.createElement("p", { className: "deduceScore" }, ui("deduceScore", { n: deduce.last.n })), deduceState === "waitNext" && React.createElement("p", { className: "pathNote" }, ui("deduceWait"))), React.createElement("p", { className: "pathNote" }, ui("pathLeft", { n: untakenCrossroads(store.get("aduventure_seen") || [], store.get("aduventure_taken") || []) })), verdict && verdict.wrong && React.createElement("div", { className: "wrongBox" }, React.createElement("h4", null, ui("wrongH")), React.createElement("p", null, tx(wrongLine(verdict.wrong))), React.createElement("p", { className: "pathNote" }, ui("wrongHint"))), React.createElement("h4", null, ui("scarH")), (() => {
     const scars = store.get("aduventure_scars") || {};
     const keys = Object.keys(scars).filter(k => scarLevel(scars, k) > 0);
     return keys.length ? keys.map(k => React.createElement("p", { key: k, className: "scarLine" }, ui("scarLine", { s: tx(SKILL_NAMES[k]), d: scarDots(scarLevel(scars, k)), n: scarLevel(scars, k), w: tx(SCENE_TITLES[scars[k].at] || { ko: scars[k].at, en: scars[k].at }) }))) : React.createElement("p", { className: "scarLine" }, ui("scarNone"));
@@ -7136,7 +7256,10 @@ function CRPG() {
     lang: lang
   }), /*#__PURE__*/React.createElement("div", null, tx(lastResult.dice.detail))), /*#__PURE__*/React.createElement("div", {
     className: "result " + lastResult.kind
-  }, fmt(lastResult.text, pc)), pickShare != null && React.createElement("p", {
+  }, fmt(lastResult.short && resultOpen !== lastResult.rid ? lastResult.short : lastResult.text, pc)), lastResult.short && resultOpen !== lastResult.rid && React.createElement("button", {
+    className: "expandBtn",
+    onClick: () => setResultOpen(lastResult.rid)
+  }, ui("resultSeen")), pickShare != null && React.createElement("p", {
     className: "pickShare"
   }, ui(pickShare < 15 ? "shareRare" : "shareSame", { n: pickShare })), scarNote && React.createElement("p", {
     className: "scarNote"
@@ -7241,14 +7364,14 @@ function CRPG() {
   }, ui("noteLeave"))), notesShown && notedScenes.includes(sceneKey) && React.createElement("p", { className: "noteSent" }, ui("noteSent")), /*#__PURE__*/React.createElement("div", {
     key: "choices" + sceneKey,
     className: "choices",
-    "data-stage": revealed === sceneKey ? "instant" : "staged",
+    "data-stage": revealed === sceneKey || collapsed ? "instant" : "staged",
     style: { animationDelay: Math.min(((collapsed ? 1 : fmt(tx(scene.text), pc).split("\n\n").length) - 1) * 0.8 + 0.6 + (sceneKey === "c2_hall" && !collapsed ? 1.4 : 0), 5) + "s" }
   }, pc && TIMED_SCENES.includes(sceneKey) && React.createElement("div", {
     className: "duelTimer" + (timerOn && timeLeft != null && timeLeft <= 4 ? " urgent" : "")
   }, timerOn ? [React.createElement("span", { key: "t", className: "timerText" }, ui("timerLeft", { n: timeLeft == null ? timerTotal : Math.max(0, timeLeft) })), React.createElement("span", { key: "b", className: "timerBar" }, React.createElement("i", { style: { width: (timeLeft == null ? 100 : Math.max(0, timeLeft) / timerTotal * 100) + "%" } }))] : React.createElement("span", { className: "timerText" }, ui("timerOffNote")), React.createElement("button", {
     className: "timerToggle",
     onClick: () => setTimerOn(v => { store.set("aduventure_timer", !v); return !v; })
-  }, timerOn ? ui("timerOff") : ui("timerOn"))), pathAll && React.createElement("p", { className: "pathNote" }, ui("pathAllWalked")), pathOrdered.map(ch => /*#__PURE__*/React.createElement("button", {
+  }, timerOn ? ui("timerOff") : ui("timerOn"))), pathAll && React.createElement("p", { className: "pathNote" }, ui("pathAllWalked")), shownChoices.map(ch => /*#__PURE__*/React.createElement("button", {
     key: narrativeId(ch),
     className: "choice" + (pathMark(ch) ? " " + pathMark(ch) : ""),
     disabled: lockedBy(ch).length > 0,
@@ -7277,7 +7400,10 @@ function CRPG() {
     className: "tag frag" + (lore.includes(ch.frag) ? " seen" : "")
   }, lore.includes(ch.frag) ? ui("fragSeen") : ui("fragNew")), ch.stake && React.createElement("span", {
     className: "stake"
-  }, ui("stakeLabel"), tx(ch.stake))] : simpleTags(ch))), forks.map(k => React.createElement("button", {
+  }, ui("stakeLabel"), tx(ch.stake))] : simpleTags(ch))), choicesCapped && React.createElement("button", {
+    className: "moreChoices",
+    onClick: () => setMoreOpen(sceneKey)
+  }, pathOrdered.length - shownChoices.length === 1 ? ui("moreChoice1") : ui("moreChoices", { n: pathOrdered.length - shownChoices.length })), forks.map(k => React.createElement("button", {
     key: "fork" + k,
     className: "choice fork",
     onClick: () => jumpTo(k)

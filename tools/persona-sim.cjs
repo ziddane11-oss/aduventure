@@ -157,7 +157,7 @@ function play(persona) {
   const w = createWorld(persona);
   const T = []; // 기록(사람이 읽을 수 있는 로그)
   const log = s => T.push(`[${(w.now / 60000).toFixed(1)}분] ${s}`);
-  const out = { persona, runs: [], quitReason: null, totalMin: 0, timeouts: 0, timerOffBy: null, objections: { tried: 0, won: 0, sealed: 0, retried: 0 }, errors: w.errors, transcript: T, sawCase2: false, maxChapter: 0, scenesSeen: new Set(), readMinutes: 0, longestScene: { key: null, sec: 0 } };
+  const out = { persona, runs: [], quitReason: null, totalMin: 0, timeouts: 0, timerOffBy: null, objections: { tried: 0, won: 0, sealed: 0, retried: 0 }, deductions: { tried: 0, solved: 0 }, errors: w.errors, transcript: T, sawCase2: false, maxChapter: 0, scenesSeen: new Set(), readMinutes: 0, longestScene: { key: null, sec: 0 } };
   let frustration = 0, fun = 0, run = null, steps = 0, objectionDone = new Set();
   let tree;
   const think = sec => { tree = w.advance(Math.round(sec * 1000)); };
@@ -284,6 +284,31 @@ function play(persona) {
       const res = obj && text(obj);
       if (obj && !objectionDone.has(run.no + ':' + end) && /Red ink strikes|붉은 잉크가 그 줄을/.test(res)) { out.objections.won++; fun += 0.2; objectionDone.add(run.no + ':' + end); log('✒ 반박 성공'); }
       else if (obj && !objectionDone.has(run.no + ':' + end) && /record stands|확정된다/.test(res)) { out.objections.sealed++; frustration += 0.08; objectionDone.add(run.no + ':' + end); log('✒ 반박 실패(확정)'); }
+      // 추리 성향이 있으면 🔎 사건 기록장을 열고 추론을 확인해 본다(한 판에 한 번).
+      if (!run.deduceTried && persona.deduction > 0.5 && r() < 0.4 + 0.5 * persona.curiosity) {
+        run.deduceTried = true;
+        const caseBtn = buttons(tree).find(b => b.props['aria-label'] === 'case board');
+        if (caseBtn) {
+          click(caseBtn, '🔎 사건 기록장을 연다');
+          const box = all(tree).find(n => /^deduce/.test(cls(n)));
+          const sels = box ? all(box).filter(n => n.type === 'select' && !n.props.disabled) : [];
+          if (sels.length === 3) {
+            const ans = JSON.parse(vm.runInContext('JSON.stringify(DEDUCE)', w.ctx));
+            ['who', 'what', 'why'].forEach((k, i) => {
+              const ids = Object.keys(ans[k]);
+              const right = r() < 0.3 + 0.6 * persona.deduction;
+              const v = right ? ans.answer[k] : ids.filter(x => x !== ans.answer[k])[Math.floor(r() * (ids.length - 1))];
+              sels[i].props.onChange({ target: { value: v } }); tree = w.render();
+            });
+            think(25 + 20 * persona.story);
+            const chk = buttons(tree).find(b => /deduceBtn/.test(cls(b)));
+            if (chk) { click(chk, '추론 확인'); out.deductions.tried++; const t = text(all(tree).find(n => /^deduce/.test(cls(n)))); if (/추론 확정|Deduction confirmed/.test(t)) { out.deductions.solved++; fun += 0.3; log('🟥 추론 확정'); } else { const m = t.match(/셋 중 (\d)개|(\d) of three/); log('추론: ' + (m ? (m[1] || m[2]) + '/3' : '?')); } }
+          }
+          const close = buttons(tree).find(b => b.props.onClick && /닫기|Close|✕|×/.test(text(b)) && all(tree).some(n => cls(n).includes('caseBoard')));
+          if (close) { close.props.onClick(); tree = w.render(); }
+          continue;
+        }
+      }
       // 다음으로 갈지
       const primary = bsNow.find(b => cls(b) === 'restart primary');
       const others = bsNow.filter(b => cls(b) === 'restart');
@@ -376,6 +401,7 @@ const summary = {
   failRate: Math.round(avg(ok.flatMap(r => r.runs).filter(x => x.checks), x => x.fails / x.checks) * 100),
   timeouts: { people: pctOf(ok, r => r.timeouts > 0), total: ok.reduce((a, r) => a + r.timeouts, 0), turnedOff: pctOf(ok, r => r.timerOffBy && r.timerOffBy !== 'next') },
   objection: { tried: ok.reduce((a, r) => a + r.objections.tried, 0), won: ok.reduce((a, r) => a + r.objections.won, 0), sealed: ok.reduce((a, r) => a + r.objections.sealed, 0), retried: ok.reduce((a, r) => a + r.objections.retried, 0) },
+  deductions: { tried: ok.reduce((a, r) => a + r.deductions.tried, 0), solvers: pctOf(ok, r => r.deductions.solved > 0) },
   goalsAvgPerRun: +avg(ok.flatMap(r => r.runs), x => x.goals).toFixed(2),
   readShare: Math.round(avg(ok, r => r.readMinutes / Math.max(0.1, r.totalMin)) * 100),
   quitWhere: Object.entries(ok.reduce((m, r) => { const k = r.quitReason.replace(/ @.*$/, ''); m[k] = (m[k] || 0) + 1; return m; }, {})).sort((a, b) => b[1] - a[1]),
