@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>어두밴처 v0.7.3-pt28</title>
+<title>어두밴처 v0.7.3-pt29</title>
 <style>body{margin:0;background:#0e1420}</style>
 </head>
 <body>
@@ -318,7 +318,7 @@ function(a,b,c){if(!Vd(b))throw Error(n(200));return Wd(null,a,b,!1,c)};Q.unmoun
    GAS 피드백 파이프 — v0.7 재구현 (제안/신호/텔레메트리)
    ============================================================ */
 /* 플레이테스트 빌드 태그 — 테스트 중 버전 구분용. 수정할 때마다 뒤 번호를 올린다. */
-const BUILD = "v0.7.3-pt28";
+const BUILD = "v0.7.3-pt29";
 const GAS_URL = "https://script.google.com/macros/s/AKfycbxFx_m5rhCZmqGoy3JcUUNqEgiObMWNHe9hx-LnZrhzIkfwa9-yJGBWP0lVulptnNQeCQ/exec";
 function gasPost(payload, options = {}) {
   return fetch(GAS_URL, {
@@ -834,8 +834,9 @@ const UI = {
   caseReady: { ko: "결론을 내릴 수 있다. 3장을 마치면 고발할 수 있다.", en: "You can reach a verdict. Finish Ch.3 to make your accusation." },
   caseNeed: { ko: "아직 결론을 내릴 수 없다 — 필요: ", en: "No verdict yet — still needed: " },
   caseLocked: { ko: "사건 기록장 {n}/{total} · 결론까지 필요: ", en: "Case board {n}/{total} · still needed: " },
-  needDecisive: { ko: "결정적 증거 1개", en: "1 decisive proof" },
-  needBern: { ko: "베른의 진술", en: "Bern's statement" },
+  needDecisive: { ko: "결정적 증거 1개(3장 수문)", en: "1 decisive proof (Ch.3, the sluice)" },
+  needBern: { ko: "베른의 진술(2장 아침)", en: "Bern's statement (Ch.2, morning)" },
+  caseGoCh2: { ko: "2장 아침으로 — 베른에게 묻는다", en: "Back to Ch.2 morning — ask Bern" },
   needCount: { ko: "조각 4개 이상", en: "4+ fragments" },
   fragNew: { ko: "◇ 아직 못 본 조각", en: "◇ unseen fragment" },
   fragSeen: { ko: "◆ 이미 본 조각", en: "◆ fragment already seen" },
@@ -858,14 +859,15 @@ const UI = {
   goalsH: { ko: "이번 기록의 의뢰", en: "This record's commission" },
   goalsDone: { ko: "의뢰 {n}/3 완수", en: "Commission {n}/3 done" },
   objStart: { ko: "✒ 이의 있음 — 거짓 문장을 짚는다", en: "✒ Objection — point at the lie" },
-  objPickLine: { ko: "어느 줄이 거짓인가? (기회는 한 번)", en: "Which line is the lie? (One chance)" },
+  objPickLine: { ko: "어느 줄이 거짓인가? (실수는 한 번까지)", en: "Which line is the lie? (You may slip once)" },
+  objMissLine: { ko: "세온이 미소 짓는다. \"그 줄은 사실일세.\" — 이제 실수할 여유가 없다.", en: "Seon smiles. \"That line is true.\" — You have no slips left." },
   objPickEvidence: { ko: "무엇으로 뒤집을 것인가? 이 줄과 맞부딪치는 것을 고른다.", en: "What will you overturn it with? Pick what contradicts this line." },
   objMiss: { ko: "세온이 고개를 젓는다. \"그게 이 줄과 무슨 상관인가?\" — 한 번 더 내밀 수 있다.", en: "Seon shakes his head. \"What has that to do with this line?\" — You may try once more." },
   objNoEvidence: { ko: "내밀 증거가 없다. 다음 기록에서 더 모아 오자.", en: "You have nothing to lay down. Gather more next record." },
   objWithdraw: { ko: "물러선다", en: "Back down" },
   objWon: { ko: "붉은 잉크가 그 줄을 긋는다 — '{e}'. 이 한 장이면 충분하다. (다음 장 운명 주사위 +1)", en: "Red ink strikes the line — '{e}'. One page is enough. (+1 fate die next chapter)" },
   objWrongLine: { ko: "그 줄은 사실이다. 세온이 찻잔을 내려놓는다. \"기록관은 증거로 말하는 법이지.\" 기록이 확정된다.", en: "That line is true. Seon sets down his cup. \"An archivist speaks with evidence.\" The record stands." },
-  objWrongEvidence: { ko: "그건 이 줄을 뒤집지 못한다. 세온의 미소가 조금 더 반듯해진다. 기록이 확정된다.", en: "That doesn't overturn this line. Seon's smile grows a little straighter. The record stands." },
+  objWrongEvidence: { ko: "그건 이 줄을 뒤집지 못한다. 세온의 미소가 조금 더 반듯해진다. 기록이 확정된다.", en: "That doesn't overturn this line. Seon's smile grows a little more practiced. The record stands." },
   objStamp: { ko: "정정", en: "Corrected" },
   objSealed: { ko: "확정", en: "Sealed" },
   diffEasy: { ko: "쉬움", en: "easy" },
@@ -1385,7 +1387,7 @@ const SCENES = {
       }
     }, {
       classOnly: "wizard",
-      credit: "제안: 태희",
+      credit: bi("제안: 태희", "Idea: Taehee"),
       label: {
         ko: "창문으로 순간이동한다 — 저 문은 함정일 것이다",
         en: "Blink through the window — that door must be a trap"
@@ -1416,8 +1418,8 @@ const SCENES = {
   stairs: {
     ch: 1,
     text: {
-      ko: `나선 계단 중간층, 등불이 새어 나온다.\n\n비쩍 마른 사내가 등대의 황동 렌즈를 자루에 쑤셔 넣고 있다. 허리춤의 갈고리칼.\n\n"…재수도 없지. 못 본 걸로 하고 내려가. 응?"`,
-      en: `Halfway up the spiral stairs, lamplight leaks out.\n\nA gaunt man is stuffing the lighthouse's brass lens into a sack. A hook-knife hangs at his belt.\n\n"…just my luck. Pretend you never saw this and walk back down. Yeah?"`
+      ko: `나선 계단 중간층, 등불이 새어 나온다.\n\n비쩍 마른 사내가 등대의 황동 렌즈를 자루에 쑤셔 넣고 있다. 허리춤의 갈고리칼 — 부두에서 '갈고리' 렌이라 불리는 도굴꾼이다.\n\n"…재수도 없지. 못 본 걸로 하고 내려가. 응?"`,
+      en: `Halfway up the spiral stairs, lamplight leaks out.\n\nA gaunt man is stuffing the lighthouse's brass lens into a sack. A hook-knife hangs at his belt — Ren "the Hook," a grave-robber known on the docks.\n\n"…just my luck. Pretend you never saw this and walk back down. Yeah?"`
     },
     choices: [{
       loreReq: "ledger",
@@ -2006,7 +2008,7 @@ const SCENES = {
         "result": {
           "text": {
             "ko": "세온이 직접 문을 연다. \"어제는 수고했네.\" 미소가 지나치게 반듯하다.\n\n돌아 나오며 올려다본 2층 창문. 덧문 안쪽에 소금이 엉긴 신호등이 걸려 있다. 등불을 두 번 가렸다 여는 손잡이까지.",
-            "en": "Seon opens the door himself. \"Good work last night.\" The smile is a little too straight.\n\nOn your way out you glance up at the second-floor window. Behind the shutter hangs a salt-crusted signal lamp — with a handle to cover the light twice and open it again."
+            "en": "Seon opens the door himself. \"Good work last night.\" The smile is a little too practiced.\n\nOn your way out you glance up at the second-floor window. Behind the shutter hangs a salt-crusted signal lamp — with a handle to cover the light twice and open it again."
           },
           "flags": [
             "leadWindow"
@@ -2109,7 +2111,7 @@ const SCENES = {
         "result": {
           "text": {
             "ko": "세온이 직접 문을 연다. \"어제는 수고했네.\" 미소가 지나치게 반듯하다.\n\n돌아 나오며 올려다본 2층 창문. 덧문 안쪽에 소금이 엉긴 신호등이 걸려 있다. 등불을 두 번 가렸다 여는 손잡이까지.",
-            "en": "Seon opens the door himself. \"Good work last night.\" The smile is a little too straight.\n\nOn your way out you glance up at the second-floor window. Behind the shutter hangs a salt-crusted signal lamp — with a handle to cover the light twice and open it again."
+            "en": "Seon opens the door himself. \"Good work last night.\" The smile is a little too practiced.\n\nOn your way out you glance up at the second-floor window. Behind the shutter hangs a salt-crusted signal lamp — with a handle to cover the light twice and open it again."
           },
           "flags": [
             "leadWindow"
@@ -2308,8 +2310,8 @@ const SCENES = {
   warehouseA: {
     ch: 2,
     text: {
-      ko: `3번 창고. 문틈으로 등불.\n\n안에서 낮은 목소리 — "등대는 처리했고, 오늘 밤 배가 들어온다."`,
-      en: `Warehouse 3. Lamplight through the gap in the door.\n\nA low voice inside — "The lighthouse is dealt with, and the ship comes in tonight."`
+      ko: `3번 창고 — 검은 코트의 심부름꾼 스컬리가 숨어 있다는 곳. 문틈으로 등불.\n\n안에서 낮은 목소리 — "등대는 처리했고, 오늘 밤 배가 들어온다."`,
+      en: `Warehouse 3 — where Scully, the errand man in the black coat, is said to hide. Lamplight through the gap in the door.\n\nA low voice inside — "The lighthouse is dealt with, and the ship comes in tonight."`
     },
     choices: [{
       label: {
@@ -2390,8 +2392,8 @@ const SCENES = {
   warehouseB: {
     ch: 2,
     text: {
-      ko: `3번 창고. 문이 반쯤 열려 있다 — 함정 냄새.\n\n안에서 숨소리가 멎어 있다.`,
-      en: `Warehouse 3. The door hangs half open — it reeks of a trap.\n\nInside, the breathing has gone still.`
+      ko: `3번 창고 — 검은 코트의 심부름꾼 스컬리가 숨어 있다는 곳. 문이 반쯤 열려 있다 — 함정 냄새.\n\n안에서 숨소리가 멎어 있다.`,
+      en: `Warehouse 3 — where Scully, the errand man in the black coat, is said to hide. The door hangs half open — it reeks of a trap.\n\nInside, the breathing has gone still.`
     },
     choices: [{
       label: {
@@ -3022,7 +3024,7 @@ const SCENES = {
       success: {
         text: {
           ko: `바람 소리 밑, 돌 너머에서 — 희미한 신음. 발밑 어딘가에 사람이 있다.\n\n위치를 가늠하러 종탑부터 오른다.`,
-          en: `Under the wind, beyond the stone — a faint moan. Someone is below your feet.\n\nYou climb the tower first, to fix where.`
+          en: `Under the wind, beyond the stone — a faint moan. Someone is below your feet.\n\nYou climb the tower first, to pin down where it comes from.`
         },
         flag: "trail",
         goto: "belltower"
@@ -3052,7 +3054,7 @@ const SCENES = {
       goto: "undercroft"
     }, {
       label: {
-        ko: "[지각] 관리인의 떨리는 시선을 따라간다",
+        ko: "[지각] 종지기 오도의 떨리는 시선을 따라간다",
         en: "[Perception] Follow the keeper's shaking gaze"
       },
       check: {
@@ -3063,7 +3065,7 @@ const SCENES = {
       },
       success: {
         text: {
-          ko: `관리인의 눈이 자꾸 한 곳을 향한다 — 종 줄 아래, 먼지가 닦인 바닥문.\n\n"…부탁이오. 그들이 내 종을 끊었소. 종이 울리면 마을에서 알아챌 테니까."\n\n관리인은 적이 아니라 인질이었다.`,
+          ko: `오도의 눈이 자꾸 한 곳을 향한다 — 종 줄 아래, 먼지가 닦인 바닥문.\n\n"…부탁이오. 그들이 내 종을 끊었소. 종이 울리면 마을에서 알아챌 테니까."\n\n오도는 적이 아니라 인질이었다.`,
           en: `His eyes keep going to one spot — a trapdoor under the bell-rope, the dust wiped clean.\n\n"…please. They cut my bell. If it rang, the village would know."\n\nThe keeper wasn't an enemy. He was a hostage.`
         },
         flag: "keeper",
@@ -3071,7 +3073,7 @@ const SCENES = {
       },
       fail: {
         text: {
-          ko: `관리인은 입을 다물었다.\n\n돌아서는 순간, 발밑에서 둔탁한 소리 — 바닥 어딘가가 비어 있다. 종 줄 아래 바닥문을 찾아냈다.`,
+          ko: `오도는 입을 다물었다.\n\n돌아서는 순간, 발밑에서 둔탁한 소리 — 바닥 어딘가가 비어 있다. 종 줄 아래 바닥문을 찾아냈다.`,
           en: `The keeper shuts his mouth.\n\nAs you turn, a dull sound underfoot — somewhere the floor is hollow. You find the trapdoor under the bell-rope.`
         },
         goto: "undercroft"
@@ -3089,14 +3091,14 @@ const SCENES = {
       },
       success: {
         text: {
-          ko: `관리인이 울음을 터뜨리며 종 줄 아래 바닥문을 가리킨다.\n\n"제발… 나는 모르는 일로 해주시오."\n\n위치는 얻었지만, 노인의 눈에서 신뢰가 사라졌다.`,
+          ko: `오도가 울음을 터뜨리며 종 줄 아래 바닥문을 가리킨다.\n\n"제발… 나는 모르는 일로 해주시오."\n\n위치는 얻었지만, 노인의 눈에서 신뢰가 사라졌다.`,
           en: `The keeper bursts into tears and points to the trapdoor under the rope.\n\n"Please… pretend I know nothing."\n\nYou have the place. Trust is gone from the old man's eyes.`
         },
         goto: "undercroft"
       },
       fail: {
         text: {
-          ko: `관리인은 입을 꾹 다문다. 노인을 겁박한 손이 부끄럽다.\n\n돌아서는 길, 발밑의 빈 소리 — 바닥문을 스스로 찾아냈다.`,
+          ko: `오도는 입을 꾹 다문다. 노인을 겁박한 손이 부끄럽다.\n\n돌아서는 길, 발밑의 빈 소리 — 바닥문을 스스로 찾아냈다.`,
           en: `He clamps his mouth shut. Your hand feels ashamed for scaring an old man.\n\nOn the way back, a hollow sound underfoot — you find the trapdoor yourself.`
         },
         goto: "undercroft"
@@ -4091,7 +4093,7 @@ const CLUES = {
   fixed: { ko: "완전히 되살린 등대 기관", en: "A fully restored lighthouse mechanism" },
   sabotage: { ko: "일부러 빼낸 톱니", en: "A gear pulled out on purpose" },
   trail: { ko: "지하로 향한 발자국", en: "Footprints leading underground" },
-  keeper: { ko: "종탑 관리인의 신뢰", en: "The bell-keeper's trust" },
+  keeper: { ko: "종지기 오도의 신뢰", en: "The bell-keeper's trust" },
   ledger: { ko: "밀수 장부", en: "The smuggling ledger" },
   grip: { ko: "선제 제압의 기억", en: "Memory of a preemptive takedown" },
   quiet3: { ko: "소리 없는 구출", en: "A silent rescue" },
@@ -4322,7 +4324,7 @@ function chapterLedger(ch, flags) {
   } else if (ch === 3) {
     row(has("saved3") ? true : false, "배달부 — " + (has("saved3") ? "업고 나왔다" : "스스로 기어 나왔다"), "Courier — " + (has("saved3") ? "carried out" : "crawled out on his own"));
     row(has("chase3") ? true : false, "증거 편지 — " + (has("chase3") ? "건져 냈다" : "대부분 물에 녹았다"), "Evidence letters — " + (has("chase3") ? "recovered" : "mostly dissolved"));
-    if (has("keeper")) row(true, "종탑 관리인 — 믿음을 얻었다", "Bell-keeper — trust earned");
+    if (has("keeper")) row(true, "종지기 오도 — 믿음을 얻었다", "Bell-keeper — trust earned");
   } else if (ch === 4) {
     row(has("accuseSeon"), has("accuseSeon") ? "진실 — 밝혔다" : "진실 — 묻혔다", has("accuseSeon") ? "Truth — exposed" : "Truth — buried");
     row(!has("accuseSeon"), has("accuseSeon") ? "마을의 겨울 — 곡식과 약이 끊겼다" : "마을의 겨울 — 배가 계속 들어온다", has("accuseSeon") ? "The village's winter — grain and medicine cut off" : "The village's winter — the boats keep coming");
@@ -4414,6 +4416,11 @@ const DUEL_SCENES = ["duel1", "duel2", "scully1", "scully2", "monk1", "monk2", "
 // 결투의 마지막 수에만 시간 제한(끌 수 있음). 시간이 다 되면 첫 판정 선택지의 실패로 흘러간다.
 const TIMED_SCENES = ["duel2", "scully2", "monk2"];
 const TIMER_SEC = 16;
+// 읽을 시간은 따로 준다: 바로 위의 결과 문단(+처음 보는 장면이면 본문) 10자당 1초, 최대 30초. (100명 시뮬: 시간 초과의 70%가 첫 방문, 원인은 직전 결과 문단 읽기)
+const TIMER_READ_CPS = 10, TIMER_READ_MAX = 30;
+function timerBudget(resultChars, sceneChars, seenBefore) {
+  return TIMER_SEC + Math.min(TIMER_READ_MAX, Math.ceil(((resultChars || 0) + (seenBefore ? 0 : sceneChars || 0)) / TIMER_READ_CPS));
+}
 const DUEL_TENSION = { duel1: 0.8, duel2: 1, scully1: 0.8, scully2: 1, monk1: 0.8, monk2: 1 };
 function stageMood(sceneKey, scene) {
   if (DUEL_SCENES.includes(sceneKey)) return "danger";
@@ -4613,7 +4620,7 @@ function officialRecord(kind, flags, no, verdict) {
     head,
     lines: has("signal")
       ? [bi("등대: 렌즈 도난. 임시 봉화로 어선 3척 귀항.", "Lighthouse: lens stolen. Three boats home by a makeshift beacon."), bi("원인: 좀도둑.", "Cause: a petty thief.")]
-      : [bi("등대: 기관 고장, 수리 완료. 어선 3척 귀항.", "Lighthouse: mechanism failure, repaired. Three boats home."), bi("원인: 불운.", "Cause: bad luck.")],
+      : [bi("등대: 밤새 수리 완료. 어선 3척 귀항.", "Lighthouse: repaired overnight. Three boats home."), bi("원인: 기관 고장 — 불운.", "Cause: mechanism failure — bad luck.")],
     signer: seon,
     rebut: has("sabotage") ? join(doubt, bi("불운이 아니다. 톱니는 누군가 빼냈다.", "Not bad luck. Someone pulled that gear.")) : null
   };
@@ -4708,7 +4715,7 @@ const GOALS = {
   light: { text: bi("등대를 흠 없이 되살린다", "Bring the lighthouse back without a crack"), done: f => f.includes("fixed") && !f.includes("lensCracked") },
   nofight: { text: bi("1장을 칼 없이 끝낸다", "Finish Chapter 1 without a blade"), done: f => f.includes("peaceful") },
   objection: { text: bi("공식 기록 하나를 반박한다", "Overturn one official record"), done: f => ["rebut1", "rebut2", "rebut3"].some(x => f.includes(x)) },
-  rounds: { text: bi("해 지기 전 탐문을 네 곳 들른다", "Make four stops before sundown"), done: f => f.filter(x => x.startsWith("lead")).length >= 4 },
+  rounds: { text: bi("해 지기 전 탐문을 네 곳 들른다(2·3장 합쳐)", "Make four sundown stops (Ch.2 and Ch.3 together)"), done: f => f.filter(x => x.startsWith("lead")).length >= 4 },
   scully: { text: bi("스컬리를 피 없이 굴복시킨다", "Make Scully fold without bloodshed"), done: f => f.includes("peaceful2") },
   quiet: { text: bi("소리 없이 철창을 연다", "Open the cell without a sound"), done: f => f.includes("quiet3") },
   courier: { text: bi("배달부를 살린다", "Save the courier"), done: f => f.includes("saved3") },
@@ -5272,7 +5279,7 @@ function ObjectionPanel({ ch, flags, lore, pc, lang, ui, tx, objection, setObjec
   }
   if (won || lost || !record) return null;
   if (!mine) return box(React.createElement("button", { className: "choice objStart", onClick: () => setObjection({ ch, step: "line" }) }, ui("objStart")));
-  if (mine.step === "line") return box(React.createElement("p", { className: "objAsk" }, ui("objPickLine")),
+  if (mine.step === "line") return box(mine.lineMiss && React.createElement("p", { className: "objMiss" }, ui("objMissLine")), React.createElement("p", { className: "objAsk" }, ui("objPickLine")),
     record.lines.map((l, i) => React.createElement("button", { key: i, className: "choice objLine", onClick: () => decide(i, null) }, t(l))),
     React.createElement("button", { className: "restart", onClick: () => setObjection(null) }, ui("objWithdraw")));
   const held = heldEvidence(flags, lore).filter(id => !(mine.tried || []).includes(id));
@@ -6507,11 +6514,12 @@ function CRPG() {
   const hesitateRef = useRef(null);
   hesitateRef.current = hesitate;
   const timedNow = timerOn && !!pc && TIMED_SCENES.includes(sceneKey) && !rolling && !pending;
+  const timerTotal = TIMED_SCENES.includes(sceneKey) && scene?.text ? timerBudget(lastResult ? String(lastResult.text || "").length : 0, fmt((scene.text[lang] || scene.text.ko || scene.text), pc || {}).length, seenAtRun.includes(sceneKey)) : TIMER_SEC;
   useEffect(() => {
     if (!timedNow) { setTimeLeft(null); return; }
     // 선택지가 번져 나온 뒤부터 센다. 글을 눌러 다 보이게 했으면 바로.
     const wait = revealed === sceneKey ? 0 : Math.min((fmt(tx(scene.text), pc).split("\n\n").length - 1) * 0.8 + 0.6, 5) * 1000 + 600;
-    let left = TIMER_SEC;
+    let left = timerTotal;
     let iv = null;
     const t0 = setTimeout(() => {
       setTimeLeft(left);
@@ -6802,6 +6810,9 @@ function CRPG() {
     setLastResult(null);
     setPending(null);
     setShowCalc(false);
+    // 지난 판의 반박 결과가 다음 판으로 새지 않게(같은 장을 다시 할 때 반박을 못 하던 문제).
+    setObjection(null);
+    setPickShare(null);
     setFlags([]);
     setStats({
       rolls: 0,
@@ -7234,7 +7245,7 @@ function CRPG() {
     style: { animationDelay: Math.min(((collapsed ? 1 : fmt(tx(scene.text), pc).split("\n\n").length) - 1) * 0.8 + 0.6 + (sceneKey === "c2_hall" && !collapsed ? 1.4 : 0), 5) + "s" }
   }, pc && TIMED_SCENES.includes(sceneKey) && React.createElement("div", {
     className: "duelTimer" + (timerOn && timeLeft != null && timeLeft <= 4 ? " urgent" : "")
-  }, timerOn ? [React.createElement("span", { key: "t", className: "timerText" }, ui("timerLeft", { n: timeLeft == null ? TIMER_SEC : Math.max(0, timeLeft) })), React.createElement("span", { key: "b", className: "timerBar" }, React.createElement("i", { style: { width: (timeLeft == null ? 100 : Math.max(0, timeLeft) / TIMER_SEC * 100) + "%" } }))] : React.createElement("span", { className: "timerText" }, ui("timerOffNote")), React.createElement("button", {
+  }, timerOn ? [React.createElement("span", { key: "t", className: "timerText" }, ui("timerLeft", { n: timeLeft == null ? timerTotal : Math.max(0, timeLeft) })), React.createElement("span", { key: "b", className: "timerBar" }, React.createElement("i", { style: { width: (timeLeft == null ? 100 : Math.max(0, timeLeft) / timerTotal * 100) + "%" } }))] : React.createElement("span", { className: "timerText" }, ui("timerOffNote")), React.createElement("button", {
     className: "timerToggle",
     onClick: () => setTimerOn(v => { store.set("aduventure_timer", !v); return !v; })
   }, timerOn ? ui("timerOff") : ui("timerOn"))), pathAll && React.createElement("p", { className: "pathNote" }, ui("pathAllWalked")), pathOrdered.map(ch => /*#__PURE__*/React.createElement("button", {
@@ -7256,7 +7267,7 @@ function CRPG() {
     className: "scar"
   }, " \xB7 ", ui("scarTag", { d: scarDots(scarLevel(scarsAtRun, ch.check.skill)) }))), ch.credit && /*#__PURE__*/React.createElement("span", {
     className: "tag"
-  }, ch.credit), ch.loreReq && /*#__PURE__*/React.createElement("span", {
+  }, tx(ch.credit)), ch.loreReq && /*#__PURE__*/React.createElement("span", {
     className: "tag lore"
   }, ui("loreTag")), ch.artifactReq && /*#__PURE__*/React.createElement("span", {
     className: "tag artifact"
@@ -7393,11 +7404,17 @@ function CRPG() {
     record: officialRecord(scene.ending, flags, runNo),
     decide: (line, evidence) => {
       const verdict = rebutJudge(scene.ending, line, evidence);
-      if (verdict === "pickEvidence") { setObjection({ ch: scene.ending, step: "evidence", tried: [] }); return; }
-      // 증거를 잘못 내밀면 한 번은 다시 고를 수 있다(두 번째부터 확정).
-      if (verdict === "wrongEvidence" && objection && !(objection.tried || []).length) {
+      const misses = (objection && objection.misses) || 0;
+      if (verdict === "pickEvidence") { setObjection({ ch: scene.ending, step: "evidence", tried: [], misses }); return; }
+      // 실수는 한 번까지(줄·증거 합쳐서). 두 번째 실수에 기록이 확정된다.
+      if (verdict === "wrongLine" && !misses) {
         try { if (sfxOn) SFX.bad(); } catch (e) {}
-        setObjection({ ch: scene.ending, step: "evidence", tried: [evidence] });
+        setObjection({ ch: scene.ending, step: "line", misses: 1, lineMiss: true });
+        return;
+      }
+      if (verdict === "wrongEvidence" && !misses) {
+        try { if (sfxOn) SFX.bad(); } catch (e) {}
+        setObjection({ ch: scene.ending, step: "evidence", tried: [evidence], misses: 1 });
         return;
       }
       const won = verdict === "won";
@@ -7458,8 +7475,12 @@ function CRPG() {
     onClick: () => { if (recordDecision("case:accuse")) goto("accuse"); }
   }, ui("accuseGo")) : React.createElement("p", {
     className: "caseStatus"
-  }, ui("caseLocked", { n: cs.found.length, total: Object.keys(FRAGMENTS).length }), cs.missing.map(k => ui(k)).join(" · ")), /*#__PURE__*/React.createElement("button", {
-    className: "restart" + (cs.ready ? "" : " primary"),
+  }, ui("caseLocked", { n: cs.found.length, total: Object.keys(FRAGMENTS).length }), cs.missing.map(k => ui(k)).join(" · ")), !cs.ready && !cs.confession && React.createElement("button", {
+    className: "restart primary",
+    onClick: () => restart("intro2")
+  }, ui("caseGoCh2")), /*#__PURE__*/React.createElement("button", {
+    // 빠진 게 베른의 진술(2장에서만 얻는다)이면 3장 다시는 강조하지 않는다.
+    className: "restart" + (cs.ready || !cs.confession ? "" : " primary"),
     onClick: () => restart("intro3")
   }, ui("ch3again")), /*#__PURE__*/React.createElement("button", {
     className: "restart",
