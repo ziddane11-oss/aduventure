@@ -199,3 +199,20 @@ test('reversing a deal does not invent an earlier imprisonment of Bern', () => {
   assert.doesNotMatch(g.run(`verdictAftermath(${f}).text.en`), /cell/);
   assert.doesNotMatch(g.run(`JSON.stringify(officialRecord(4, ${f}, 113).lines)`), /released/);
 });
+
+test('the receipt route records Scully surrendering rather than fleeing', () => {
+  const g = game({sceneKey: 'confront', flags: ['leadBern']});
+  const branch = g.run("SCENES.confront.choices.find(c => c.echoReq === 'leadBern').result");
+  g.state().applyBranch(branch, null, null);
+  const flags = JSON.stringify([...g.state().flags]);
+  assert.match(g.run(`officialRecord(2, ${flags}, 113).lines[0].en`), /arrested/);
+  assert.match(g.run(`buildEnding2(${flags}).en`), /authorities/);
+  assert.doesNotMatch(g.run(`buildEnding2(${flags}).en`), /Scully is gone/);
+  assert.ok(g.run(`heldEvidence(${flags}, []).includes('letters')`));
+});
+
+test('letting Scully go still records him leaving with no arrest', () => {
+  const g = game();
+  assert.match(g.run("officialRecord(2, ['peaceful2'], 113).lines[0].en"), /fled/);
+  assert.match(g.run("buildEnding2(['peaceful2']).en"), /Scully is gone/);
+});
