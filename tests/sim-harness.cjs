@@ -45,7 +45,7 @@ function readGame(file) {
     build: source.match(/const BUILD\s*=\s*["']([^"']+)/)?.[1] || 'unknown',
     core: cut('const wname =', '/* ---------- 다국어 UI') + cut('const SRD20 =', 'const SCENE_TITLES ='),
     handlers: cut('  function looterAction(action)', '  function restart('),
-    scenes: () => cut('const SCENES =', 'function buildEnding1(')
+    scenes: () => cut(source.includes('const INTRO_PAGES =') ? 'const INTRO_PAGES =' : 'const SCENES =', 'function buildEnding1(')
   };
 }
 

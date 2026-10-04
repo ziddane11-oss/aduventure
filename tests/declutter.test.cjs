@@ -58,7 +58,7 @@ function game({sceneKey = 'scully1', flags = [], runNo = 140, store = {}, classK
 }
 const busy = {flags: ['leadOil'], store: {aduventure_seen: ['scully1'], aduventure_taken: ['scully1:0'], aduventure_scars: {perception: {n: 1, at: 'door'}}}};
 
-test('by default a choice carries one tag and no percentages', () => {
+test('by default a choice has only essential tags and no forecasts', () => {
   const g = game(busy);
   const buttons = g.choices();
   assert.ok(buttons.length >= 5);
@@ -68,13 +68,12 @@ test('by default a choice carries one tag and no percentages', () => {
   }
   const tags = buttons.flatMap(b => nodes(b).filter(isTag));
   assert.ok(tags.length <= buttons.length, 'At most one tag per choice (it was ~20 on this screen)');
-  assert.ok(buttons.some(b => /easy|even odds|hard/.test(text(b))), 'Odds become a word');
-  assert.ok(buttons.some(b => text(b).includes('🦋 At stake · Take the upper hand')), 'A clue road shows the butterfly and what it buys');
+  assert.ok(buttons.every(b => !/easy|even odds|hard|At stake/.test(text(b))), 'No difficulty or outcome forecast by default');
 });
 
-test('consequence choices still show what is at stake; dice choices do not', () => {
+test('consequence outcomes are not previewed below the action', () => {
   const rail = game({sceneKey: 'railing', classKey: 'fighter'}).choices();
-  assert.equal(rail.filter(b => byClass(b, 'stake').length).length, 2, 'The two plain choices keep their stakes');
+  assert.equal(rail.filter(b => byClass(b, 'stake').length).length, 0, 'Consequences arrive through the story');
   assert.equal(byClass(rail.find(b => text(b).includes('hold on to both')), 'stake').length, 0);
 });
 
@@ -96,7 +95,7 @@ test('features unlock one record at a time', () => {
   const first = game({...busy, runNo: 113});
   assert.equal(first.choices().some(b => /road not taken|past record/.test(text(b))), false, 'No footprints on the first record');
   const second = game({...busy, runNo: 114});
-  assert.ok(second.choices().some(b => /road not taken|past record/.test(text(b))));
+  assert.ok(second.choices().some(b => /fresh|walked/.test(b.props.className)), 'Path marks remain without repeated explanatory tags');
   const intro = text(game({sceneKey: 'intro', runNo: 114}).render());
   assert.ok(intro.includes('From this record on — footprints.'));
   assert.ok(text(game({sceneKey: 'intro', runNo: 115}).render()).includes('From this record on — scars.'));

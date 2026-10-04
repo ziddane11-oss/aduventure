@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>어두밴처 v0.7.3-pt44</title>
+<title>어두밴처 v0.7.3-pt45</title>
 <style>body{margin:0;background:#0e1420}</style>
 </head>
 <body>
@@ -318,7 +318,7 @@ function(a,b,c){if(!Vd(b))throw Error(n(200));return Wd(null,a,b,!1,c)};Q.unmoun
    GAS 피드백 파이프 — v0.7 재구현 (제안/신호/텔레메트리)
    ============================================================ */
 /* 플레이테스트 빌드 태그 — 테스트 중 버전 구분용. 수정할 때마다 뒤 번호를 올린다. */
-const BUILD = "v0.7.3-pt44";
+const BUILD = "v0.7.3-pt45";
 const GAS_URL = "https://script.google.com/macros/s/AKfycbxFx_m5rhCZmqGoy3JcUUNqEgiObMWNHe9hx-LnZrhzIkfwa9-yJGBWP0lVulptnNQeCQ/exec";
 function gasPost(payload, options = {}) {
   return fetch(GAS_URL, {
@@ -865,7 +865,7 @@ const UI = {
   shareRec: { ko: "📋 이 기록 복사하기 (공유)", en: "📋 Copy this record (share)" },
   shareDone: { ko: "복사됨 — 붙여넣어 공유하세요", en: "Copied — paste it anywhere" },
   shareFail: { ko: "복사 실패 — 화면을 캡처해 주세요", en: "Couldn't copy — take a screenshot instead" },
-  seenExpand: { ko: "▸ 이미 기록한 장면 — 펼쳐 읽기", en: "▸ Already on record — read it again" },
+  seenExpand: { ko: "▸ 전문 읽기", en: "▸ Full text" },
   moreChoices: { ko: "▾ 다른 방법 {n}개 더", en: "▾ {n} more ways" },
   moreChoice1: { ko: "▾ 다른 방법 1개 더", en: "▾ 1 more way" },
   deduceH: { ko: "추론 — 등대 사건: 누가 · 무엇을 · 왜", en: "Deduction — the lighthouse night: who · what · why" },
@@ -880,7 +880,7 @@ const UI = {
   deduceSolved: { ko: "추론 확정 — 세온이 등대 불을 끄게 했다. 밀수선을 들여 마을의 겨울을 사려고. 조각이 모자라도 결론을 내릴 수 있다.", en: "Deduction confirmed — Seon had the light put out, to bring the ship in and buy the village its winter. You can reach a verdict even with fragments missing." },
   deduceLocked: { ko: "조각을 2개 이상 모으면 추론할 수 있다.", en: "Gather two or more fragments to start deducing." },
   deduceWait: { ko: "이 장에서는 이미 확인했다. 다음 장(또는 장을 다시 할 때) 다시.", en: "You already checked in this chapter. Try again next chapter (or when you replay one)." },
-  resultSeen: { ko: "▸ 전에도 이렇게 됐다 — 처음부터 읽기", en: "▸ It went this way before — read it all" },
+  resultSeen: { ko: "▸ 전문 읽기", en: "▸ Full text" },
   forkStairs: { ko: "⤳ 갈림길로: 렌과 마주치는 계단부터", en: "⤳ Jump to the fork: the stairs where you meet Ren" },
   forkRescue: { ko: "⤳ 갈림길로: 3장 수문 앞부터", en: "⤳ Jump to the fork: Ch.3, at the sluice" },
   forkTag: { ko: "다른 쪽을 골라 볼 곳", en: "where you can choose differently" },
@@ -930,7 +930,11 @@ const UI = {
   aboutLead: { ko: "거짓으로 남은 기록을, 당신이 목격한 진실로 고치는 미스터리.", en: "A mystery of false records, corrected with truths you witness." },
   aboutPremise: { ko: "등대는 꺼졌고 어선 세 척이 돌아온다. 오늘 밤의 진실을 보고, 세온의 기록과 대조하라.", en: "The lighthouse is dark and three boats are coming home. Witness tonight's events, then compare them with Seon's account." },
   aboutStart: { ko: "기록에 남길 이름과, 사건에 접근할 방식을 고른다.", en: "Choose the name this record will bear, and how you approach the case." },
-  checkBrief: { ko: "위험한 행동은 주사위로 판정한다. 실패해도 이야기는 이어진다. 자세한 규칙은 위의 ‘숫자 보기’에서.", en: "Risky actions use a die roll. Failure still moves the story forward. Use “Show numbers” above for the detailed rules." },
+  checkBrief: { ko: "위험한 행동은 주사위로 판정한다. 실패해도 이야기는 이어진다.", en: "Risky actions use a die roll. Failure still moves the story forward." },
+  prologueNext: { ko: "다음 →", en: "Next →" },
+  prologueSkip: { ko: "건너뛰기", en: "Skip" },
+  prologuePage: { ko: "도입 {n} / {t}", en: "Opening {n} / {t}" },
+  replayRoutes: { ko: "기록한 지점에서 시작", en: "Start from a recorded point" },
   optionalGoals: { ko: "다시 온 기록관의 선택 목표", en: "Optional goals for a returning recorder" },
   aftermathH: { ko: "판결 뒤, 당신을 기다린 사람", en: "After the verdict, someone waits for you" },
   aftermathAsk: { ko: "말을 건넨다", en: "Speak to them" },
@@ -956,7 +960,7 @@ const UI = {
   scarNone: { ko: "아직 없다. 실패한 판정은 다음 기록의 힘이 된다.", en: "None yet. A failed check becomes strength in your next record." },
   scarLine: { ko: "{s} {d} — 장애물 −{n} · 마지막 흉터: {w}", en: "{s} {d} — checks −{n} · last scar: {w}" },
   noteFrom: { ko: "🩸 제{n}호의 누군가:", en: "🩸 Someone in Record No. {n}:" },
-  noteLeave: { ko: "✎ 이 장면에 다음 모험가를 위한 쪽지 남기기", en: "✎ Leave a note here for the next adventurer" },
+  noteLeave: { ko: "✎ 붉은 쪽지 남기기", en: "✎ Leave a red note" },
   noteSend: { ko: "붉은 쪽지 남기기", en: "Leave the red note" },
   noteSent: { ko: "쪽지를 남겼다. 다음 모험가가 이 장면에서 보게 된다.", en: "Note left. The next adventurer will find it here." },
   noteNoClue: { ko: "(단서 없음)", en: "(no clue)" },
@@ -1390,14 +1394,21 @@ const SCENE_TITLES = {
   ending4: { ko: "에필로그 엔딩", en: "End of the Epilogue" },
   ending3: { ko: "3장 엔딩", en: "End of Ch.3" }
 };
+// The first record opens in three short pages, after the red-ink interaction.
+// Skipping lands on the brief: the objective and motive seed are never skipped.
+const INTRO_PAGES = [
+  bi("폭풍을 피해 들어온 항구 마을, 소금여울.\n\n등대가 사흘째 꺼져 있다. 늙은 등대지기는 응답이 없다.",
+     "You reach the harbor town of Saltmarsh, seeking shelter from the storm.\n\nThe lighthouse has been dark for three days. Its old keeper doesn't answer."),
+  bi("촌장 세온이 낡은 열쇠를 쥐여 준다. 꼬리표에 단정한 글씨 — '등대'.\n\n\"{이름}, 오늘 밤 안에 불을 올리지 못하면, 새벽에 들어오는 어선 셋이 암초로 직행하네.\"",
+     "Seon, the village chief, presses a worn key into your hand. Its tag is neatly lettered: \"Lighthouse.\"\n\n\"{name}, if the light isn't burning by dawn, three fishing boats will sail straight onto the rocks.\""),
+  bi("\"곡식과 약을 실은 배까지 끊기면, 마을은 겨울을 못 넘겨.\" 세온은 열쇠를 놓으며 말한다.\n\n빗속 절벽 길 끝에 꺼진 등대가 서 있다. 새벽 어선 세 척이 오기 전, 불을 올려야 한다.",
+     "\"If the ships carrying grain and medicine stop too, this village won't survive the winter.\" Seon lets go of the key.\n\nThe dark lighthouse stands at the end of the rain-lashed cliff path. You must light it before the three fishing boats arrive at dawn.")
+];
 const SCENES = {
   /* ---------- 제1장 잿빛 등대 ---------- */
   intro: {
     ch: 1,
-    text: {
-      ko: `당신은 폭풍을 피해 항구 마을 소금여울에 들어온 떠돌이 모험가다.\n\n그런데 마을의 등대가 사흘째 꺼져 있다. 등대지기 노인은 응답이 없고, 폭풍은 그칠 기미가 없다.\n\n촌장 세온이 낡은 열쇠를 쥐여 준다. 꼬리표에 단정한 글씨 — '등대'.\n\n"{이름}, 부탁할 사람이 자네뿐이야. 오늘 밤 안에 불을 올리지 못하면, 새벽에 들어오는 어선 셋이 암초로 직행하네."\n\n빗속 절벽 길의 끝 — 잿빛 등대가 죽은 이빨처럼 서 있다.`,
-      en: `You're a wandering adventurer who slipped into the harbor town of Saltmarsh to wait out the storm.\n\nBut the town's lighthouse has stood dark for three days. The old keeper doesn't answer, and the storm won't break.\n\nSeon, the village chief, presses a worn key into your hand. Its tag is lettered in a neat hand: "Lighthouse."\n\n"{name}, you're the only one left to ask. If the light isn't burning by dawn, three fishing boats will sail straight onto the rocks."\n\nAt the end of the rain-lashed cliff path, the ashen lighthouse stands like a dead tooth.`
-    },
+    text: bi(INTRO_PAGES.map(p => p.ko).join("\n\n"), INTRO_PAGES.map(p => p.en).join("\n\n")),
     choices: [{
       label: {
         ko: "등대 문을 연다",
@@ -6865,6 +6876,15 @@ const css = `
 .crpg .objHint p { margin:0 0 10px; line-height:1.7; color:var(--text); }
 .crpg .objHint summary:focus-visible, .crpg .optionalGoals summary:focus-visible, .crpg .aftermathQuestion summary:focus-visible { outline:2px solid var(--gold); outline-offset:3px; }
 .crpg .openingProof { margin:12px 0 24px; color:var(--redText); font-size:15px; line-height:1.7; }
+.crpg .prologueNav { display:flex; align-items:center; gap:12px; margin:22px 0 8px; }
+.crpg .prologueCount { margin-right:auto; color:var(--dim); font-size:13px; }
+.crpg .prologueNav button { min-height:44px; padding:10px 16px; font:inherit; cursor:pointer; border:1px solid var(--line); border-radius:4px; background:var(--panel2); color:var(--text); }
+.crpg .prologueNav .prologueSkip { border-color:transparent; background:none; color:var(--dim); }
+.crpg .prologueNav .prologueNext { color:var(--accent); }
+.crpg .prologueNav button:focus-visible, .crpg .replayRoutes summary:focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
+.crpg .replayRoutes { margin-top:12px; }
+.crpg .replayRoutes summary { min-height:44px; padding:12px 4px; cursor:pointer; color:var(--dim); font-size:14px; }
+.crpg .replayRoutes .choice { margin-top:8px; }
 .crpg .checkBrief, .crpg .optionalGoals { font-size:13px; color:var(--dim); line-height:1.7; }
 .crpg .aftermath { margin:24px 0; padding:22px 18px; border-top:1px solid var(--gold); border-bottom:1px solid var(--line); background:var(--panel); }
 .crpg .aftermath h3 { margin:4px 0 14px; font-size:19px; line-height:1.5; }
@@ -7438,7 +7458,8 @@ function CRPG() {
   const [specialLeft, setSpecialLeft] = useState(2);
   const [breathLeft, setBreathLeft] = useState(1);
   const [tutOpen, setTutOpen] = useState(false);
-  const [tutSeen, setTutSeen] = useState(false);
+  const [tutSeen, setTutSeen] = useState(() => store.get("aduventure_check_seen") === true);
+  const [introStep, setIntroStep] = useState(0);
   const [sfxOn, setSfxOn] = useState(() => (SFX.enabled = store.get("aduventure_sfx") !== false));
   const [lang, setLang] = useState(() => store.get("aduventure_lang") || "ko");
   const [feedbackOpen, setFeedbackOpen] = useState(false);
@@ -7548,15 +7569,12 @@ function CRPG() {
   const pathBeen = seenAtRun.includes(sceneKey) || takenAtRun.some(id => id.startsWith(sceneKey + ":"));
   const pathMark = ch => !pc || runIndex < UNLOCK_AT.paths || !pathBeen || visibleChoices.length < 2 ? null : takenAtRun.includes(narrativeId(ch)) ? "walked" : "fresh";
   const pathOrdered = [...visibleChoices.filter(ch => pathMark(ch) !== "walked"), ...visibleChoices.filter(ch => pathMark(ch) === "walked")];
-  // 정보 과밀 줄이기(pt30, 100명 시뮬·리뷰: confront에 선택지 7개). 4개를 넘으면
-  // 지난 판에서 얻은 것으로 열린 길·안 가 본 길을 먼저 보이고 나머지는 「다른 방법 n개 더」로 접는다.
-  // 탐문 거점(lead가 있는 장면)은 고르는 것 자체가 설계라 접지 않는다.
-  // 순위(pt30 재평가 반영): 탐문에서 약속받은 길(lead 메아리)·판정 없이 확정되는 결과를 가장 먼저,
-  // 그다음 지난 판에서 얻은 길·직업의 길, 안 가 본 길. 그리고 조건 없는 기본 길(대화 우선) 한 자리는 늘 남긴다.
+  // Every narrative hub obeys the same four-action preview. Keep the class route,
+  // earned routes and one ordinary way available; expansion never deletes actions.
   const isPlain = ch => !(ch.echoReq || ch.loreReq || ch.artifactReq || ch.classOnly || ch.caseMin || ch.needFrags);
   const isTalk = ch => /설득|위협|기만|Persuasion|Intimidat|Decept|"/.test(ch.label ? (ch.label.ko || "") + (ch.label.en || "") : "");
-  const choiceRank = ch => (typeof ch.echoReq === "string" && ch.echoReq.startsWith("lead") ? 3 : 0) + (ch.result && !ch.check ? 1 : 0) + (isPlain(ch) ? 0 : 2) + (pathMark(ch) === "fresh" ? 1 : pathMark(ch) === "walked" ? -1 : 0) - (lockedBy(ch).length ? 3 : 0);
-  const choicesCapped = pathOrdered.length > CHOICE_CAP && !pathOrdered.some(ch => ch.lead) && moreOpen !== sceneKey;
+  const choiceRank = ch => (ch.classOnly ? 6 : 0) + (typeof ch.echoReq === "string" && ch.echoReq.startsWith("lead") ? 3 : 0) + (ch.result && !ch.check ? 1 : 0) + (isPlain(ch) ? 0 : 2) + (pathMark(ch) === "fresh" ? 1 : pathMark(ch) === "walked" ? -1 : 0) - (lockedBy(ch).length ? 20 : 0);
+  const choicesCapped = pathOrdered.length > CHOICE_CAP && moreOpen !== sceneKey;
   const shownKeep = (() => {
     if (!choicesCapped) return null;
     const ranked = [...pathOrdered].sort((a, b) => choiceRank(b) - choiceRank(a));
@@ -7564,13 +7582,13 @@ function CRPG() {
     if (!keep.some(isPlain)) {
       const plains = ranked.filter(isPlain);
       const plain = plains.find(isTalk) || plains[0];
-      if (plain) keep[keep.length - 1] = plain;
+      const replaceAt = keep.findLastIndex(ch => !ch.classOnly);
+      if (plain && replaceAt >= 0) keep[replaceAt] = plain;
     }
     return new Set(keep);
   })();
   const shownChoices = choicesCapped ? pathOrdered.filter(ch => shownKeep.has(ch)) : pathOrdered;
-  // 덜어내기(pt23): 기본은 꼬리표 하나 + 쉬움/반반/어려움. '숫자 보기'를 켜면 예전처럼 전부 보인다.
-  const difficulty = ch => { const v = pct(ch); return v >= 70 ? "diffEasy" : v >= 40 ? "diffEven" : "diffHard"; };
+  // Detailed rules remain available through the existing numbers switch.
   // pt39: 잠긴 결정적 선택지는 '무엇이 없는지·어디서 얻는지'까지 말한다(헷갈림 점검).
   const missingNames = ch => lockedBy(ch).map(f => FRAGMENTS[f] ? tx(FRAGMENTS[f].text) + " (" + tx(FRAGMENTS[f].where).split(" · ")[0] + ")" : CLUES[f] ? tx(CLUES[f]) : f).join(" · ");
   const primaryTag = ch => ch.needFrags ? ui("retrialNeed", { n: ch.needFrags.length - lockedBy(ch).length, t: ch.needFrags.length }) + (lockedBy(ch).length ? " — " + ui("needMissing", { list: missingNames(ch) }) : "")
@@ -7583,12 +7601,12 @@ function CRPG() {
     : ch.frag && !lore.includes(ch.frag) ? ui("fragNew")
     : pathMark(ch) ? ui(pathMark(ch) === "fresh" ? "pathFresh" : "pathWalked")
     : null;
-  // 판정 없는 선택은 '걸린 것' 한 줄이 곧 꼬리표다(🦋 단서 길이면 앞에 나비만 붙인다).
-  const simpleTags = ch => {
-    if (!ch.check && ch.stake) return React.createElement("span", { key: "stake", className: "stake" + (ch.needFrags || lockedBy(ch).length ? " lock" : "") }, ch.needFrags || lockedBy(ch).length ? primaryTag(ch) + " \xB7 " : ch.echo ? "\uD83E\uDD8B " : "", ui("stakeLabel"), tx(ch.stake));
-    const parts = [primaryTag(ch), ch.check ? ui(difficulty(ch)) : null].filter(Boolean);
-    return parts.length > 0 && React.createElement("span", { key: "one", className: "tag one" + (ch.check ? " " + difficulty(ch) : "") }, parts.join(" \xB7 "));
-  };
+  // Default: action first. Explain a lock or identify a class action, not its future outcome.
+  const simpleTags = ch => lockedBy(ch).length
+    ? React.createElement("span", { className: "tag one lock" }, primaryTag(ch))
+    : ch.classOnly && CLASSES[ch.classOnly]
+      ? React.createElement("span", { className: "tag one cls" }, CLASSES[ch.classOnly].icon + " " + tx(CLASSES[ch.classOnly].name))
+      : null;
   const pathAll = visibleChoices.length > 1 && visibleChoices.every(ch => pathMark(ch) === "walked");
   let availableIds = [], decisionKind = null;
   if (pc && scene && !rolling && !scene.ending && !scene.gameover) {
@@ -7608,7 +7626,7 @@ function CRPG() {
     }
   }
   const decisionKey = telemetryRun && decisionKind ? telemetryRun.id + ":" + telemetryRun.seq + ":" + sceneKey + ":" + decisionKind : null;
-  const decisionPaused = ownTrialOpen || rolling || tutOpen || feedbackOpen || (pc && hasCheckChoices && !tutSeen && numbersOn);
+  const decisionPaused = ownTrialOpen || rolling || tutOpen || feedbackOpen;
   const decisionData = {
     scene_id: sceneKey, seq: telemetryRun?.seq, kind: decisionKind,
     available_ids: availableIds, lang, rule: ruleKey, class: pc?.classKey,
@@ -7666,9 +7684,6 @@ function CRPG() {
     setTelemetryRun(r => r ? {...r, seq: r.seq + 1} : r);
     return true;
   }
-  useEffect(() => {
-    if (pc && hasCheckChoices && !tutSeen && numbersOn) setTutOpen(true);
-  }, [pc, hasCheckChoices, tutSeen, numbersOn]);
   useEffect(() => {
     // 고른 뒤에는 결과(또는 새 장면의 첫 줄)를 화면 위로 — 휴대폰에서 위아래로 오가지 않게.
     try {
@@ -7739,12 +7754,12 @@ function CRPG() {
     }));
   }, [sfxOn, sceneKey, chapter, pc?.hp, pc?.maxHp, enemyIntent, enemy?.done, enemy?.playerDown]);
   // 자동 저장 — 안정적인 서사 장면에서만 진행 상태를 보관한다.
-  // (전투·판정 중·마지막 엔딩·게임오버·첫 인트로는 제외 → 복원 시 선택지 화면이나 장 끝 화면으로 복귀)
+  // 전투·판정 중·마지막 엔딩·게임오버는 제외. 도입부는 읽던 페이지도 저장한다.
   // pt35: 장 끝(1·2·3장, 사건 2의 1·2장)은 저장한다 — 한 장씩 끊어 하고 다음에 「이어서 하기」로 그 자리에서 잇는다.
   useEffect(() => {
     if (!pc || !scene) return;
     if (scene.combat || scene.gameover || scene.ending && !MID_ENDINGS.includes(scene.ending)) return;
-    if (rolling || pending || sceneKey === "intro") return;
+    if (rolling || pending) return;
     const snapshot = {
       v: 1,
       pc,
@@ -7756,13 +7771,14 @@ function CRPG() {
       breathLeft,
       ruleKey,
       tutSeen,
+      introStep,
       runNo: runNo || undefined,
       telemetry: telemetryRun ? {id: telemetryRun.id, seq: telemetryRun.seq} : undefined,
       savedAt: Date.now()
     };
     store.set(SAVE_KEY, snapshot);
     setSavedGame(snapshot);
-  }, [sceneKey, pc, flags, stats, fate, specialLeft, breathLeft, ruleKey, tutSeen, rolling, pending, telemetryRun]);
+  }, [sceneKey, pc, flags, stats, fate, specialLeft, breathLeft, ruleKey, tutSeen, introStep, rolling, pending, telemetryRun]);
   // 회차가 끝나면(엔딩·게임오버) 이어하기 기록을 비운다. 엔딩 도감(badges)은 별도로 영구 보관된다.
   useEffect(() => {
     if (pc && scene && scene.ending === 4) {
@@ -7857,6 +7873,7 @@ function CRPG() {
   }
   function pickClass(key) {
     const c = CLASSES[key];
+    setIntroStep(0);
     const run = newTelemetryRun(restartFrom.current);
     setTelemetryRun(run);
     emitTelemetry("run_start", run, {scene_id: "intro", lang, rule: ruleKey, class: key, reason: restartFrom.current ? "restart" : "new", previous_run_id: restartFrom.current || undefined, opening: opening || undefined, record_no: recordNo});
@@ -8013,6 +8030,7 @@ function CRPG() {
   }
   function resolveCheck(choice, fateAvail) {
     setTutSeen(true);
+    store.set("aduventure_check_seen", true);
     setRolling(true);
     setShowCalc(false);
     SFX.dice();
@@ -8379,6 +8397,7 @@ function CRPG() {
       restartFrom.current = null;
     } else setTelemetryRun(null);
     setSceneKey(toScene || "intro");
+    setIntroStep(0);
     setRolling(false);
     setRollFace(null);
     setLastResult(null);
@@ -8443,7 +8462,9 @@ function CRPG() {
     setFate(typeof s.fate === "number" ? s.fate : 1);
     setSpecialLeft(typeof s.specialLeft === "number" ? s.specialLeft : 2);
     setBreathLeft(typeof s.breathLeft === "number" ? s.breathLeft : 1);
-    setTutSeen(!!s.tutSeen);
+    setTutSeen(!!s.tutSeen || store.get("aduventure_check_seen") === true);
+    if (s.tutSeen) store.set("aduventure_check_seen", true);
+    setIntroStep(Number.isInteger(s.introStep) ? Math.max(0, Math.min(INTRO_PAGES.length - 1, s.introStep)) : 0);
     setEnemy(null);
     setEnemyIntent(null);
     setTrapUsed(false);
@@ -8489,7 +8510,13 @@ function CRPG() {
     try { if (sfxOn) { if (n === 3) { SFX.good(); SFX.cue("pen"); } else SFX.bad(); } } catch (e) {}
     emitTelemetry("deduction", telemetryRun, { scene_id: sceneKey, right: n, lang });
   }
-  const collapsed = !!pc && !!scene?.text && seenAtRun.includes(sceneKey) && expanded !== sceneKey;
+  const introPaged = !!pc && sceneKey === "intro" && runIndex === 0 && !seenAtRun.includes("intro");
+  const introLast = introStep === INTRO_PAGES.length - 1;
+  const sceneText = introPaged ? INTRO_PAGES[introStep] : scene?.text;
+  const collapsed = !introPaged && !!pc && !!scene?.text && seenAtRun.includes(sceneKey) && expanded !== sceneKey;
+  const narrativeParagraphs = collapsed
+    ? [(sceneKey === "intro" ? fmt(tx(INTRO_PAGES[INTRO_PAGES.length - 1]), pc) : fmt(tx(sceneText), pc).split("\n\n")[0]) + " …"]
+    : fmt(tx(sceneText), pc).split("\n\n");
   const forks = sceneKey === "intro" ? ["stairs", "rescue"].filter(k => seenAtRun.includes(k)) : [];
   const disruptMove = pc && looterDisruptFor(pc.classKey);
   if (ownTrialOpen) return React.createElement("div", {className:"crpg"},
@@ -8621,7 +8648,7 @@ function CRPG() {
   }), pc && SCENE_TITLES[sceneKey] && React.createElement("div", {
     key: "loc" + sceneKey,
     className: "locCard"
-  }, React.createElement("span", { className: "locPlace" }, "\uD83D\uDCCD " + tx(SCENE_TITLES[sceneKey])), React.createElement("span", { className: "locCh" }, chapterTitle), SCENE_DOING[sceneKey] && React.createElement("span", { className: "locDoing" }, tx(SCENE_DOING[sceneKey])))), tutOpen && /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("span", { className: "locPlace" }, "\uD83D\uDCCD " + tx(SCENE_TITLES[sceneKey])), SCENE_DOING[sceneKey] && React.createElement("span", { className: "locDoing" }, tx(SCENE_DOING[sceneKey])))), tutOpen && /*#__PURE__*/React.createElement("div", {
     className: "tut"
   }, /*#__PURE__*/React.createElement("h4", null, ui("rulesTitle"), " \u2014 ", tx(rules.name)), (rules.tutorial[lang] || rules.tutorial.ko).map((line, i) => /*#__PURE__*/React.createElement("p", {
     key: i
@@ -8634,6 +8661,7 @@ function CRPG() {
     onClick: () => {
       setTutOpen(false);
       setTutSeen(true);
+      store.set("aduventure_check_seen", true);
     }
   }, ui("rulesGot"))), !pc && !opening && React.createElement("div", {
     className: "scene opening"
@@ -8661,9 +8689,7 @@ function CRPG() {
       const rec = officialRecord("opening", [], recordNo, verdict);
       return { ...rec, struck: rec.lines.findIndex(l => l.en.includes("The name was not recorded")), rebut: ui_bi("openingCorrection"), stamp: ui_bi("objStamp") };
     })(), pc: null, lang
-  }), opening === "lie" && React.createElement("p", { className: "openingProof", role: "status" }, ui("openingProof")), React.createElement("div", {
-    className: "about"
-  }, React.createElement("p", null, ui("aboutLead")), React.createElement("p", null, ui("aboutPremise")), React.createElement("p", null, ui("aboutStart"))), savedGame && savedGame.pc && /*#__PURE__*/React.createElement("button", {
+  }), opening === "lie" && React.createElement("p", { className: "openingProof", role: "status" }, ui("openingProof")), savedGame && savedGame.pc && /*#__PURE__*/React.createElement("button", {
     className: "continueBtn",
     onClick: continueGame,
     title: lang === "en" ? "Resume your saved run" : "\uC800\uC7A5\uB41C \uBAA8\uD5D8\uC744 \uC774\uC5B4\uC11C \uD55C\uB2E4"
@@ -8829,12 +8855,12 @@ function CRPG() {
   }, SCENE_CAST[sceneKey].map(id => React.createElement("span", {
     key: id,
     className: "castChip"
-  }, PORTRAITS[id] ? portraitImage(id, tx) : CAST[id].mark + " ", React.createElement("span", { className: "castInfo" }, React.createElement("b", null, tx(CAST[id].name)), React.createElement("span", { className: "castRole" }, tx(CAST[id].role)))))), pc && banterFor(sceneKey, flags, runNo) && React.createElement("p", {
+  }, PORTRAITS[id] ? portraitImage(id, tx) : CAST[id].mark + " ", React.createElement("span", { className: "castInfo" }, React.createElement("b", null, tx(CAST[id].name)), React.createElement("span", { className: "castRole" }, tx(CAST[id].role)))))), pc && !introPaged && banterFor(sceneKey, flags, runNo) && React.createElement("p", {
     className: "banter"
   }, "\u201C" + tx(banterFor(sceneKey, flags, runNo).text) + "\u201D", React.createElement("span", { className: "banterWho" }, " \u2014 " + tx(CAST[banterFor(sceneKey, flags, runNo).who].name))), (ECHOES[sceneKey] || []).filter(e => flags.includes(e.req)).map((e, i) => /*#__PURE__*/React.createElement("div", {
     key: "echo" + i,
     className: "echoBanner"
-  }, /*#__PURE__*/React.createElement("span", {
+  }, numbersOn && /*#__PURE__*/React.createElement("span", {
     className: "echo-h"
   }, lang === "en" ? "\uD83E\uDD8B Ripples of a past choice" : "\uD83E\uDD8B \uC9C0\uB09C \uC120\uD0DD\uC758 \uC5EC\uD30C"), /*#__PURE__*/React.createElement("span", {
     className: "echo-t"
@@ -8842,18 +8868,21 @@ function CRPG() {
     className: "narr",
     "data-stage": revealed === sceneKey ? "instant" : "staged",
     onClick: () => setRevealed(sceneKey)
-  }, (collapsed ? [fmt(tx(scene.text), pc).split("\n\n")[0] + " …"] : fmt(tx(scene.text), pc).split("\n\n")).flatMap((para, i) => [i > 0 ? "\n\n" : null, React.createElement("span", {
+  }, narrativeParagraphs.flatMap((para, i) => [i > 0 ? "\n\n" : null, React.createElement("span", {
     key: sceneKey + "p" + i,
     className: "para",
     style: { animationDelay: Math.min(i * 0.8, 3.2) + "s" }
-  }, para)]).filter(x => x !== null)), sceneKey === "c2_hall" && React.createElement("div", {
+  }, para)]).filter(x => x !== null)), introPaged && React.createElement("div", { className: "prologueNav" },
+    React.createElement("span", { className: "prologueCount", role: "status" }, ui("prologuePage", { n: introStep + 1, t: INTRO_PAGES.length })),
+    !introLast && React.createElement("button", { className: "prologueSkip", onClick: () => { setIntroStep(INTRO_PAGES.length - 1); setRevealed("intro"); } }, ui("prologueSkip")),
+    !introLast && React.createElement("button", { className: "prologueNext", onClick: () => { setIntroStep(i => Math.min(INTRO_PAGES.length - 1, i + 1)); setRevealed("intro"); } }, ui("prologueNext"))), sceneKey === "c2_hall" && React.createElement("div", {
     className: "hallExtra"
-  }, React.createElement("p", { className: "bigLine", style: { animation: "inkIn 1.6s ease both", animationDelay: revealed === sceneKey ? "0s" : (fmt(tx(scene.text), pc).split("\n\n").length - 1) * 0.8 + 0.6 + "s" } }, ui("c2Hall", { a: RECORD_FIRST, b: Math.max(RECORD_FIRST, runNo || RECORD_FIRST) })), notes && Object.values(notes).flat().length > 0 && React.createElement("p", null, ui("c2Notes"), Object.values(notes).flat().slice(0, 3).map((n, i) => React.createElement("span", { key: i, className: "redhand small" }, " " + noteText(n, lang))))), collapsed && React.createElement("button", {
+  }, React.createElement("p", { className: "bigLine", style: { animation: "inkIn 1.6s ease both", animationDelay: revealed === sceneKey ? "0s" : (fmt(tx(sceneText), pc).split("\n\n").length - 1) * 0.8 + 0.6 + "s" } }, ui("c2Hall", { a: RECORD_FIRST, b: Math.max(RECORD_FIRST, runNo || RECORD_FIRST) })), notes && Object.values(notes).flat().length > 0 && React.createElement("p", null, ui("c2Notes"), Object.values(notes).flat().slice(0, 3).map((n, i) => React.createElement("span", { key: i, className: "redhand small" }, " " + noteText(n, lang))))), collapsed && React.createElement("button", {
     className: "expandBtn",
     onClick: () => setExpanded(sceneKey)
   }, ui("seenExpand")), sceneKey === "intro" && pc && runIndex > 0 && React.createElement("details", { className: "optionalGoals" }, React.createElement("summary", null, ui("optionalGoals")), React.createElement(GoalBox, { ids: goalsFor(runNo), flags, ui, tx })), sceneKey === "intro" && pc && UNLOCK_LINES[runIndex] && React.createElement("p", {
     className: "unlockLine"
-  }, tx(UNLOCK_LINES[runIndex])), pc && hasCheckChoices && !tutSeen && !numbersOn && React.createElement("p", { className: "checkBrief" }, ui("checkBrief")), notesShown && (notes[sceneKey] || []).map((n, i) => React.createElement("div", {
+  }, tx(UNLOCK_LINES[runIndex])), pc && hasCheckChoices && !tutSeen && React.createElement("p", { className: "checkBrief" }, ui("checkBrief")), notesShown && (notes[sceneKey] || []).map((n, i) => React.createElement("div", {
     key: "note" + i,
     className: "noteCard"
   }, React.createElement("span", { className: "noteFrom" }, ui("noteFrom", { n: n.no || "?" })), React.createElement("span", { className: "noteText" }, noteText(n, lang)))), notesShown && !notedScenes.includes(sceneKey) && (noteOpen ? React.createElement("div", {
@@ -8881,13 +8910,13 @@ function CRPG() {
     key: "choices" + sceneKey,
     className: "choices",
     "data-stage": revealed === sceneKey || collapsed ? "instant" : "staged",
-    style: { animationDelay: Math.min(((collapsed ? 1 : fmt(tx(scene.text), pc).split("\n\n").length) - 1) * 0.8 + 0.6 + (sceneKey === "c2_hall" && !collapsed ? 1.4 : 0), 5) + "s" }
+    style: { animationDelay: Math.min(((collapsed ? 1 : fmt(tx(sceneText), pc).split("\n\n").length) - 1) * 0.8 + 0.6 + (sceneKey === "c2_hall" && !collapsed ? 1.4 : 0), 5) + "s" }
   }, pc && timerUnlocked && TIMED_SCENES.includes(sceneKey) && React.createElement("div", {
     className: "duelTimer" + (timerOn && timeLeft != null && timeLeft <= 4 ? " urgent" : "")
   }, timerOn ? [React.createElement("span", { key: "t", className: "timerText" }, ui("timerLeft", { n: timeLeft == null ? timerTotal : Math.max(0, timeLeft) })), React.createElement("span", { key: "b", className: "timerBar" }, React.createElement("i", { style: { width: (timeLeft == null ? 100 : Math.max(0, timeLeft) / timerTotal * 100) + "%" } }))] : React.createElement("span", { className: "timerText" }, ui("timerOffNote")), React.createElement("button", {
     className: "timerToggle",
     onClick: () => setTimerOn(v => { store.set("aduventure_timer", !v); return !v; })
-  }, timerOn ? ui("timerOff") : ui("timerOn"))), pathAll && React.createElement("p", { className: "pathNote" }, ui("pathAllWalked")), shownChoices.map(ch => /*#__PURE__*/React.createElement("button", {
+  }, timerOn ? ui("timerOff") : ui("timerOn"))), pathAll && React.createElement("p", { className: "pathNote" }, ui("pathAllWalked")), (!introPaged || introLast) && shownChoices.map(ch => /*#__PURE__*/React.createElement("button", {
     key: narrativeId(ch),
     className: "choice" + (pathMark(ch) ? " " + pathMark(ch) : ""),
     disabled: lockedBy(ch).length > 0,
@@ -8919,7 +8948,7 @@ function CRPG() {
   }, ui("stakeLabel"), tx(ch.stake))] : simpleTags(ch))), choicesCapped && React.createElement("button", {
     className: "moreChoices",
     onClick: () => setMoreOpen(sceneKey)
-  }, pathOrdered.length - shownChoices.length === 1 ? ui("moreChoice1") : ui("moreChoices", { n: pathOrdered.length - shownChoices.length })), forks.map(k => React.createElement("button", {
+  }, pathOrdered.length - shownChoices.length === 1 ? ui("moreChoice1") : ui("moreChoices", { n: pathOrdered.length - shownChoices.length })), (forks.length > 0 || sceneKey === "intro" && (ch1Cleared || badges.some(b => b.startsWith("2")) || verdict?.kind)) && React.createElement("details", { className: "replayRoutes" }, React.createElement("summary", null, ui("replayRoutes")), forks.map(k => React.createElement("button", {
     key: "fork" + k,
     className: "choice fork",
     onClick: () => jumpTo(k)
@@ -8932,12 +8961,7 @@ function CRPG() {
   }, lang === "en" ? "(Ch.2 cleared) Start from Ch.3 \u2192" : "(2\uC7A5 \uD074\uB9AC\uC5B4 \uAE30\uB85D \uC788\uC74C) 3\uC7A5\uBD80\uD130 \uC2DC\uC791\uD55C\uB2E4 \u2192"), sceneKey === "intro" && verdict && verdict.kind && React.createElement("button", {
     className: "choice",
     onClick: () => { if (recordDecision("skip:case2")) { setFlags(f => f.includes(verdict.kind) ? f : [...f, verdict.kind]); goto("c2_intro", verdict.kind); } }
-  }, ui("c2Skip"))), /*#__PURE__*/React.createElement(SuggestBox, {
-    sceneKey: sceneKey,
-    pc: pc,
-    lang: lang,
-    ui: ui
-  })), pc && scene?.combat && enemy && !rolling && !pending && /*#__PURE__*/React.createElement("div", {
+  }, ui("c2Skip"))))), pc && scene?.combat && enemy && !rolling && !pending && /*#__PURE__*/React.createElement("div", {
     className: "scene"
   }, /*#__PURE__*/React.createElement("div", {
     className: "combat"
@@ -9189,7 +9213,7 @@ function CRPG() {
         React.createElement("p", null, ui("portraitCredit")),
         React.createElement("p", null, ui("footer4")),
         React.createElement("p", null, ui("footer2")),
-        React.createElement("p", null, ui("footer3"), BUILD))))));
+        React.createElement("p", null, ui("footer3"), BUILD), pc && React.createElement(SuggestBox, { sceneKey, pc, lang, ui }))))));
 }
 ReactDOM.createRoot(document.getElementById('root')).render(/*#__PURE__*/React.createElement(CRPG, null));
 </script>
