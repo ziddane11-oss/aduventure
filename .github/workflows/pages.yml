@@ -21,6 +21,7 @@ jobs:
         run: |
           mkdir -p _site
           cp index.html _site/index.html
+          cp letter.html _site/letter.html
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site
