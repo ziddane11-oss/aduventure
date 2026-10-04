@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>어두밴처 v0.7.3-pt38</title>
+<title>어두밴처 v0.7.3-pt39</title>
 <style>body{margin:0;background:#0e1420}</style>
 </head>
 <body>
@@ -318,7 +318,7 @@ function(a,b,c){if(!Vd(b))throw Error(n(200));return Wd(null,a,b,!1,c)};Q.unmoun
    GAS 피드백 파이프 — v0.7 재구현 (제안/신호/텔레메트리)
    ============================================================ */
 /* 플레이테스트 빌드 태그 — 테스트 중 버전 구분용. 수정할 때마다 뒤 번호를 올린다. */
-const BUILD = "v0.7.3-pt38";
+const BUILD = "v0.7.3-pt39";
 const GAS_URL = "https://script.google.com/macros/s/AKfycbxFx_m5rhCZmqGoy3JcUUNqEgiObMWNHe9hx-LnZrhzIkfwa9-yJGBWP0lVulptnNQeCQ/exec";
 function gasPost(payload, options = {}) {
   return fetch(GAS_URL, {
@@ -871,6 +871,8 @@ const UI = {
   deduceWhat: { ko: "무엇을", en: "What" },
   deduceWhy: { ko: "왜", en: "Why" },
   deducePick: { ko: "— 고른다 —", en: "— choose —" },
+  deduceHow: { ko: "세 칸을 모두 맞히면 사건이 확정된다 — 조각이 모자라도 판결에서 [고발](진실의 결말)을 고를 수 있다. 확인은 장마다 한 번.", en: "Get all three right and the case is settled — even short on fragments, you can choose [Accuse] (the true ending) at the verdict. One check per chapter." },
+  needMissing: { ko: "없는 것: {list}", en: "missing: {list}" },
   deduceCheck: { ko: "추론을 확인한다 (장마다 한 번)", en: "Check the deduction (once per chapter)" },
   deduceScore: { ko: "셋 중 {n}개가 맞다. 어느 칸인지는 기록이 말해 주지 않는다.", en: "{n} of three are right. The record won't say which." },
   deduceSolved: { ko: "추론 확정 — 세온이 등대 불을 끄게 했다. 밀수선을 들여 마을의 겨울을 사려고. 조각이 모자라도 결론을 내릴 수 있다.", en: "Deduction confirmed — Seon had the light put out, to bring the ship in and buy the village its winter. You can reach a verdict even with fragments missing." },
@@ -919,7 +921,7 @@ const UI = {
   numbersOff: { ko: "숫자 숨기기", en: "Hide numbers" },
   shareSame: { ko: "다른 기록관의 {n}%도 이 길을 택했다.", en: "{n}% of other recorders took this road too." },
   shareRare: { ko: "드문 길 — 다른 기록관의 {n}%만 이 길로 갔다.", en: "A rare road — only {n}% of other recorders came this way." },
-  timerLeft: { ko: "⏳ 망설일 시간 {n}초", en: "⏳ {n}s before you falter" },
+  timerLeft: { ko: "⏳ 망설일 시간 {n}초 — 넘기면 상대가 먼저 움직인다", en: "⏳ {n}s before you falter — then they move first" },
   timerOff: { ko: "⏸ 시간 제한 끄기", en: "⏸ Turn the clock off" },
   timerOffNote: { ko: "시간 제한 꺼짐 — ", en: "Clock off — " },
   timerOn: { ko: "▶ 켜기", en: "▶ Turn it on" },
@@ -6657,6 +6659,7 @@ const css = `
 @keyframes ecStamp { 0% { opacity:0; transform:rotate(-2deg) scale(1.25); } 14% { opacity:1; transform:rotate(-2deg) scale(.97); } 22% { transform:rotate(-2deg) scale(1); } 80% { opacity:1; } 100% { opacity:0; transform:rotate(-2deg) scale(1); } }
 @keyframes ecSeal { 0% { opacity:0; transform:rotate(12deg) scale(2.2); } 100% { opacity:1; transform:rotate(12deg) scale(1); } }
 @media (prefers-reduced-motion: reduce) { .crpg .eyecatch, .crpg .eyecatch * { animation:none !important; } .crpg .eyecatch .ecLine { width:60%; } }
+.crpg .deduceHow { margin:2px 0 10px; color:var(--dim); font-size:13px; line-height:1.6; }
 .crpg .pauseOk { margin:10px 0 0; color:var(--dim); font-size:13px; line-height:1.6; }
 .crpg .endMore { margin:18px 0 6px; border:1px solid var(--line); border-radius:8px; background:var(--panel); }
 .crpg .endMore > summary { min-height:44px; display:flex; align-items:center; flex-wrap:wrap; gap:2px; padding:8px 14px; cursor:pointer; color:var(--dim); font-size:14px; }
@@ -6973,7 +6976,9 @@ function CRPG() {
   const shownChoices = choicesCapped ? pathOrdered.filter(ch => shownKeep.has(ch)) : pathOrdered;
   // 덜어내기(pt23): 기본은 꼬리표 하나 + 쉬움/반반/어려움. '숫자 보기'를 켜면 예전처럼 전부 보인다.
   const difficulty = ch => { const v = pct(ch); return v >= 70 ? "diffEasy" : v >= 40 ? "diffEven" : "diffHard"; };
-  const primaryTag = ch => ch.needFrags ? ui("retrialNeed", { n: ch.needFrags.length - lockedBy(ch).length, t: ch.needFrags.length })
+  // pt39: 잠긴 결정적 선택지는 '무엇이 없는지·어디서 얻는지'까지 말한다(헷갈림 점검).
+  const missingNames = ch => lockedBy(ch).map(f => FRAGMENTS[f] ? tx(FRAGMENTS[f].text) + " (" + tx(FRAGMENTS[f].where).split(" · ")[0] + ")" : CLUES[f] ? tx(CLUES[f]) : f).join(" · ");
+  const primaryTag = ch => ch.needFrags ? ui("retrialNeed", { n: ch.needFrags.length - lockedBy(ch).length, t: ch.needFrags.length }) + (lockedBy(ch).length ? " — " + ui("needMissing", { list: missingNames(ch) }) : "")
     : ch.caseMin && lockedBy(ch).length ? ui("caseMinNeed", { n: caseMinHave(ch), t: ch.caseMin })
     : ch.caseReady && lockedBy(ch).length ? ui("caseReadyNeed")
     : ch.echo ? "\uD83E\uDD8B " + tx(ch.echo)
@@ -7912,7 +7917,7 @@ function CRPG() {
     className: "caseStatus " + (cs.ready ? "ready" : "")
   }, cs.ready ? ui("caseReady") : ui("caseNeed") + cs.missing.map(k => ui(k)).join(" · ")), React.createElement("div", {
     className: "deduce" + (deduce.solved ? " solved" : "")
-  }, React.createElement("h4", null, ui("deduceH")), deduceState === "solved" ? React.createElement("p", { className: "deduceSolved" }, ui("deduceSolved")) : deduceState === "locked" ? React.createElement("p", { className: "pathNote" }, ui("deduceLocked")) : [["who", "deduceWho"], ["what", "deduceWhat"], ["why", "deduceWhy"]].map(([k, label]) => React.createElement("label", { key: k, className: "deduceRow" }, React.createElement("span", null, ui(label)), React.createElement("select", {
+  }, React.createElement("h4", null, ui("deduceH")), deduceState !== "solved" && React.createElement("p", { className: "deduceHow" }, ui("deduceHow")), deduceState === "solved" ? React.createElement("p", { className: "deduceSolved" }, ui("deduceSolved")) : deduceState === "locked" ? React.createElement("p", { className: "pathNote" }, ui("deduceLocked")) : [["who", "deduceWho"], ["what", "deduceWhat"], ["why", "deduceWhy"]].map(([k, label]) => React.createElement("label", { key: k, className: "deduceRow" }, React.createElement("span", null, ui(label)), React.createElement("select", {
     value: deducePick[k],
     disabled: deduceState !== "open",
     "aria-label": ui(label),

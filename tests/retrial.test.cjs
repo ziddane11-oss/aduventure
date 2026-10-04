@@ -90,6 +90,8 @@ test('after a wrongful verdict, plain accusation is gone and the retrial needs b
   const retrial = buttons.find(b => text(b).startsWith('[Retrial]'));
   assert.equal(retrial.props.disabled, true);
   assert.match(text(retrial), /decisive fragments 1\/2/);
+  // pt39: 무엇이 없는지, 어디서 얻는지까지 말한다.
+  assert.match(text(retrial), /missing: S's signature matches the hand on the key tag \(Ch\.3 sluice — choose the evidence\)/);
   retrial.props.onClick();
   assert.equal(half.api().sceneKey, 'accuse', 'A locked retrial does nothing');
   const withdraw = half.choices().find(b => text(b).startsWith('[Withdraw]'));

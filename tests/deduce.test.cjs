@@ -69,6 +69,7 @@ function pick(g, who, what, why) {
 test('the deduction opens after two fragments and tells only how many of three are right', () => {
   assert.match(text(board(game({sceneKey: 'intro', lore: ['f_receipt']}))), /Gather two or more fragments/);
   const g = game({sceneKey: 'intro', lore: ['f_receipt', 'f_window']});
+  assert.match(text(board(g)), /Get all three right and the case is settled — even short on fragments, you can choose \[Accuse\]/, 'pt39: the goal is spelled out');
   pick(g, 'seon', 'sell', 'ship');
   assert.match(text(board(g)), /2 of three are right\. The record won't say which/);
   assert.match(text(board(g)), /You already checked in this chapter/);
@@ -107,7 +108,7 @@ test('the answer is the story: Seon ordered the light out to bring the ship in; 
   const all = JSON.parse(g.run('JSON.stringify(["who","what","why"].flatMap(k => Object.values(DEDUCE[k])))'));
   assert.equal(all.length, 12);
   for (const t of all) assert.ok(HANGUL.test(t.ko) && t.en && !HANGUL.test(t.en), JSON.stringify(t));
-  for (const k of ['deduceH', 'deduceCheck', 'deduceScore', 'deduceSolved', 'deduceLocked', 'deduceWait']) {
+  for (const k of ['deduceH', 'deduceHow', 'needMissing', 'deduceCheck', 'deduceScore', 'deduceSolved', 'deduceLocked', 'deduceWait']) {
     const t = JSON.parse(g.run(`JSON.stringify(UI.${k})`)); assert.ok(HANGUL.test(t.ko) && !HANGUL.test(t.en), k);
   }
 });
