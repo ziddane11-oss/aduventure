@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>어두밴처 v0.7.3-pt41</title>
+<title>어두밴처 v0.7.3-pt42</title>
 <style>body{margin:0;background:#0e1420}</style>
 </head>
 <body>
@@ -318,7 +318,7 @@ function(a,b,c){if(!Vd(b))throw Error(n(200));return Wd(null,a,b,!1,c)};Q.unmoun
    GAS 피드백 파이프 — v0.7 재구현 (제안/신호/텔레메트리)
    ============================================================ */
 /* 플레이테스트 빌드 태그 — 테스트 중 버전 구분용. 수정할 때마다 뒤 번호를 올린다. */
-const BUILD = "v0.7.3-pt41";
+const BUILD = "v0.7.3-pt42";
 const GAS_URL = "https://script.google.com/macros/s/AKfycbxFx_m5rhCZmqGoy3JcUUNqEgiObMWNHe9hx-LnZrhzIkfwa9-yJGBWP0lVulptnNQeCQ/exec";
 function gasPost(payload, options = {}) {
   return fetch(GAS_URL, {
@@ -6995,7 +6995,378 @@ const css = `
   .crpg .castInfo b { font-size:18px; }
   .crpg button.choice { padding:14px 15px; font-size:17px; }
 }
+/* pt42: the report is both a document and a set of permissions. */
+.crpg .or-entry { display:block; width:100%; text-align:left; margin:0 0 22px; padding:15px 18px; border:1px solid #655044; border-left:3px solid var(--redText); background:#241c18; color:var(--text); font-family:inherit; font-size:16px; font-weight:600; line-height:1.6; cursor:pointer; }
+.crpg .or-shell { width:100%; max-width:760px; }
+.crpg .or-nav { position:sticky; top:0; z-index:4; background:var(--ink); display:flex; justify-content:space-between; gap:16px; padding:20px 0; border-bottom:1px solid var(--line); }
+.crpg .or-nav button { border:0; background:none; color:var(--dim); font:inherit; font-size:13px; min-height:36px; padding:5px 0; cursor:pointer; }
+.crpg .or-nav button:hover { color:var(--text); }
+.crpg .or-brand { padding:25px 0 30px; font-size:17px; color:var(--gold); letter-spacing:.12em; display:flex; align-items:baseline; justify-content:space-between; gap:12px; }
+.crpg .or-brand small { font-size:11px; letter-spacing:.05em; color:var(--dim); }
+.crpg .or-section-head { scroll-margin-top:96px; outline:none; }
+.crpg .or-eyebrow { color:var(--redText); font-size:12px; letter-spacing:.11em; margin-bottom:13px; }
+.crpg .or-main h2 { font-size:clamp(25px,4.5vw,36px); line-height:1.5; letter-spacing:-.035em; font-weight:600; margin:0 0 25px; text-wrap:balance; }
+.crpg .or-main h3 { color:var(--gold); font-size:17px; font-weight:600; margin:0 0 16px; }
+.crpg .or-content { animation:fadeIn .4s ease both; }
+.crpg .or-prose { font-size:17px; line-height:1.95; white-space:pre-line; margin:0 0 26px; word-break:keep-all; overflow-wrap:anywhere; }
+.crpg .or-prose p + p { margin-top:18px; }
+.crpg .or-facts { padding:22px 24px; background:var(--panel); border-top:1px solid var(--line); border-bottom:1px solid var(--line); margin:26px 0; }
+.crpg .or-facts ol { padding-left:23px; font-size:16px; line-height:1.85; }
+.crpg .or-facts li + li { margin-top:13px; }
+.crpg .or-rule { border-left:2px solid var(--gold); padding:4px 0 4px 18px; margin:25px 0 32px; font-size:14px; line-height:1.9; color:var(--dim); }
+.crpg .or-rule strong { color:var(--gold); display:block; margin-bottom:4px; }
+.crpg .or-fields { margin:28px 0; }
+.crpg .or-fields fieldset { border:0; padding:0; margin:0 0 26px; min-width:0; }
+.crpg .or-fields legend { font-size:14px; color:var(--gold); margin-bottom:12px; }
+.crpg .or-option { display:flex; align-items:flex-start; gap:12px; border:1px solid var(--line); background:var(--panel); padding:15px 17px; margin-bottom:8px; cursor:pointer; transition:border-color .15s,background .15s; }
+.crpg .or-option.selected { border-color:#b69d78; background:#2e271f; box-shadow:inset 3px 0 var(--gold); }
+.crpg .or-option input { accent-color:#b44636; margin-top:6px; flex-shrink:0; width:17px; height:17px; }
+.crpg .or-option span { display:block; }
+.crpg .or-option strong { font-weight:400; font-size:17px; line-height:1.65; }
+.crpg .or-option small { display:block; font-size:13px; line-height:1.7; color:var(--dim); margin-top:5px; }
+.crpg .or-paper { position:relative; color:#302920; background:linear-gradient(115deg,#e1d3b9,#ede4d1 56%,#dccdaf); padding:28px 34px; margin:22px 0; box-shadow:0 7px 28px #0005; border:1px solid #bcb097; overflow-wrap:anywhere; }
+.crpg .or-paper::before { content:""; position:absolute; left:10px; top:21px; width:5px; height:5px; border-radius:50%; background:#5b5048; box-shadow:0 16px 0 #5b5048; }
+.crpg .or-paper-head { display:flex; justify-content:space-between; align-items:center; gap:12px; border-bottom:1px solid #a6967c; padding-bottom:13px; margin-bottom:18px; font-size:12px; letter-spacing:.08em; }
+.crpg .or-folio { font-family:'IBM Plex Mono',monospace; font-size:23px; color:#7f705b; }
+.crpg .or-lines { padding-left:22px; font-size:18px; line-height:1.85; }
+.crpg .or-lines li { padding:5px 0 8px; }
+.crpg .or-lines li::marker { font-size:12px; color:#7b6953; }
+.crpg .or-lines del { text-decoration-color:#a52d24; text-decoration-thickness:2px; }
+.crpg .or-lines ins { display:block; text-decoration:none; color:#922a21; font-weight:600; border-left:2px solid #aa362a; padding-left:10px; margin-top:5px; }
+.crpg .or-signature { display:flex; align-items:baseline; justify-content:flex-end; gap:16px; padding-top:16px; margin-top:19px; border-top:1px solid #a6967c; }
+.crpg .or-signature span { font-size:11px; letter-spacing:.12em; }
+.crpg .or-signature strong { font-size:21px; font-weight:600; max-width:78%; overflow-wrap:anywhere; }
+.crpg .or-sign-input { display:block; color:var(--gold); font-size:14px; margin:22px 0 18px; }
+.crpg .or-sign-input input { display:block; width:100%; margin-top:10px; background:var(--panel); color:var(--text); border:1px solid var(--line); border-bottom:2px solid var(--gold); padding:14px 16px; font:inherit; font-size:19px; border-radius:0; }
+.crpg .or-button { display:block; width:100%; min-height:52px; padding:14px 20px; margin:17px 0 10px; border:1px solid var(--line); background:var(--panel); color:var(--text); font-family:inherit; font-size:16px; line-height:1.7; cursor:pointer; text-align:left; }
+.crpg .or-button.primary { background:#dcc5a0; border-color:#dcc5a0; color:#231b15; font-weight:600; }
+.crpg .or-button:disabled { background:#28241f; border-color:#51483c; color:#aaa093; cursor:not-allowed; }
+.crpg .or-button:not(:disabled):hover,.crpg .or-route:hover { border-color:var(--gold); }
+.crpg .or-shell button:focus-visible,.crpg .or-shell input:focus-visible,.crpg .or-shell summary:focus-visible,.crpg .or-entry:focus-visible { outline:2px solid var(--gold); outline-offset:4px; }
+.crpg .or-caption { color:var(--dim); font-size:13px; line-height:1.8; margin:8px 0 18px; }
+.crpg .or-seal { display:inline-block; border:2px solid #b44133; color:#e47966; padding:7px 14px; font-size:13px; letter-spacing:.1em; transform:rotate(-3deg); margin:0 0 24px; }
+.crpg .or-turn-paper { animation:or-turn .65s ease both; transform-origin:50% 50%; }
+.crpg .or-routes { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:25px 0; }
+.crpg .or-route { border:1px solid #75634c; border-top:2px solid var(--gold); background:#29221c; color:var(--text); padding:17px; font-family:inherit; text-align:left; cursor:pointer; }
+.crpg .or-route strong { display:block; font-size:16px; line-height:1.65; font-weight:600; }
+.crpg .or-route small { display:block; margin-top:9px; font-size:13px; color:var(--dim); line-height:1.7; }
+.crpg .or-route.blocked { border-color:var(--line); border-top-color:#944237; background:var(--panel); }
+.crpg .or-route.blocked strong::before { content:"× "; color:var(--redText); }
+.crpg .or-notice { padding:20px; border-left:3px solid var(--redText); background:#291c18; line-height:1.8; }
+.crpg .or-notice > strong { display:block; color:var(--redText); font-size:13px; margin-bottom:8px; }
+.crpg .or-notice .or-signature { border-color:var(--line); }
+.crpg .or-petition h3 { color:#403327; font-size:20px; padding-bottom:16px; border-bottom:1px solid #a6967c; }
+.crpg .or-petition .or-prose { font-size:17px; margin-bottom:0; }
+.crpg .or-reveal { padding:24px 0; border-top:1px solid var(--line); }
+.crpg .or-reveal .or-prose { color:var(--gold); }
+.crpg .or-reveal blockquote,.crpg .or-rule-echo { padding-left:18px; border-left:2px solid var(--redText); font-size:14px; color:var(--dim); line-height:1.9; margin:0 0 28px; }
+.crpg .or-outcomes { list-style:none; padding:0; font-size:16px; line-height:1.9; margin:0 0 32px; }
+.crpg .or-outcomes li { border-bottom:1px solid var(--line); padding:14px 0 14px 19px; position:relative; }
+.crpg .or-outcomes li::before { content:"·"; position:absolute; left:2px; color:var(--gold); }
+.crpg .or-last-line { white-space:pre-line; font-size:21px; line-height:1.85; color:var(--gold); margin:30px 0; }
+.crpg .or-last-line p + p { margin-top:15px; }
+.crpg .or-preview,.crpg .or-previous { margin:20px 0; color:var(--dim); font-size:14px; line-height:1.8; }
+.crpg .or-preview summary,.crpg .or-previous summary { cursor:pointer; min-height:40px; padding:8px 0; color:var(--gold); }
+.crpg .or-footer { display:flex; justify-content:space-between; flex-wrap:wrap; gap:12px; border-top:1px solid var(--line); color:var(--dim); font-size:11px; padding-top:20px; margin-top:38px; }
+@keyframes or-turn { from { opacity:0; transform:perspective(900px) rotateY(-14deg) translateY(12px); } to { opacity:1; transform:none; } }
+@media (max-width:560px) {
+  .crpg .or-brand { display:block; padding:22px 0; }
+  .crpg .or-brand small { display:block; margin-top:8px; }
+  .crpg .or-routes { grid-template-columns:1fr; }
+  .crpg .or-paper { padding:23px 23px 23px 26px; }
+  .crpg .or-lines { font-size:17px; padding-left:18px; }
+  .crpg .or-facts { padding:20px 17px; }
+  .crpg .or-option { padding:14px 13px; }
+  .crpg .or-last-line { font-size:19px; }
+}
+@media (prefers-reduced-motion:reduce) {
+  .crpg .or-content,.crpg .or-turn-paper { animation:none; }
+}
+
+
 `;
+
+// pt42 — A separately saved, finite experiment. IDs, not translated text, drive every consequence.
+const OWN_RECORD_KEY = "aduventure_own_record_v1";
+const OWN_RECORD_FIELDS = {
+  status: ["refused", "delayed"],
+  identity: ["public", "sealed"],
+  attachment: ["filed", "returned"]
+};
+const OWN_RECORD_COPY = {
+  title: {ko:"반송된 편지",en:"The Returned Letter"},
+  entry: {ko:"새 사건 미리보기 · 반송된 편지",en:"New case preview · The Returned Letter"},
+  subtitle: {ko:"소금여울 기록실 · 별지 07",en:"Saltmarsh Registry · Supplement 07"},
+  exit: {ko:"본편으로 돌아가기",en:"Return to the main game"},
+  saved: {ko:"이 사건은 자동 저장됩니다.",en:"This case saves automatically."},
+  draftRole: {ko:"오전 · 당신은 기록관이다",en:"Morning · You are the clerk"},
+  draftTitle: {ko:"문장은 짧을수록 처리하기 쉽다.",en:"A short sentence is easier to process."},
+  draftIntro: {ko:"촌장 세온이 반송 보고서 한 장을 밀어 놓는다. “배달이 끝나지 않은 이유만 적게. 나머지는 양식대로.” 창구 건너편에서 배달부 핍이 젖은 모자를 움켜쥔다.",en:"Seon slides a return report across your desk. “Just record why the delivery failed. The form will handle the rest.” Across the counter, Pip grips a rain-soaked cap."},
+  factsTitle: {ko:"당신이 직접 확인한 것",en:"What you actually observed"},
+  fact1: {ko:"봉투의 수취인은 등대지기 베른이다. 배달 완료 도장은 없다.",en:"The envelope is addressed to Bern, the lighthouse keeper. There is no delivery stamp."},
+  fact2: {ko:"핍은 말했다. “명부에서 이름이 지워진 사람에게는 배달할 수 없다고 했어요.” 누가 지웠는지, 왜 지웠는지는 확인하지 못했다.",en:"Pip said, “They told me I cannot deliver to someone whose name was removed from the register.” You have not verified who removed it, or why."},
+  fact3: {ko:"봉투에는 봉인된 별지가 딸려 있다. 표제는 ‘명부 정정 신청’. 핍은 베른의 이름이 게시되지 않기를 부탁했다.",en:"A sealed enclosure is attached, headed ‘Petition to Correct the Register.’ Pip asks you not to post Bern’s name publicly."},
+  ruleTitle: {ko:"접수 규정",en:"Filing rules"},
+  rule: {ko:"서명한 본문은 출입 심사에 사용한다. 첨부해 접수한 별지는 본문과 같은 효력을 갖는다. 정정은 원문 아래에 덧붙인다.",en:"The signed report governs admission. An enclosure filed with it has the same standing as the report. Corrections must be appended below the original."},
+  status: {ko:"1. 미배달 사유",en:"1. Reason for non-delivery"},
+  identity: {ko:"2. 수취인 공개 범위",en:"2. Recipient disclosure"},
+  attachment: {ko:"3. 별지 처리",en:"3. Enclosure"},
+  refused: {ko:"배달부 핍은 배달을 거부했다.",en:"The courier Pip refused delivery."},
+  refusedHint: {ko:"업무 거부로 분류 · 배달 자격 정지",en:"Classify as refusal · suspend courier credentials"},
+  delayed: {ko:"배달부 핍의 배달은 지연되었다.",en:"The courier Pip's delivery was delayed."},
+  delayedHint: {ko:"원인 미확정으로 분류 · 배달 자격 유지",en:"Cause unconfirmed · retain courier credentials"},
+  public: {ko:"수취인 베른의 이름을 공개한다.",en:"Publish Bern's name as the recipient."},
+  publicHint: {ko:"실명 증인 창구 이용 가능 · 이름이 공시됨",en:"Allow the named-witness desk · expose the name publicly"},
+  sealed: {ko:"수취인의 이름을 봉인한다.",en:"Keep the recipient's name under seal."},
+  sealedHint: {ko:"이름 보호 · 공개 명부로 신원 확인 불가",en:"Protect the name · no identification through the public register"},
+  filed: {ko:"봉인된 별지를 첨부해 접수한다.",en:"File the sealed enclosure with this report."},
+  filedHint: {ko:"봉인을 유지한 채 정식 접수 · 심사 대상으로 남음",en:"Keep it sealed and formally filed · it must be reviewed"},
+  returned: {ko:"봉인된 별지를 배달부에게 돌려준다.",en:"Return the sealed enclosure to the courier."},
+  returnFiledHint: {ko:"원본을 돌려주되, 이미 남은 접수 이력과 심사 대상 지위는 유지됨",en:"Return the original; its filing history and standing for review remain"},
+  petitionReturnedAfter: {ko:"별지 원본은 돌려주었다. 하지만 오전의 접수 이력은 남는다. 베른의 신청은 여전히 심사 대상이다.",en:"The original enclosure is returned, but its morning filing remains on record. Bern’s petition is still entitled to review."},
+  language: {ko:"English",en:"한국어"},
+  returnedHint: {ko:"서류를 당사자에게 반환 · 이 창구에서는 접수하지 않음",en:"Return the document to its bearer · do not file it here"},
+  preview: {ko:"서명 전 미리보기",en:"Review before signing"},
+  blank: {ko:"문장을 선택해 주세요.",en:"Choose a sentence."},
+  signature: {ko:"서명",en:"Signature"},
+  signatureHint: {ko:"기록에 남길 이름",en:"The name to leave on this record"},
+  sign: {ko:"이 문장들에 서명한다",en:"Sign these sentences"},
+  signHelp: {ko:"세 문장을 고르고 이름을 적으면 서명할 수 있습니다.",en:"Choose all three sentences and enter a name to sign."},
+  signed: {ko:"서명 완료 · 원본 보존",en:"Signed · original retained"},
+  original: {ko:"원본 · 별지 07",en:"Original · Supplement 07"},
+  stamped: {ko:"접수",en:"FILED"},
+  turnRole: {ko:"같은 날 오후",en:"That afternoon"},
+  turnTitle: {ko:"종이의 반대편.",en:"The other side of the paper."},
+  turnText: {ko:"펜의 감촉이 사라진다. 손에는 젖은 모자가 들려 있다.\n\n당신은 배달부 핍이다. 기록실 문 앞, 유리 밑에 낯익은 보고서가 끼워져 있다. 오전에 당신이 고른 문장. 당신이 남긴 서명.",en:"The pen is gone. A wet cap rests in your hands.\n\nYou are Pip, the courier. At the registry door, a familiar report sits under glass. The sentences you chose that morning. The signature you left."},
+  turn: {ko:"내가 서명한 문 앞에 선다",en:"Stand before the door I signed"},
+  courierRole: {ko:"오후 · 당신은 배달부 핍이다",en:"Afternoon · You are Pip"},
+  courierTitle: {ko:"이 문은 당신의 문장을 읽는다.",en:"This door reads your sentences."},
+  courierText: {ko:"베른은 살아 있다. 다만 명부에는 없다. 이름을 되돌려 달라는 신청서를 전해야 한다. 문지기는 유리 밑 보고서를 가리킨다. “통과할 근거가 있으면 보여 줘.”",en:"Bern is alive. He is simply absent from the register. You must deliver his petition to restore his name. The attendant points to the report under the glass. “Show me your grounds for admission.”"},
+  accessLabel: {ko:"출입 심사의 근거 · 당신이 서명한 원문",en:"Grounds for admission · your signed original"},
+  badgeRoute: {ko:"배달증을 내민다",en:"Present the courier badge"},
+  witnessRoute: {ko:"베른을 실명 증인으로 부른다",en:"Call Bern as a named witness"},
+  appendixRoute: {ko:"별지 접수 내역을 제시한다",en:"Present the enclosure filing"},
+  copyRoute: {ko:"서류를 다시 펼쳐 볼 곳을 찾는다",en:"Find a place to unfold the papers"},
+  badgeOpen: {ko:"자격이 유지되어 정문으로 들어갈 수 있다.",en:"Your credentials admit you through the front door."},
+  badgeClosed: {ko:"배달 자격 정지. 거부 근거는 위 보고서의 첫 문장이다.",en:"Credentials suspended under the report's first sentence."},
+  witnessOpen: {ko:"베른이 증인 창구로 동행한다. 공개된 이름은 이미 게시되었다.",en:"Bern can accompany you to the witness desk. His name is already posted."},
+  witnessClosed: {ko:"공개 명부에 수취인 이름이 없어 이 창구로는 확인할 수 없다.",en:"This desk cannot identify a recipient whose name is sealed."},
+  appendixOpen: {ko:"접수된 별지의 당사자로서 열람 창구를 이용할 수 있다.",en:"As the bearer of a filed enclosure, you may use the records desk."},
+  appendixClosed: {ko:"이 보고서에 접수된 별지가 없다.",en:"No enclosure is filed with this report."},
+  copyHint: {ko:"베른은 창구 밖에서 기다린다. 이 길에는 허가가 필요 없다.",en:"Bern is waiting outside. No admission is required for this route."},
+  locked: {ko:"이 길이 막힌 근거",en:"Why this route is closed"},
+  letterRole: {ko:"베른의 별지",en:"Bern's enclosure"},
+  letterTitle: {ko:"받는 사람이 없어서 반송되었다.",en:"Returned: recipient not found."},
+  routeBadge: {ko:"배달증이 통했다. 당신이 ‘지연’이라고 적은 덕분이다. 안으로 들어가기 전, 베른이 당신을 멈춰 세운다. ‘전하기 전에 자네도 읽어 보게.’",en:"The badge works because you wrote ‘delayed.’ Before you step inside, Bern stops you. ‘Read it yourself before you hand it over.’"},
+  routeWitness: {ko:"게시된 이름으로 베른이 확인된다. 그는 당신을 증인 창구로 데려간다. 줄을 선 사람들이 그의 이름을 이미 읽었다.",en:"The posted name identifies Bern. He brings you to the witness desk. The people in the queue have already read his name."},
+  routeAppendix: {ko:"접수 도장 하나가 문을 열었다. 베른이 열람 창구에 앉아, 자신이 맡긴 별지를 펼친다.",en:"A filing stamp opens the door. At the records desk, Bern unfolds the enclosure he entrusted to you."},
+  routeCopyFiled: {ko:"베른이 담장 그늘에서 기다리고 있다. 접수된 원본 대신, 그가 간직한 사본을 함께 펼친다.",en:"Bern waits in the shade of the wall. Together you unfold the copy he kept of the filed original."},
+  routeCopyReturned: {ko:"베른이 담장 그늘에서 기다리고 있다. 당신 손에 되돌아온 별지의 봉인을 그가 직접 푼다.",en:"Bern waits in the shade of the wall. He breaks the seal on the enclosure returned to your hands."},
+  petitionTitle: {ko:"명부 정정 신청",en:"Petition to Correct the Register"},
+  petitionText: {ko:"신청인: 베른, 등대지기.\n\n나는 살아 있다. 이번 달 명부에서 내 이름이 빠졌다. 창구는 ‘명부에 없는 자의 신청은 받을 수 없다’며 접수를 거부했다.\n\n내 이름을 되찾기 위해, 내 이름이 먼저 필요하다.\n\n이 서류를 받을 수 있는 사람에게 전해 주시오.",en:"Applicant: Bern, lighthouse keeper.\n\nI am alive. My name is missing from this month's register. The desk refused my petition: ‘Applications from unregistered persons cannot be accepted.’\n\nTo recover my name, I must first have my name.\n\nPlease deliver this to someone who is allowed to receive it."},
+  letterAfter: {ko:"베른이 묻는다. “자네가 들어갈 문은 찾았나? 내 신청서가 들어갈 자리는?”\n\n오전에 본 사실은 달라지지 않았다. 배달은 끝나지 않았고, 별지에는 ‘명부 정정 신청’이라고 적혀 있었다.",en:"Bern asks, “Did you find a door for yourself? And a place for my petition?”\n\nNone of the morning's facts have changed. The delivery was unfinished. The enclosure was headed ‘Petition to Correct the Register.’"},
+  filedReveal: {ko:"접수증을 뒤집는다. 별지 접수 시각은 지금이 아니다. 당신이 오전에 서명한 시각이다.\n\n베른이 문을 통과하기도 전에, 그의 신청서는 이미 들어가 있었다.",en:"You turn over the receipt. The enclosure was not filed just now. It was filed when you signed that morning.\n\nBefore Bern could pass through the door, his petition was already inside."},
+  returnedReveal: {ko:"접수증의 별지 칸은 비어 있다. 신청서는 당신에게 돌아왔고, 베른은 여전히 ‘신청한 적 없는 사람’이다.\n\n오전의 세 번째 문장은 종이를 어디에 둘지 정하는 문장이었다. 동시에, 이 사람이 신청한 것으로 인정할지를 정했다.",en:"The enclosure box on the receipt is empty. The petition came back to you. Officially, Bern has never applied.\n\nYour third sentence decided where to put a piece of paper. It also decided whether this person had applied at all."},
+  review: {ko:"이 보고서를 서명한 사람에게 돌려보낸다",en:"Return the report to its signer"},
+  reviewRole: {ko:"다시, 기록관의 책상",en:"Back at the clerk's desk"},
+  reviewTitle: {ko:"그 서명은 여전히 당신 것이다.",en:"The signature is still yours."},
+  reviewText: {ko:"핍이 보고서를 내려놓는다. 종이는 오전과 같다. 달라진 것은 당신이 그 문장 뒤에서 살아 보았다는 것뿐이다.\n\n고칠 문장만 바꾸어라. 원문과 서명은 남는다. 이미 공개한 이름을 본 사람들의 기억까지 지울 수는 없다.",en:"Pip places the report on your desk. It is the same paper. You have now lived on the other side of its sentences.\n\nChange only what you wish to correct. The original and its signature remain. You cannot erase a published name from the minds of those who read it."},
+  correction: {ko:"정정안",en:"Proposed correction"},
+  maintain: {ko:"원문을 유지한다",en:"Keep the original"},
+  maintainHint: {ko:"원래 세 문장의 효력을 그대로 남긴다.",en:"Leave all three original provisions in force."},
+  amend: {ko:"바꾼 문장에 다시 서명한다",en:"Sign the changed sentences"},
+  amendHint: {ko:"적어도 한 문장을 바꾸면 정정할 수 있다.",en:"Change at least one sentence to file a correction."},
+  defer: {ko:"판단을 유보하고 자격 정지를 보류한다",en:"Defer judgment and stay the suspension"},
+  deferHint: {ko:"정지된 배달 자격을 임시로 회복한다. 이름 공개와 별지 접수 상태는 원문대로 남는다.",en:"Temporarily restore any suspended credentials. Keep the original disclosure and filing decisions."},
+  reread: {ko:"별지를 다시 읽는다",en:"Read the enclosure again"},
+  endRole: {ko:"별지 07 · 처리 결과",en:"Supplement 07 · Disposition"},
+  endTitle: {ko:"문장은 남고, 길은 달라졌다.",en:"The sentences remain. The paths have changed."},
+  maintained: {ko:"원문 유지",en:"ORIGINAL UPHELD"},
+  amended: {ko:"정정 기록",en:"CORRECTION FILED"},
+  deferred: {ko:"판단 유보",en:"JUDGMENT DEFERRED"},
+  badgeYes: {ko:"핍의 배달 자격이 유지된다.",en:"Pip retains his courier credentials."},
+  badgeNo: {ko:"핍의 배달 자격은 정지된 채 남는다.",en:"Pip's courier credentials remain suspended."},
+  badgeTemporary: {ko:"심사가 끝날 때까지 핍에게 임시 배달 자격이 주어진다.",en:"Pip receives temporary credentials until the review concludes."},
+  petitionYes: {ko:"베른의 신청이 정식 기록 안에 들어갔다. 이름 복구는 아직 심사 중이지만, 이제 ‘신청한 적 없다’고 처리할 수는 없다.",en:"Bern's petition is in the official record. His name is still under review, but the registry can no longer claim he never applied."},
+  petitionNo: {ko:"베른의 신청서는 당사자에게 돌아갔다. 이 보고서에는 접수되지 않았고, 이름을 되찾는 심사도 아직 시작되지 않았다.",en:"Bern's petition has been returned to its bearer. It is not filed with this report, and the review of his name has not begun."},
+  privateYes: {ko:"베른의 이름은 공개되지 않았다.",en:"Bern's name was never made public."},
+  privateNo: {ko:"베른의 이름이 공개 명부에 남는다.",en:"Bern's name remains on the public notice."},
+  privateAfter: {ko:"이후 사본에서는 이름을 봉인한다. 앞서 게시된 이름을 본 사람들의 기억은 남는다.",en:"Future copies will seal the name. Those who saw the earlier posting still remember it."},
+  payoffFiled: {ko:"베른은 접수 시각을 손가락으로 짚는다.\n“그럼… 자네가 처음 펜을 놓았을 때부터였군.”",en:"Bern puts a finger on the filing time.\n“So… it was already there when you first put down the pen.”"},
+  payoffAmended: {ko:"베른이 새로 찍힌 접수 도장을 오래 바라본다.\n“내 이름보다, 내 말이 먼저 들어갔군.”",en:"Bern studies the new filing stamp.\n“My words got in before my name did.”"},
+  payoffReturned: {ko:"베른은 접수 도장이 없는 종이를 접는다. 봉투는 처음보다 더 낡았다.",en:"Bern folds the paper without a filing stamp. The envelope is more worn than before."},
+  finalRule: {ko:"첨부해 접수한 별지는 본문과 같은 효력을 갖는다.",en:"An enclosure filed with the report has the same standing as the report."},
+  replay: {ko:"문장을 바꿔 다시 살아 보기",en:"Change the sentences. Live through them again."},
+  previous: {ko:"이전 체험의 문장으로 시작합니다. 바꾼 문장이 어떤 길을 바꾸는지 확인해 보세요.",en:"Start with your previous wording. See which path changes when you change a sentence."},
+  compare: {ko:"지난 서명 기록",en:"Previous signed record"},
+  endingNote: {ko:"이 짧은 사건은 여기서 끝납니다. 본편으로 돌아가거나 다른 문장으로 다시 시작할 수 있습니다.",en:"This short case ends here. Return to the main game or try a different wording."}
+};
+function newOwnRecord() {
+  return {v:1, stage:"draft", draft:{status:"",identity:"",attachment:""}, signature:"", original:null, revision:null, route:null, result:null, previous:null};
+}
+function validOwnClauses(value, complete = true) {
+  return !!value && typeof value === "object" && !Array.isArray(value) && Object.entries(OWN_RECORD_FIELDS).every(([k, values]) => values.includes(value[k]) || (!complete && value[k] === ""));
+}
+function ownRecordAccess(record) {
+  return {badge:record.status === "delayed", witness:record.identity === "public", appendix:record.attachment === "filed", copy:true};
+}
+function restoreOwnRecord(raw) {
+  const fresh = newOwnRecord();
+  if (!raw || raw.v !== 1 || !["draft","turn","courier","letter","review","end"].includes(raw.stage) ||
+      !validOwnClauses(raw.draft, false) || typeof raw.signature !== "string" || raw.signature.length > 24) return fresh;
+  if (raw.stage !== "draft" && (!raw.signature.trim() || !validOwnClauses(raw.original))) return fresh;
+  if (["letter","review","end"].includes(raw.stage) && !["badge","witness","appendix","copy"].includes(raw.route)) return fresh;
+  if (raw.route && raw.original && !ownRecordAccess(raw.original)[raw.route]) return fresh;
+  if (["review","end"].includes(raw.stage) && !validOwnClauses(raw.revision)) return fresh;
+  if (raw.stage === "end" && !["maintain","amend","defer"].includes(raw.result)) return fresh;
+  const copy = value => value ? Object.fromEntries(Object.keys(OWN_RECORD_FIELDS).map(k => [k,value[k]])) : null;
+  const previous = raw.previous && validOwnClauses(raw.previous.original) && validOwnClauses(raw.previous.effective) &&
+    typeof raw.previous.signature === "string" && raw.previous.signature.length <= 24 && ["maintain","amend","defer"].includes(raw.previous.result)
+      ? {original:copy(raw.previous.original), effective:copy(raw.previous.effective), signature:raw.previous.signature, result:raw.previous.result} : null;
+  return {...fresh, stage:raw.stage, draft:copy(raw.draft), signature:raw.signature,
+    original:raw.stage === "draft" ? null : copy(raw.original),
+    revision:["letter","review","end"].includes(raw.stage) && validOwnClauses(raw.revision) ? copy(raw.revision) : null,
+    route:["letter","review","end"].includes(raw.stage) ? raw.route : null,
+    result:raw.stage === "end" ? raw.result : null, previous};
+}
+function ownRecordMove(state, action) {
+  const s = state;
+  if (!action || typeof action !== "object") return s;
+  if (action.type === "pick" && s.stage === "draft" && Object.keys(OWN_RECORD_FIELDS).includes(action.field) && OWN_RECORD_FIELDS[action.field].includes(action.value))
+    return {...s, draft:{...s.draft,[action.field]:action.value}};
+  if (action.type === "signature" && s.stage === "draft" && typeof action.value === "string")
+    return {...s, signature:action.value.slice(0,24)};
+  if (action.type === "sign" && s.stage === "draft" && validOwnClauses(s.draft) && s.signature.trim())
+    return {...s, signature:s.signature.trim(), original:{...s.draft}, stage:"turn"};
+  if (action.type === "turn" && s.stage === "turn") return {...s, stage:"courier"};
+  if (action.type === "route" && s.stage === "courier" && ["badge","witness","appendix","copy"].includes(action.route) && ownRecordAccess(s.original)[action.route])
+    return {...s, stage:"letter", route:action.route};
+  if (action.type === "review" && s.stage === "letter")
+    return {...s, stage:"review", revision:s.revision || {...s.original}};
+  if (action.type === "revise" && s.stage === "review" && Object.keys(OWN_RECORD_FIELDS).includes(action.field) && OWN_RECORD_FIELDS[action.field].includes(action.value))
+    return {...s, revision:{...s.revision,[action.field]:action.value}};
+  if (action.type === "reread" && s.stage === "review") return {...s, stage:"letter"};
+  if (action.type === "finish" && s.stage === "review" && ["maintain","amend","defer"].includes(action.result)) {
+    if (action.result === "amend" && !Object.keys(OWN_RECORD_FIELDS).some(k => s.original[k] !== s.revision[k])) return s;
+    return {...s, stage:"end", result:action.result};
+  }
+  if (action.type === "replay" && s.stage === "end") {
+    const effective = s.result === "amend" ? s.revision : s.original;
+    return {...newOwnRecord(), signature:s.signature, draft:{...s.original},
+      previous:{original:{...s.original},effective:{...effective},signature:s.signature,result:s.result}};
+  }
+  return s;
+}
+function ownRecordOutcome(state) {
+  const r = state.result === "amend" ? state.revision : state.original;
+  return {badge:r.status === "delayed" || state.result === "defer", temporary:state.result === "defer" && state.original.status === "refused",
+    petition:state.original.attachment === "filed" || r.attachment === "filed",
+    returnedAfterFiling:state.original.attachment === "filed" && r.attachment === "returned", exposed:state.original.identity === "public" || r.identity === "public",
+    sealed:r.identity === "sealed"};
+}
+function OwnRecordTrial({lang, onLanguage, onExit, sound}) {
+  const [state,setState] = useState(() => restoreOwnRecord(store.get(OWN_RECORD_KEY)));
+  const [notice,setNotice] = useState(null);
+  const focusRef = useRef(null);
+  const tx = value => value && (value[lang] || value.ko || value.en) || "";
+  const ui = key => tx(OWN_RECORD_COPY[key]);
+  const h = React.createElement;
+  useEffect(() => { store.set(OWN_RECORD_KEY,state); }, [state]);
+  useEffect(() => {
+    setNotice(null);
+    focusRef.current?.focus({preventScroll:true});
+    focusRef.current?.scrollIntoView?.({block:"start",behavior:"auto"});
+  }, [state.stage]);
+  const move = action => {
+    setState(s => ownRecordMove(s,action));
+    if (sound && ["sign","finish"].includes(action.type)) { try { SFX.cue("pen"); } catch (e) {} }
+  };
+  const paragraphs = (key, cls = "or-prose") => h("div",{className:cls},ui(key).split("\n\n").map((line,i) => h("p",{key:i},line)));
+  const signature = () => h("div",{className:"or-signature"},h("span",null,ui("signature")),h("strong",null,state.signature));
+  const record = (clauses, revision, label = "original") => h("section",{className:"or-paper","aria-label":ui(label)},
+    h("div",{className:"or-paper-head"},h("span",null,ui(label)),h("span",{className:"or-folio","aria-hidden":"true"},"07")),
+    h("ol",{className:"or-lines"},Object.keys(OWN_RECORD_FIELDS).map(k => h("li",{key:k},
+      revision && revision[k] !== clauses[k] ? h(React.Fragment,null,h("del",null,ui(clauses[k])),h("ins",null,ui(revision[k]))) : ui(clauses[k]) || ui("blank")))),
+    state.original && signature());
+  const fields = (values, type) => h("div",{className:"or-fields"},Object.entries(OWN_RECORD_FIELDS).map(([field,choices]) => h("fieldset",{key:field},
+    h("legend",null,ui(field)),
+    choices.map(value => h("label",{key:value,className:"or-option" + (values[field] === value ? " selected" : "")},
+      h("input",{type:"radio",name:"or-" + type + "-" + field,value,checked:values[field] === value,"data-pick":field + ":" + value,
+        onChange:() => move({type,field,value})}),
+      h("span",null,h("strong",null,ui(value)),h("small",null,ui(type === "revise" && value === "returned" && state.original.attachment === "filed" ? "returnFiledHint" : value+"Hint"))))))));
+  const button = (key, action, primary = false, disabled = false) => h("button",{
+    type:"button",className:"or-button" + (primary ? " primary" : ""),"data-action":key,disabled,
+    onClick:() => move(action)
+  },ui(key));
+  const titles = {draft:["draftRole","draftTitle"],turn:["turnRole","turnTitle"],courier:["courierRole","courierTitle"],
+    letter:["letterRole","letterTitle"],review:["reviewRole","reviewTitle"],end:["endRole","endTitle"]};
+  const title = titles[state.stage];
+  let body;
+  if (state.stage === "draft") body = h(React.Fragment,null,
+    paragraphs("draftIntro"),
+    h("section",{className:"or-facts"},h("h3",null,ui("factsTitle")),h("ol",null,["fact1","fact2","fact3"].map(key => h("li",{key},ui(key))))),
+    h("aside",{className:"or-rule"},h("strong",null,ui("ruleTitle")),h("p",null,ui("rule"))),
+    state.previous && h("details",{className:"or-previous"},h("summary",null,ui("compare")),h("p",null,ui("previous")),
+      record(state.previous.original,state.previous.result === "amend" ? state.previous.effective : null),h("p",null,ui("signature") + ": " + state.previous.signature)),
+    fields(state.draft,"pick"),
+    h("details",{className:"or-preview"},h("summary",null,ui("preview")),record(state.draft,null,"preview")),
+    h("label",{className:"or-sign-input",htmlFor:"or-signature"},ui("signature"),
+      h("input",{id:"or-signature",type:"text",autoComplete:"off",maxLength:24,value:state.signature,placeholder:ui("signatureHint"),
+        onChange:e => move({type:"signature",value:e.target.value})})),
+    button("sign",{type:"sign"},true,!validOwnClauses(state.draft) || !state.signature.trim()),
+    (!validOwnClauses(state.draft) || !state.signature.trim()) && h("p",{className:"or-caption"},ui("signHelp")));
+  else if (state.stage === "turn") body = h(React.Fragment,null,
+    paragraphs("turnText"),
+    h("div",{className:"or-turn-paper"},record(state.original),h("span",{className:"or-seal"},ui("signed"))),
+    button("turn",{type:"turn"},true));
+  else if (state.stage === "courier") {
+    const access = ownRecordAccess(state.original);
+    const field = {badge:"status",witness:"identity",appendix:"attachment"};
+    body = h(React.Fragment,null,paragraphs("courierText"),
+      h("p",{className:"or-caption"},ui("accessLabel")),record(state.original),
+      h("div",{className:"or-routes"},["badge","witness","appendix","copy"].map(route => h("button",{
+        key:route,type:"button",className:"or-route" + (access[route] ? "" : " blocked"),"data-route":route,
+        "aria-disabled":!access[route], onClick:() => access[route] ? move({type:"route",route}) : setNotice(field[route])
+      },h("strong",null,ui(route+"Route")),h("small",null,ui(route === "copy" ? "copyHint" : route+(access[route] ? "Open" : "Closed"))),
+      ))),
+      notice && h("aside",{className:"or-notice",role:"status"},h("strong",null,ui("locked")),h("q",null,ui(state.original[notice])),signature()));
+  } else if (state.stage === "letter") body = h(React.Fragment,null,
+    paragraphs(state.route === "copy" ? (state.original.attachment === "filed" ? "routeCopyFiled" : "routeCopyReturned") : {badge:"routeBadge",witness:"routeWitness",appendix:"routeAppendix"}[state.route]),
+    h("article",{className:"or-paper or-petition"},h("h3",null,ui("petitionTitle")),paragraphs("petitionText")),
+    paragraphs("letterAfter"),
+    h("div",{className:"or-reveal"},paragraphs(state.original.attachment === "filed" ? "filedReveal" : "returnedReveal"),h("blockquote",null,ui("finalRule"))),
+    button("review",{type:"review"},true));
+  else if (state.stage === "review") body = h(React.Fragment,null,
+    paragraphs("reviewText"),record(state.original,state.revision),h("h3",null,ui("correction")),fields(state.revision,"revise"),
+    h("div",{className:"or-decisions"},
+      button("amend",{type:"finish",result:"amend"},true,!Object.keys(OWN_RECORD_FIELDS).some(k => state.original[k] !== state.revision[k])),
+      h("p",{className:"or-caption"},ui("amendHint")),
+      button("maintain",{type:"finish",result:"maintain"}),h("p",{className:"or-caption"},ui("maintainHint")),
+      button("defer",{type:"finish",result:"defer"}),h("p",{className:"or-caption"},ui("deferHint"))),
+    button("reread",{type:"reread"}));
+  else {
+    const outcome = ownRecordOutcome(state);
+    body = h(React.Fragment,null,
+      h("div",{className:"or-end-record"},record(state.original,state.result === "amend" ? state.revision : null),
+        h("span",{className:"or-seal"},ui({maintain:"maintained",amend:"amended",defer:"deferred"}[state.result]))),
+      h("ul",{className:"or-outcomes"},
+        h("li",null,ui(outcome.temporary ? "badgeTemporary" : outcome.badge ? "badgeYes" : "badgeNo")),
+        h("li",null,ui(outcome.exposed ? (outcome.sealed ? "privateAfter" : "privateNo") : "privateYes")),
+        h("li",null,ui(outcome.returnedAfterFiling ? "petitionReturnedAfter" : outcome.petition ? "petitionYes" : "petitionNo"))),
+      paragraphs(outcome.petition ? (state.original.attachment === "filed" ? "payoffFiled" : "payoffAmended") : "payoffReturned","or-last-line"),
+      h("blockquote",{className:"or-rule-echo"},ui("finalRule")),
+      button("replay",{type:"replay"},true),h("p",{className:"or-caption"},ui("endingNote")));
+  }
+  return h("div",{className:"or-shell"},
+    h("nav",{className:"or-nav"},h("button",{type:"button",onClick:onExit},ui("exit")),
+      h("button",{type:"button",onClick:onLanguage,"aria-label":"language"},ui("language"))),
+    h("main",{className:"or-main"},h("div",{className:"or-brand"},ui("title"),h("small",null,ui("subtitle"))),
+      h("div",{className:"or-section-head",ref:focusRef,tabIndex:-1},h("p",{className:"or-eyebrow"},ui(title[0])),h("h2",null,ui(title[1]))),
+      h("div",{key:state.stage,className:"or-content"},body)),
+    h("footer",{className:"or-footer"},h("span",null,ui("saved")),h("span",null,BUILD)));
+}
+
+
 function CRPG() {
   const [nameInput, setNameInput] = useState("");
   const [ruleKey, setRuleKey] = useState("srd20");
@@ -7089,6 +7460,7 @@ function CRPG() {
   const daily = DAILY_CHALLENGES[dayHash(todayKey) % DAILY_CHALLENGES.length];
   const [dailyDone, setDailyDone] = useState(() => !!store.get("aduventure_daily_" + todayKey));
   const clogRef = useRef(null);
+  const [ownTrialOpen, setOwnTrialOpen] = useState(() => typeof window !== "undefined" && window.location?.hash === "#returned-letter");
   useEffect(() => {
     clogRef.current?.scrollTo(0, 99999);
   }, [clog]);
@@ -7176,7 +7548,7 @@ function CRPG() {
     }
   }
   const decisionKey = telemetryRun && decisionKind ? telemetryRun.id + ":" + telemetryRun.seq + ":" + sceneKey + ":" + decisionKind : null;
-  const decisionPaused = rolling || tutOpen || feedbackOpen || (pc && hasCheckChoices && !tutSeen && numbersOn);
+  const decisionPaused = ownTrialOpen || rolling || tutOpen || feedbackOpen || (pc && hasCheckChoices && !tutSeen && numbersOn);
   const decisionData = {
     scene_id: sceneKey, seq: telemetryRun?.seq, kind: decisionKind,
     available_ids: availableIds, lang, rule: ruleKey, class: pc?.classKey,
@@ -7653,7 +8025,7 @@ function CRPG() {
   const hesitateRef = useRef(null);
   hesitateRef.current = hesitate;
   const timerUnlocked = runIndex >= UNLOCK_AT.timer;
-  const timedNow = timerOn && timerUnlocked && !!pc && TIMED_SCENES.includes(sceneKey) && !rolling && !pending;
+  const timedNow = !ownTrialOpen && timerOn && timerUnlocked && !!pc && TIMED_SCENES.includes(sceneKey) && !rolling && !pending;
   // 읽을 시간: 결과는 지금 보이는 길이(접혔으면 접힌 길이), 장면 몫은 본문 전체(인물 대사·여파 줄도 함께 뜨므로 넉넉히).
   const timerSceneText = TIMED_SCENES.includes(sceneKey) && scene?.text ? fmt((scene.text[lang] || scene.text.ko || scene.text), pc || {}) : "";
   const timerTotal = timerSceneText ? timerBudget(lastResult ? resultNarrative(lastResult, lang, resultOpen === lastResult.rid).length : 0, timerSceneText.length, false) : TIMER_SEC;
@@ -8060,6 +8432,16 @@ function CRPG() {
   const collapsed = !!pc && !!scene?.text && seenAtRun.includes(sceneKey) && expanded !== sceneKey;
   const forks = sceneKey === "intro" ? ["stairs", "rescue"].filter(k => seenAtRun.includes(k)) : [];
   const disruptMove = pc && looterDisruptFor(pc.classKey);
+  if (ownTrialOpen) return React.createElement("div", {className:"crpg"},
+    React.createElement("style",null,css), React.createElement(OwnRecordTrial, {
+      lang, sound:sfxOn,
+      onLanguage:() => { const next = lang === "ko" ? "en" : "ko"; setLang(next); store.set("aduventure_lang",next); },
+      onExit:() => {
+        setOwnTrialOpen(false);
+        if (typeof window !== "undefined" && window.location?.hash === "#returned-letter")
+          window.history?.replaceState(null,"",window.location.pathname + window.location.search);
+      }
+    }));
   return /*#__PURE__*/React.createElement("div", {
     className: "crpg"
   }, /*#__PURE__*/React.createElement("style", null, css), eyecatch && React.createElement("div", {
@@ -8195,7 +8577,7 @@ function CRPG() {
     }
   }, ui("rulesGot"))), !pc && !opening && React.createElement("div", {
     className: "scene opening"
-  }, React.createElement(RecordCard, {
+  }, React.createElement("button", {className:"or-entry",onClick:() => setOwnTrialOpen(true)},tx(OWN_RECORD_COPY.entry)), React.createElement(RecordCard, {
     record: { ...officialRecord("opening", [], recordNo, verdict), rebut: null },
     pc: null,
     lang
