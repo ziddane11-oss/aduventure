@@ -181,3 +181,67 @@ test('the actual UI signs, blocks a forbidden route, switches language, reloads 
   assert.equal(JSON.parse(g.data.get('aduventure_own_record_v1')).stage, 'end');
   assert.equal(g.data.get('aduventure_save'), '{"pc":{"name":"untouched"}}');
 });
+
+test('disclosure has a cost the player lives through before the review, not only in the ending', () => {
+  for (const lang of ['ko','en']) {
+    const g = harness();
+    const copy = g.run('OWN_RECORD_COPY');
+    const seen = {};
+    for (const identity of ['public','sealed']) {
+      const other = identity === 'public' ? 'Sealed' : 'Public';
+      const own = identity === 'public' ? 'Public' : 'Sealed';
+      let s = prepared(g, {status:'delayed', identity, attachment:'returned'});
+      const morning = text(harness({...s, stage:'turn'}).render(lang));
+      assert.ok(morning.includes(copy['board'+own][lang]), 'The next morning shows the posted or sealed notice');
+      assert.equal(morning.includes(copy['board'+other][lang]), false);
+      for (const route of ['badge','copy']) {
+        const letter = text(harness(g.move(s, {type:'route', route})).render(lang));
+        assert.ok(letter.includes(copy['bern'+own][lang]), 'Bern reacts to the disclosure on every route: '+route);
+        assert.equal(letter.includes(copy['bern'+other][lang]), false);
+      }
+      seen[identity] = morning;
+    }
+    assert.notEqual(seen.public, seen.sealed);
+    const draft = text(harness().render(lang));
+    for (const key of ['boardPublic','boardSealed','bernPublic','bernSealed']) assert.equal(draft.includes(copy[key][lang]), false, 'No spoiler before signing: '+key);
+  }
+});
+
+test('the ending offers a shareable record of the signed sentences in the chosen language', () => {
+  const g = harness();
+  let s = prepared(g, {status:'refused', identity:'public', attachment:'returned'});
+  s = g.move(s, {type:'route', route:'witness'}); s = g.move(s, {type:'review'});
+  s = g.move(s, {type:'revise', field:'attachment', value:'filed'}); s = g.move(s, {type:'finish', result:'amend'});
+  const copy = g.run('OWN_RECORD_COPY');
+  for (const lang of ['ko','en']) {
+    const share = g.run(`ownRecordShareText(${JSON.stringify(s)}, '${lang}', 'https://example.test/aduventure/#returned-letter')`);
+    assert.ok(share.includes(copy.title[lang]));
+    assert.ok(share.includes(copy.refused[lang]) && share.includes(copy.public[lang]) && share.includes(copy.filed[lang]), 'The corrected sentences are shared');
+    assert.ok(share.includes(copy.amended[lang]));
+    assert.ok(share.includes(copy.petitionYes[lang]));
+    assert.ok(share.endsWith('https://example.test/aduventure/#returned-letter'));
+    assert.equal(share.includes('테스터'), false, 'The private signature is not shared');
+    if (lang === 'en') assert.doesNotMatch(share, /[가-힣]/);
+  }
+  const end = nodes(harness(s).render('ko'));
+  assert.ok(end.some(n => n.props['data-action'] === 'share'), 'The end screen has a share button');
+  for (const stage of ['draft','turn','courier']) assert.equal(nodes(harness({...prepared(g), stage}).render('ko')).some(n => n.props['data-action'] === 'share'), false);
+});
+
+test('sharing uses a stable public link and falls back to selectable text when the clipboard is blocked', async () => {
+  const g = harness();
+  let s = prepared(g, {status:'delayed', identity:'sealed', attachment:'filed'});
+  s = g.move(s, {type:'route', route:'appendix'}); s = g.move(s, {type:'review'}); s = g.move(s, {type:'finish', result:'maintain'});
+  const end = harness(s);
+  const url = end.run('ownRecordShareUrl()');
+  assert.match(url, /^https:\/\//, 'Never the embedding page (e.g. an itch.io iframe) or localhost');
+  end.run('window.ADU_SHARE_URL = "https://someone.itch.io/returned-letter"');
+  assert.equal(end.run('ownRecordShareUrl()'), 'https://someone.itch.io/returned-letter');
+  // No navigator in this context: the share must fail gracefully and expose the text instead.
+  await nodes(end.render('ko')).find(n => n.props['data-action'] === 'share').props.onClick();
+  const after = nodes(end.render('ko'));
+  const box = after.find(n => n.type === 'textarea');
+  assert.ok(box, 'A selectable copy of the share text appears');
+  assert.ok(box.props.value.endsWith('https://someone.itch.io/returned-letter'));
+  assert.ok(text(after).includes(end.run('OWN_RECORD_COPY.shareManual.ko')));
+});
