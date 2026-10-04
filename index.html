@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>어두밴처 v0.7.3-pt45</title>
+<title>어두밴처 v0.7.3-pt46</title>
 <style>body{margin:0;background:#0e1420}</style>
 </head>
 <body>
@@ -318,7 +318,7 @@ function(a,b,c){if(!Vd(b))throw Error(n(200));return Wd(null,a,b,!1,c)};Q.unmoun
    GAS 피드백 파이프 — v0.7 재구현 (제안/신호/텔레메트리)
    ============================================================ */
 /* 플레이테스트 빌드 태그 — 테스트 중 버전 구분용. 수정할 때마다 뒤 번호를 올린다. */
-const BUILD = "v0.7.3-pt45";
+const BUILD = "v0.7.3-pt46";
 const GAS_URL = "https://script.google.com/macros/s/AKfycbxFx_m5rhCZmqGoy3JcUUNqEgiObMWNHe9hx-LnZrhzIkfwa9-yJGBWP0lVulptnNQeCQ/exec";
 function gasPost(payload, options = {}) {
   return fetch(GAS_URL, {
@@ -6740,14 +6740,16 @@ const css = `
 @keyframes popIn { from{transform:scale(.6); opacity:0} to{transform:scale(1); opacity:1} }
 @keyframes shake { 0%{transform:rotate(-4deg)} 50%{transform:rotate(4deg)} 100%{transform:rotate(-4deg)} }
 @media (max-width: 700px) {
-  .crpg header { flex-wrap:wrap; }
-  .crpg h1 { min-width:0; overflow-wrap:anywhere; }
-  .crpg .hctrl { width:100%; flex-wrap:wrap; }
-  .crpg .hctrl select, .crpg .hctrl button { min-height:44px; }
+  .crpg header { flex-wrap:wrap; align-items:center; padding:10px 0 8px; margin-bottom:10px; }
+  .crpg h1 { min-width:0; overflow-wrap:anywhere; font-size:18px; letter-spacing:.1em; }
+  .crpg h1 .hSub, .crpg .hctrl .hLbl { display:none; }
+  .crpg .hctrl { flex-wrap:wrap; gap:6px; }
+  .crpg .hctrl select, .crpg .hctrl button { min-height:44px; min-width:40px; padding:4px 6px; }
   .crpg .diceMeta, .crpg .jump { min-width:0; overflow-wrap:anywhere; }
   .crpg div.stageWrap { position:relative; }
   .crpg .lhscene { height:104px; box-shadow:0 6px 18px rgba(0,0,0,.55); }
-  .crpg div.miniBar { display:flex; }
+  .crpg div.miniBar { display:flex; position:fixed; left:0; right:0; top:0; margin:0; transition:transform .25s ease, opacity .25s ease; }
+  .crpg div.miniBar:not(.show) { transform:translateY(-110%); opacity:0; pointer-events:none; }
   .crpg div.sheet { padding:6px 12px; gap:8px; margin-bottom:10px; }
   .crpg .sheet .clueLine { display:none; }
   .crpg .health .healthLabel span { display:none; }
@@ -7501,6 +7503,18 @@ function CRPG() {
   const [expanded, setExpanded] = useState(null);
   // 선택지가 많으면 4개만 먼저 보이고 나머지는 접는다(펼친 장면 키).
   const [moreOpen, setMoreOpen] = useState(null);
+  // 휴대폰 상단 막대: 그림(위치 카드)이 화면 밖으로 나간 뒤에만 보인다. 맨 위에서 위치·체력을 두 번 보여 주지 않는다.
+  const [hudAway, setHudAway] = useState(false);
+  useEffect(() => {
+    const onScroll = () => {
+      let away;
+      try { const st = document.querySelector(".crpg .stageWrap"); away = st ? st.getBoundingClientRect().bottom < 0 : window.scrollY > 200; }
+      catch (e) { away = (window.scrollY || 0) > 200; }
+      setHudAway(a => a === away ? a : away);
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener?.("scroll", onScroll);
+  }, []);
   const [resultOpen, setResultOpen] = useState(null);
   const [deduce, setDeduce] = useState(() => store.get("aduventure_deduce") || {});
   const [deducePick, setDeducePick] = useState({ who: "", what: "", why: "" });
@@ -8588,7 +8602,7 @@ function CRPG() {
     onClose: () => setFeedbackOpen(false)
   }), /*#__PURE__*/React.createElement("div", {
     className: "frame"
-  }, /*#__PURE__*/React.createElement("header", null, /*#__PURE__*/React.createElement("h1", null, ui("brand"), /*#__PURE__*/React.createElement("span", null, chapterTitle, " \xB7 ", BUILD)), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("header", null, /*#__PURE__*/React.createElement("h1", null, ui("brand"), /*#__PURE__*/React.createElement("span", { className: "hSub" }, chapterTitle, " \xB7 ", BUILD)), /*#__PURE__*/React.createElement("div", {
     className: "hctrl"
   }, /*#__PURE__*/React.createElement("button", {
     onClick: () => {
@@ -8610,8 +8624,9 @@ function CRPG() {
     title: sfxOn ? ui("sfxOn") : ui("sfxOff")
   }, sfxOn ? "🔊" : "🔇"), /*#__PURE__*/React.createElement("button", {
     onClick: () => setTutOpen(o => !o),
-    title: ui("rulesTitle")
-  }, ui("rulesBtn")), React.createElement("button", {
+    title: ui("rulesTitle"),
+    "aria-label": ui("rulesBtn").replace(/^\?\s*/, "")
+  }, "?", React.createElement("span", { className: "hLbl" }, " " + ui("rulesBtn").replace(/^\?\s*/, ""))), React.createElement("button", {
     onClick: () => setNumbersOn(v => { store.set("aduventure_numbers", !v); return !v; }),
     title: numbersOn ? ui("numbersOff") : ui("numbersOn"),
     "aria-label": "numbers",
@@ -8625,7 +8640,7 @@ function CRPG() {
   }, "SRD d20"), /*#__PURE__*/React.createElement("option", {
     value: "simple2d6"
   }, "Simple 2d6")))), pc && SCENE_TITLES[sceneKey] && React.createElement("div", {
-    className: "miniBar",
+    className: "miniBar" + (hudAway ? " show" : ""),
     "aria-hidden": "true"
   }, React.createElement("span", { className: "mbPlace" }, "\uD83D\uDCCD " + tx(SCENE_TITLES[sceneKey])), React.createElement("span", { className: "mbHp" }, React.createElement("i", { style: { "--hp": Math.max(0, Math.min(100, (pc.hp ?? pc.maxHp) / pc.maxHp * 100)) + "%" } }), pc.hp ?? pc.maxHp, "/", pc.maxHp)), React.createElement("div", {
     className: "stageWrap" + (pc ? " mood-" + stageMood(sceneKey, scene) : "")
@@ -9207,7 +9222,7 @@ function CRPG() {
     onClick: () => restart()
   }, ui("rewrite"))), /*#__PURE__*/React.createElement("footer", null,
     React.createElement("details", { className: "credits" },
-      React.createElement("summary", null, ui("credits")),
+      React.createElement("summary", null, ui("credits"), " \xB7 ", BUILD),
       React.createElement("div", { className: "creditsBody" },
         React.createElement("p", null, ui("footer1")),
         React.createElement("p", null, ui("portraitCredit")),
