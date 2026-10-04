@@ -78,3 +78,37 @@ test('on phones the header is one row: the chapter subtitle hides and the rules 
   assert.match(html, /@media \(max-width: 700px\) \{[\s\S]*?\.crpg h1 \.hSub, \.crpg \.hctrl \.hLbl \{ display:none; \}/);
   assert.match(text(nodes(tree).find(n => n.type === 'summary')), /v0\.7\.3-pt\d+/, 'Build tag is visible at the bottom without opening credits');
 });
+
+// pt47 — 영어에서도 상단이 한 줄: 덜 쓰는 버튼(쪽지·소리·숫자)은 휴대폰에서 '⋯' 아래로.
+test('on phones the less-used header buttons fold behind a "⋯" toggle; nothing is removed', () => {
+  const g = game('door');
+  let header = nodes(g.render()).find(n => n.type === 'header');
+  const more = nodes(header).filter(n => hasClass(n, 'hMore'));
+  assert.equal(more.length, 3, 'Feedback, sound and numbers stay in the markup');
+  const ctrl = firstByClass(header, 'hctrl');
+  assert.equal(hasClass(ctrl, 'open'), false);
+  const toggle = firstByClass(header, 'hMoreBtn');
+  assert.ok(toggle, 'A "⋯" button exists');
+  assert.equal(toggle.props['aria-expanded'], false);
+  toggle.props.onClick();
+  header = nodes(g.render()).find(n => n.type === 'header');
+  assert.equal(hasClass(firstByClass(header, 'hctrl'), 'open'), true);
+  assert.equal(firstByClass(header, 'hMoreBtn').props['aria-expanded'], true);
+  assert.match(html, /\.crpg \.hMoreBtn \{ display:none; \}/, 'Desktop keeps every button visible');
+  assert.match(html, /@media \(max-width: 700px\) \{[\s\S]*?\.crpg \.hctrl:not\(\.open\) \.hMore \{ display:none; \}[\s\S]*?\.crpg \.hctrl \.hMoreBtn \{ display:inline-block; \}/, 'More specific than the later desktop rule, so it wins on phones');
+});
+
+test('class cards on phones show the road name only; the explanation stays for desktop and the scene labels', () => {
+  const g = game('door');
+  assert.deepEqual(JSON.parse(JSON.stringify(g.run('roadParts("둘 다 잡는다 — 남들이 하나를 버릴 때")'))), ['둘 다 잡는다', ' — 남들이 하나를 버릴 때']);
+  assert.deepEqual(JSON.parse(JSON.stringify(g.run('roadParts("No dash here")'))), ['No dash here', '']);
+  for (const k of ['fighter', 'rogue', 'wizard']) for (const lang of ['ko', 'en']) {
+    const [head, tail] = g.run(`roadParts(CLASS_ROADS.${k}.${lang})`);
+    assert.ok(head.length > 0 && head.length <= 16 && tail.startsWith(' — '), `${k}/${lang} splits into a short name and an explanation`);
+  }
+  assert.match(html, /@media \(max-width: 700px\) \{[\s\S]*?\.crpg \.card \.roadMore \{ display:none; \}/);
+});
+
+test('the Returned Letter paper has no dot decoration that reads like a bullet before its label', () => {
+  assert.doesNotMatch(html, /\.crpg \.or-paper::before \{/);
+});

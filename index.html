@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>어두밴처 v0.7.3-pt46</title>
+<title>어두밴처 v0.7.3-pt47</title>
 <style>body{margin:0;background:#0e1420}</style>
 </head>
 <body>
@@ -318,7 +318,7 @@ function(a,b,c){if(!Vd(b))throw Error(n(200));return Wd(null,a,b,!1,c)};Q.unmoun
    GAS 피드백 파이프 — v0.7 재구현 (제안/신호/텔레메트리)
    ============================================================ */
 /* 플레이테스트 빌드 태그 — 테스트 중 버전 구분용. 수정할 때마다 뒤 번호를 올린다. */
-const BUILD = "v0.7.3-pt46";
+const BUILD = "v0.7.3-pt47";
 const GAS_URL = "https://script.google.com/macros/s/AKfycbxFx_m5rhCZmqGoy3JcUUNqEgiObMWNHe9hx-LnZrhzIkfwa9-yJGBWP0lVulptnNQeCQ/exec";
 function gasPost(payload, options = {}) {
   return fetch(GAS_URL, {
@@ -5199,6 +5199,11 @@ const CLASS_ROADS = {
   rogue: bi("먼저 안다 — 싸움이 시작되기 전에 엿듣고, 훔쳐보고, 슬쩍한다.", "Know first — overhear, peek and pocket before any fight begins."),
   wizard: bi("꿰뚫어 본다 — 빛과 글씨에 남은 흔적을 읽는다. 몸은 약하다.", "See through — read what light and handwriting leave behind. A fragile body.")
 };
+// pt47 — 직업의 길: 휴대폰 카드에는 '둘 다 잡는다'처럼 이름만, 설명(' — ' 뒤)은 데스크톱에서.
+function roadParts(text) {
+  const i = text.indexOf(" — ");
+  return i < 0 ? [text, ""] : [text.slice(0, i), text.slice(i)];
+}
 // 위치 카드: 지금 어디서 무엇을 하는지 한 줄로.
 const SCENE_DOING = {
   c2_intro: bi("붉은 선이 끝나는 곳으로", "Toward where the red line ends"),
@@ -6748,6 +6753,9 @@ const css = `
   .crpg header { flex-wrap:wrap; align-items:center; padding:10px 0 8px; margin-bottom:10px; }
   .crpg h1 { min-width:0; overflow-wrap:anywhere; font-size:18px; letter-spacing:.1em; }
   .crpg h1 .hSub, .crpg .hctrl .hLbl { display:none; }
+  .crpg .hctrl:not(.open) .hMore { display:none; }
+  .crpg .hctrl .hMoreBtn { display:inline-block; }
+  .crpg .card .roadMore { display:none; }
   .crpg .hctrl { flex-wrap:wrap; gap:6px; }
   .crpg .hctrl select, .crpg .hctrl button { min-height:44px; min-width:40px; padding:4px 6px; }
   .crpg .diceMeta, .crpg .jump { min-width:0; overflow-wrap:anywhere; }
@@ -6911,6 +6919,7 @@ const css = `
 .crpg .tag.one.diffEasy { color:#9fd39a; }
 .crpg .tag.one.diffHard { color:#e08a8a; }
 .crpg .hctrl button.on { border-color:var(--gold); color:var(--gold); }
+.crpg .hMoreBtn { display:none; }
 .crpg .unlockLine { margin:6px 0 12px; padding:8px 12px; border-left:3px solid var(--gold); background:rgba(205,182,139,.10); font-size:14px; }
 .crpg .bigLine { font-size:21px; line-height:1.5; color:#b0281c; font-weight:700; margin:14px 0 18px; animation:fadeIn 1.6s ease both; }
 .crpg .hallExtra { font-size:14px; opacity:.9; margin:4px 0 10px; }
@@ -7052,7 +7061,7 @@ const css = `
 .crpg .or-option strong { font-weight:400; font-size:17px; line-height:1.65; }
 .crpg .or-option small { display:block; font-size:13px; line-height:1.7; color:var(--dim); margin-top:5px; }
 .crpg .or-paper { position:relative; color:#302920; background:linear-gradient(115deg,#e1d3b9,#ede4d1 56%,#dccdaf); padding:28px 34px; margin:22px 0; box-shadow:0 7px 28px #0005; border:1px solid #bcb097; overflow-wrap:anywhere; }
-.crpg .or-paper::before { content:""; position:absolute; left:10px; top:21px; width:5px; height:5px; border-radius:50%; background:#5b5048; box-shadow:0 16px 0 #5b5048; }
+/* pt47: 바인더 구멍 장식은 휴대폰에서 '원본' 앞 글머리표처럼 읽혀 없앴다. */
 .crpg .or-paper-head { display:flex; justify-content:space-between; align-items:center; gap:12px; border-bottom:1px solid #a6967c; padding-bottom:13px; margin-bottom:18px; font-size:12px; letter-spacing:.08em; }
 .crpg .or-folio { font-family:'IBM Plex Mono',monospace; font-size:23px; color:#7f705b; }
 .crpg .or-lines { padding-left:22px; font-size:18px; line-height:1.85; }
@@ -7510,6 +7519,8 @@ function CRPG() {
   const [moreOpen, setMoreOpen] = useState(null);
   // 휴대폰 상단 막대: 그림(위치 카드)이 화면 밖으로 나간 뒤에만 보인다. 맨 위에서 위치·체력을 두 번 보여 주지 않는다.
   const [hudAway, setHudAway] = useState(false);
+  // pt47 — 휴대폰 상단: 덜 쓰는 버튼(쪽지·소리·숫자)은 '⋯' 아래로 접는다. 데스크톱은 그대로 다 보인다.
+  const [hdrMore, setHdrMore] = useState(false);
   useEffect(() => {
     const onScroll = () => {
       let away;
@@ -8608,7 +8619,7 @@ function CRPG() {
   }), /*#__PURE__*/React.createElement("div", {
     className: "frame"
   }, /*#__PURE__*/React.createElement("header", null, /*#__PURE__*/React.createElement("h1", null, ui("brand"), /*#__PURE__*/React.createElement("span", { className: "hSub" }, chapterTitle, " \xB7 ", BUILD)), /*#__PURE__*/React.createElement("div", {
-    className: "hctrl"
+    className: "hctrl" + (hdrMore ? " open" : "")
   }, /*#__PURE__*/React.createElement("button", {
     onClick: () => {
       const nl = lang === "ko" ? "en" : "ko";
@@ -8618,6 +8629,7 @@ function CRPG() {
     title: "language / 언어",
     "aria-label": "language"
   }, ui("langBtn")), /*#__PURE__*/React.createElement("button", {
+    className: "hMore",
     onClick: () => setFeedbackOpen(true),
     title: ui("fbBtn")
   }, "🗒"), React.createElement("button", {
@@ -8625,6 +8637,7 @@ function CRPG() {
     title: ui("caseBtn"),
     "aria-label": "case board"
   }, "🔎"), /*#__PURE__*/React.createElement("button", {
+    className: "hMore",
     onClick: () => { const on = SFX.toggle(); store.set("aduventure_sfx", on); setSfxOn(on); },
     title: sfxOn ? ui("sfxOn") : ui("sfxOff")
   }, sfxOn ? "🔊" : "🔇"), /*#__PURE__*/React.createElement("button", {
@@ -8635,8 +8648,9 @@ function CRPG() {
     onClick: () => setNumbersOn(v => { store.set("aduventure_numbers", !v); return !v; }),
     title: numbersOn ? ui("numbersOff") : ui("numbersOn"),
     "aria-label": "numbers",
-    className: numbersOn ? "on" : ""
+    className: "hMore" + (numbersOn ? " on" : "")
   }, "\uD83D\uDD22"), numbersOn && /*#__PURE__*/React.createElement("select", {
+    className: "hMore",
     value: ruleKey,
     onChange: e => setRuleKey(e.target.value),
     "aria-label": ui("rulesAria")
@@ -8644,7 +8658,12 @@ function CRPG() {
     value: "srd20"
   }, "SRD d20"), /*#__PURE__*/React.createElement("option", {
     value: "simple2d6"
-  }, "Simple 2d6")))), pc && SCENE_TITLES[sceneKey] && React.createElement("div", {
+  }, "Simple 2d6")), React.createElement("button", {
+    className: "hMoreBtn",
+    onClick: () => setHdrMore(v => !v),
+    "aria-expanded": hdrMore,
+    "aria-label": lang === "en" ? "More" : "더 보기"
+  }, "\u00B7\u00B7\u00B7"))), pc && SCENE_TITLES[sceneKey] && React.createElement("div", {
     className: "miniBar" + (hudAway ? " show" : ""),
     "aria-hidden": "true"
   }, React.createElement("span", { className: "mbPlace" }, "\uD83D\uDCCD " + tx(SCENE_TITLES[sceneKey])), React.createElement("span", { className: "mbHp" }, React.createElement("i", { style: { "--hp": Math.max(0, Math.min(100, (pc.hp ?? pc.maxHp) / pc.maxHp * 100)) + "%" } }), pc.hp ?? pc.maxHp, "/", pc.maxHp)), React.createElement("div", {
@@ -8736,7 +8755,7 @@ function CRPG() {
     onClick: () => pickClass(k)
   }, /*#__PURE__*/React.createElement("div", {
     className: "ci"
-  }, c.icon), /*#__PURE__*/React.createElement("h2", null, tx(c.name)), /*#__PURE__*/React.createElement("p", null, tx(c.blurb)), CLASS_ROADS[k] && React.createElement("p", { className: "road" }, React.createElement("b", null, ui("classRoadH"), " · "), tx(CLASS_ROADS[k])), numbersOn && /*#__PURE__*/React.createElement("div", {
+  }, c.icon), /*#__PURE__*/React.createElement("h2", null, tx(c.name)), /*#__PURE__*/React.createElement("p", null, tx(c.blurb)), CLASS_ROADS[k] && React.createElement("p", { className: "road" }, React.createElement("b", null, ui("classRoadH"), " · "), roadParts(tx(CLASS_ROADS[k]))[0], React.createElement("span", { className: "roadMore" }, roadParts(tx(CLASS_ROADS[k]))[1])), numbersOn && /*#__PURE__*/React.createElement("div", {
     className: "st"
   }, "HP ", c.maxHp, " \xB7 AC ", c.ac, " \xB7 ", tx(c.weapon.name), " \xB7 ", ui("special"), " ", tx(SPECIALS[k].name), /*#__PURE__*/React.createElement("br", null), ui("proficient"), " ", c.proficiencies.map(s => tx(SKILL_NAMES[s])).join(" · "))))), numbersOn && React.createElement(StatsHelp, { ui }), React.createElement("details", {
     className: "archive"
