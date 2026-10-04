@@ -88,6 +88,6 @@ test('on phones a slim bar follows instead of the big picture: place and health 
   assert.ok(bar);
   assert.equal(text(byClass(bar, 'mbPlace')[0]), '📍 Before Sundown');
   assert.match(text(byClass(bar, 'mbHp')[0]), /^\d+\/\d+$/);
-  assert.match(html, /\.crpg div\.miniBar \{ display:flex; \}/, 'Shown on phones');
+  assert.match(html, /\.crpg div\.miniBar \{ display:flex;/, 'Shown on phones (slides in once the picture scrolls away; pt46)');
   assert.doesNotMatch(html, /div\.stageWrap \{ position:sticky/, 'The big picture no longer covers the choices');
 });
