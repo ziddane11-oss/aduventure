@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>어두밴처 v0.7.3-pt40</title>
+<title>어두밴처 v0.7.3-pt40.1</title>
 <style>body{margin:0;background:#0e1420}</style>
 </head>
 <body>
@@ -318,7 +318,7 @@ function(a,b,c){if(!Vd(b))throw Error(n(200));return Wd(null,a,b,!1,c)};Q.unmoun
    GAS 피드백 파이프 — v0.7 재구현 (제안/신호/텔레메트리)
    ============================================================ */
 /* 플레이테스트 빌드 태그 — 테스트 중 버전 구분용. 수정할 때마다 뒤 번호를 올린다. */
-const BUILD = "v0.7.3-pt40";
+const BUILD = "v0.7.3-pt40.1";
 const GAS_URL = "https://script.google.com/macros/s/AKfycbxFx_m5rhCZmqGoy3JcUUNqEgiObMWNHe9hx-LnZrhzIkfwa9-yJGBWP0lVulptnNQeCQ/exec";
 function gasPost(payload, options = {}) {
   return fetch(GAS_URL, {
@@ -2775,12 +2775,13 @@ const SCENES = {
       },
       "result": {
         "text": {
-          "ko": "스컬리의 얼굴이 하얗게 질린다. \"그, 그걸 어디서… 난 심부름만 했어. 돈은 다 기금으로 들어갔다고. 기금 장부는 위에서 쥐고 있어.\"\n\n그는 순순히 손을 내민다.",
-          "en": "Scully goes white. \"Wh-where did you get that… I just ran errands. The money all went into the fund. The fund's books are held up the hill.\"\n\nHe holds out his wrists without a fight."
+          "ko": "스컬리의 얼굴이 하얗게 질린다. \"그, 그걸 어디서… 난 심부름만 했어. 돈은 다 기금으로 들어갔다고. 기금 장부는 위에서 쥐고 있어.\"\n\n품에서 S가 서명한 편지 뭉치를 꺼내 놓고, 순순히 손을 내민다.",
+          "en": "Scully goes white. \"Wh-where did you get that… I just ran errands. The money all went into the fund. The fund's books are held up the hill.\"\n\nHe sets down a bundle of letters signed S, then holds out his wrists without a fight."
         },
         "goto": "ending2",
         "flags": [
-          "peaceful2"
+          "peaceful2",
+          "scullySurrendered"
         ]
       }
     }
@@ -4599,8 +4600,8 @@ function buildEnding1(flags) {
 function buildEnding2(flags) {
   const ko = [];
   const en = [];
-  ko.push(flags.includes("peaceful2") ? "스컬리는 떠났다. 대신 편지가 남았다." : flags.includes("scullyFled") ? "스컬리는 뒷문으로 달아났다. 손에 남은 건 편지뿐이다." : "스컬리는 관헌의 손에 넘어갔다. 그리고 편지가 남았다.");
-  en.push(flags.includes("peaceful2") ? "Scully is gone. A letter remains in his place." : flags.includes("scullyFled") ? "Scully fled out the back door. All you have left are the letters." : "Scully is in the authorities' hands. And a letter remains.");
+  ko.push(flags.includes("scullySurrendered") ? "스컬리는 싸움 없이 관헌의 손에 넘어갔다. 그가 내놓은 편지가 남았다." : flags.includes("peaceful2") ? "스컬리는 떠났다. 대신 편지가 남았다." : flags.includes("scullyFled") ? "스컬리는 뒷문으로 달아났다. 손에 남은 건 편지뿐이다." : "스컬리는 관헌의 손에 넘어갔다. 그리고 편지가 남았다.");
+  en.push(flags.includes("scullySurrendered") ? "Scully is in the authorities' hands, without a fight. The letters he handed over remain." : flags.includes("peaceful2") ? "Scully is gone. A letter remains in his place." : flags.includes("scullyFled") ? "Scully fled out the back door. All you have left are the letters." : "Scully is in the authorities' hands. And a letter remains.");
   if (flags.includes("ledger")) {
     ko.push("품속의 장부에는 입항 일정과 뱃이름이 빼곡하다 — 움직일 수 없는 증거다.");
     en.push("The ledger in your coat is packed with arrival times and ship names — evidence that won't budge.");
@@ -5498,7 +5499,7 @@ function officialRecord(kind, flags, no, verdict) {
   };
   if (kind === 2) return {
     head,
-    lines: [has("peaceful2") || has("scullyFled") ? bi("부두: 밀수 혐의자 스컬리, 도주.", "Docks: smuggling suspect Scully, fled.") : bi("부두: 밀수 혐의자 스컬리, 체포.", "Docks: smuggling suspect Scully, arrested."), bi("배후: 없음.", "Behind it: no one.")],
+    lines: [!has("scullySurrendered") && (has("peaceful2") || has("scullyFled")) ? bi("부두: 밀수 혐의자 스컬리, 도주.", "Docks: smuggling suspect Scully, fled.") : bi("부두: 밀수 혐의자 스컬리, 체포.", "Docks: smuggling suspect Scully, arrested."), bi("배후: 없음.", "Behind it: no one.")],
     signer: seon,
     rebut: has("f_fund") ? bi("배후가 없다고? 돈은 소금여울 공동 기금으로 갔다.", "No one behind it? The money went to the Saltmarsh Common Fund.")
       : has("peaceful2") ? bi("배후가 없다고? 편지마다 S가 있다.", "No one behind it? Every letter is signed S.") : null
