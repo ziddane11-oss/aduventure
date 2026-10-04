@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>어두밴처 v0.7.3-pt42</title>
+<title>어두밴처 v0.7.3-pt42.1</title>
 <style>body{margin:0;background:#0e1420}</style>
 </head>
 <body>
@@ -318,7 +318,7 @@ function(a,b,c){if(!Vd(b))throw Error(n(200));return Wd(null,a,b,!1,c)};Q.unmoun
    GAS 피드백 파이프 — v0.7 재구현 (제안/신호/텔레메트리)
    ============================================================ */
 /* 플레이테스트 빌드 태그 — 테스트 중 버전 구분용. 수정할 때마다 뒤 번호를 올린다. */
-const BUILD = "v0.7.3-pt42";
+const BUILD = "v0.7.3-pt42.1";
 const GAS_URL = "https://script.google.com/macros/s/AKfycbxFx_m5rhCZmqGoy3JcUUNqEgiObMWNHe9hx-LnZrhzIkfwa9-yJGBWP0lVulptnNQeCQ/exec";
 function gasPost(payload, options = {}) {
   return fetch(GAS_URL, {
@@ -7462,6 +7462,15 @@ function CRPG() {
   const clogRef = useRef(null);
   const [ownTrialOpen, setOwnTrialOpen] = useState(() => typeof window !== "undefined" && window.location?.hash === "#returned-letter");
   useEffect(() => {
+    const syncOwnTrial = () => setOwnTrialOpen(window.location?.hash === "#returned-letter");
+    window.addEventListener("hashchange",syncOwnTrial);
+    return () => window.removeEventListener?.("hashchange",syncOwnTrial);
+  },[]);
+  function openOwnTrial() {
+    try { window.history?.pushState(null,"","#returned-letter"); } catch (e) {}
+    setOwnTrialOpen(true);
+  }
+  useEffect(() => {
     clogRef.current?.scrollTo(0, 99999);
   }, [clog]);
   useEffect(() => {
@@ -8577,7 +8586,7 @@ function CRPG() {
     }
   }, ui("rulesGot"))), !pc && !opening && React.createElement("div", {
     className: "scene opening"
-  }, React.createElement("button", {className:"or-entry",onClick:() => setOwnTrialOpen(true)},tx(OWN_RECORD_COPY.entry)), React.createElement(RecordCard, {
+  }, React.createElement("button", {className:"or-entry",onClick:openOwnTrial},tx(OWN_RECORD_COPY.entry)), React.createElement(RecordCard, {
     record: { ...officialRecord("opening", [], recordNo, verdict), rebut: null },
     pc: null,
     lang
