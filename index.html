@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>어두밴처 v0.7.3-pt43</title>
+<title>어두밴처 v0.7.3-pt44</title>
 <style>body{margin:0;background:#0e1420}</style>
 </head>
 <body>
@@ -318,7 +318,7 @@ function(a,b,c){if(!Vd(b))throw Error(n(200));return Wd(null,a,b,!1,c)};Q.unmoun
    GAS 피드백 파이프 — v0.7 재구현 (제안/신호/텔레메트리)
    ============================================================ */
 /* 플레이테스트 빌드 태그 — 테스트 중 버전 구분용. 수정할 때마다 뒤 번호를 올린다. */
-const BUILD = "v0.7.3-pt43";
+const BUILD = "v0.7.3-pt44";
 const GAS_URL = "https://script.google.com/macros/s/AKfycbxFx_m5rhCZmqGoy3JcUUNqEgiObMWNHe9hx-LnZrhzIkfwa9-yJGBWP0lVulptnNQeCQ/exec";
 function gasPost(payload, options = {}) {
   return fetch(GAS_URL, {
@@ -7203,7 +7203,17 @@ const OWN_RECORD_COPY = {
   replay: {ko:"문장을 바꿔 다시 살아 보기",en:"Change the sentences. Live through them again."},
   previous: {ko:"이전 체험의 문장으로 시작합니다. 바꾼 문장이 어떤 길을 바꾸는지 확인해 보세요.",en:"Start with your previous wording. See which path changes when you change a sentence."},
   compare: {ko:"지난 서명 기록",en:"Previous signed record"},
-  endingNote: {ko:"이 짧은 사건은 여기서 끝납니다. 본편으로 돌아가거나 다른 문장으로 다시 시작할 수 있습니다.",en:"This short case ends here. Return to the main game or try a different wording."}
+  endingNote: {ko:"이 짧은 사건은 여기서 끝납니다. 본편으로 돌아가거나 다른 문장으로 다시 시작할 수 있습니다.",en:"This short case ends here. Return to the main game or try a different wording."},
+  // pt44 — 공개/봉인의 대가를 정정 전에 겪게 한다(이전에는 엔딩 한 줄뿐이라 '공개'가 사실상 공짜였다).
+  boardPublic: {ko:"창구를 열기 전에 게시판을 지난다. 오늘 붙은 공시에 ‘수취인: 등대지기 베른’이 적혀 있다. 누군가 그 이름 아래에 손톱으로 긴 줄을 긋고 갔다.",en:"On your way to the counter you pass the notice board. This morning’s notice reads ‘Recipient: Bern, lighthouse keeper.’ Someone has scored a long line under the name with a fingernail."},
+  boardSealed: {ko:"창구를 열기 전에 게시판을 지난다. 오늘 붙은 공시의 수취인 칸에는 붉은 봉인 표시만 찍혀 있다. 지나가던 사람들이 잠깐 멈췄다가 그냥 지나간다.",en:"On your way to the counter you pass the notice board. On this morning’s notice, the recipient line carries only a red seal. Passers-by pause, then move on."},
+  bernPublic: {ko:"베른은 모자를 깊이 눌러쓰고 있다. “게시판에 내 이름이 붙었더군. 오는 길에 세 사람이 나를 알아봤네. 그중 한 사람은 나를 끝까지 따라왔어.”",en:"Bern keeps his hat pulled low. “My name is on the board. Three people recognised me on the way here. One of them followed me all the way.”"},
+  bernSealed: {ko:"베른이 낮게 말한다. “핍, 자네가 부탁했다지. 게시판에 내 이름은 없더군. 여기까지 오는 동안 아무도 나를 알아보지 못했네.”",en:"Bern speaks quietly. “Pip, I hear you asked for this. My name isn’t on the board. No one recognised me on the way here.”"},
+  share: {ko:"이 처리 결과 공유하기",en:"Share this disposition"},
+  shareCopied: {ko:"처리 결과를 복사했습니다. 붙여 넣어 공유하세요.",en:"Disposition copied. Paste it to share."},
+  shareFailed: {ko:"공유하지 못했습니다. 화면을 캡처해 주세요.",en:"Could not share. Please take a screenshot instead."},
+  shareHead: {ko:"내가 서명한 문장",en:"The sentences I signed"},
+  shareInvite: {ko:"당신이라면 어떤 문장에 서명하겠습니까?",en:"Which sentences would you sign?"}
 };
 function newOwnRecord() {
   return {v:1, stage:"draft", draft:{status:"",identity:"",attachment:""}, signature:"", original:null, revision:null, route:null, result:null, previous:null};
@@ -7268,9 +7278,26 @@ function ownRecordOutcome(state) {
     returnedAfterFiling:state.original.attachment === "filed" && r.attachment === "returned", exposed:state.original.identity === "public" || r.identity === "public",
     sealed:r.identity === "sealed"};
 }
+function ownRecordOutcomeLines(state) {
+  const o = ownRecordOutcome(state);
+  return [o.temporary ? "badgeTemporary" : o.badge ? "badgeYes" : "badgeNo",
+    o.exposed ? (o.sealed ? "privateAfter" : "privateNo") : "privateYes",
+    o.returnedAfterFiling ? "petitionReturnedAfter" : o.petition ? "petitionYes" : "petitionNo"];
+}
+// 공유 문구: 실제로 효력이 남은 문장과 처리 결과만 담는다. 서명(실명일 수 있음)은 넣지 않는다.
+function ownRecordShareText(state, lang, url) {
+  const ui = key => OWN_RECORD_COPY[key][lang] || OWN_RECORD_COPY[key].ko;
+  const effective = state.result === "amend" ? state.revision : state.original;
+  return [ui("title") + " — " + ui("shareHead"),
+    ...Object.keys(OWN_RECORD_FIELDS).map((k, i) => (i + 1) + ". " + ui(effective[k])),
+    "[" + ui({maintain:"maintained",amend:"amended",defer:"deferred"}[state.result]) + "]",
+    ...ownRecordOutcomeLines(state).map(key => "· " + ui(key)),
+    "", ui("shareInvite"), url].join("\n");
+}
 function OwnRecordTrial({lang, onLanguage, onExit, sound}) {
   const [state,setState] = useState(() => restoreOwnRecord(store.get(OWN_RECORD_KEY)));
   const [notice,setNotice] = useState(null);
+  const [shareNote,setShareNote] = useState(null);
   const focusRef = useRef(null);
   const tx = value => value && (value[lang] || value.ko || value.en) || "";
   const ui = key => tx(OWN_RECORD_COPY[key]);
@@ -7278,12 +7305,21 @@ function OwnRecordTrial({lang, onLanguage, onExit, sound}) {
   useEffect(() => { store.set(OWN_RECORD_KEY,state); }, [state]);
   useEffect(() => {
     setNotice(null);
+    setShareNote(null);
     focusRef.current?.focus({preventScroll:true});
     focusRef.current?.scrollIntoView?.({block:"start",behavior:"auto"});
   }, [state.stage]);
   const move = action => {
     setState(s => ownRecordMove(s,action));
     if (sound && ["sign","finish"].includes(action.type)) { try { SFX.cue("pen"); } catch (e) {} }
+  };
+  const shareRecord = async () => {
+    const url = window.location.origin + window.location.pathname + "#returned-letter";
+    const body = ownRecordShareText(state, lang, url);
+    try {
+      if (typeof navigator !== "undefined" && navigator.share) { await navigator.share({title:ui("title"), text:body}); setShareNote(null); return; }
+      await navigator.clipboard.writeText(body); setShareNote("shareCopied");
+    } catch (e) { if (e?.name !== "AbortError") setShareNote("shareFailed"); }
   };
   const paragraphs = (key, cls = "or-prose") => h("div",{className:cls},ui(key).split("\n\n").map((line,i) => h("p",{key:i},line)));
   const signature = () => h("div",{className:"or-signature"},h("span",null,ui("signature")),h("strong",null,state.signature));
@@ -7320,7 +7356,8 @@ function OwnRecordTrial({lang, onLanguage, onExit, sound}) {
     button("sign",{type:"sign"},true,!validOwnClauses(state.draft) || !state.signature.trim()),
     (!validOwnClauses(state.draft) || !state.signature.trim()) && h("p",{className:"or-caption"},ui("signHelp")));
   else if (state.stage === "turn") body = h(React.Fragment,null,
-    h("div",{className:"or-turn-paper"},paragraphs(state.original.status === "refused" ? "turnRefused" : "turnDelayed")),
+    h("div",{className:"or-turn-paper"},paragraphs(state.original.identity === "public" ? "boardPublic" : "boardSealed"),
+      paragraphs(state.original.status === "refused" ? "turnRefused" : "turnDelayed")),
     button("turn",{type:"turn"},true));
   else if (state.stage === "courier") {
     const access = ownRecordAccess(state.original);
@@ -7335,6 +7372,7 @@ function OwnRecordTrial({lang, onLanguage, onExit, sound}) {
       notice && h("aside",{className:"or-notice",role:"status"},h("strong",null,ui("locked")),h("q",null,ui(state.original[notice])),signature()));
   } else if (state.stage === "letter") body = h(React.Fragment,null,
     paragraphs(state.route === "copy" ? (state.original.attachment === "filed" ? "routeCopyFiled" : "routeCopyReturned") : {badge:"routeBadge",witness:"routeWitness",appendix:"routeAppendix"}[state.route]),
+    paragraphs(state.original.identity === "public" ? "bernPublic" : "bernSealed"),
     h("article",{className:"or-paper or-petition"},h("h3",null,ui("petitionTitle")),paragraphs("petitionText")),
     paragraphs("letterAfter"),
     h("div",{className:"or-reveal"},paragraphs(state.original.attachment === "filed" ? "filedReveal" : "returnedReveal"),h("blockquote",null,ui("finalRule"))),
@@ -7352,13 +7390,13 @@ function OwnRecordTrial({lang, onLanguage, onExit, sound}) {
     body = h(React.Fragment,null,
       h("div",{className:"or-end-record"},record(state.original,state.result === "amend" ? state.revision : null),
         h("span",{className:"or-seal"},ui({maintain:"maintained",amend:"amended",defer:"deferred"}[state.result]))),
-      h("ul",{className:"or-outcomes"},
-        h("li",null,ui(outcome.temporary ? "badgeTemporary" : outcome.badge ? "badgeYes" : "badgeNo")),
-        h("li",null,ui(outcome.exposed ? (outcome.sealed ? "privateAfter" : "privateNo") : "privateYes")),
-        h("li",null,ui(outcome.returnedAfterFiling ? "petitionReturnedAfter" : outcome.petition ? "petitionYes" : "petitionNo"))),
+      h("ul",{className:"or-outcomes"},ownRecordOutcomeLines(state).map(key => h("li",{key},ui(key)))),
       paragraphs(outcome.petition ? (state.original.attachment === "filed" ? "payoffFiled" : "payoffAmended") : "payoffReturned","or-last-line"),
       h("blockquote",{className:"or-rule-echo"},ui("finalRule")),
-      button("replay",{type:"replay"},true),h("p",{className:"or-caption"},ui("endingNote")));
+      button("replay",{type:"replay"},true),
+      h("button",{type:"button",className:"or-button","data-action":"share",onClick:shareRecord},ui("share")),
+      shareNote && h("p",{className:"or-caption",role:"status"},ui(shareNote)),
+      h("p",{className:"or-caption"},ui("endingNote")));
   }
   return h("div",{className:"or-shell"},
     h("nav",{className:"or-nav"},h("button",{type:"button",onClick:onExit},ui("exit")),
