@@ -349,6 +349,12 @@ function play(persona) {
       else i = Math.floor(r() * Math.min(cb.length, 2));
       click(cb[i], `전투: ${t[i].slice(0, 16)}`); continue;
     }
+    // pt45: advance the visible opening page just as a player would.
+    const prologueNext = bsNow.find(b => cls(b) === 'prologueNext');
+    if (prologueNext) {
+      think(readSec(text(all(tree).find(n => cls(n) === 'narr')).length) + 1);
+      click(prologueNext, '도입 다음 장'); continue;
+    }
     // 5) 일반 선택지
     const choiceBtns = bsNow.filter(b => /^choice( |$)/.test(cls(b)) && !/obj|fate/.test(cls(b)));
     if (!choiceBtns.length) {

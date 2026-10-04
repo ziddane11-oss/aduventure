@@ -65,7 +65,8 @@ test('confront with every key in hand shows four ways first, the rest folded', (
   const shown = choiceBtns(g.render()).map(text);
   assert.equal(shown.length, 4);
   assert.ok(shown.some(t => /\[Receipt\]/.test(t)), 'the receipt promised at the morning lead is never folded');
-  assert.equal(shown.filter(t => !t.includes('🦋')).length, 1, 'exactly one plain way stays in view');
+  const plain = [...g.run('SCENES.confront.choices')].filter(c => !c.echoReq && !c.loreReq && !c.classOnly).map(c => c.label.en);
+  assert.equal(shown.filter(t => plain.some(label => t.startsWith(label))).length, 1, 'one ordinary way stays in view');
   assert.ok(shown.some(t => /\[Persuade\]/.test(t)), 'and it is the talking one: ' + shown.join(' | '));
   const more = nodes(g.render()).find(n => n.props.className === 'moreChoices');
   assert.match(text(more), /3 more ways/);
@@ -75,11 +76,14 @@ test('confront with every key in hand shows four ways first, the rest folded', (
   assert.equal(nodes(g.render()).find(n => n.props.className === 'moreChoices'), undefined);
 });
 
-test('a scene with four or fewer ways, or a lead hub, is never folded', () => {
+test('four or fewer ways stay visible; lead hubs use the same cap', () => {
   const few = game({sceneKey: 'confront'});
   assert.equal(nodes(few.render()).find(n => n.props.className === 'moreChoices'), undefined);
   const hub = game({sceneKey: 'dawn2', flags: ['sabotage', 'ledger', 'caughtRen', 'peaceful']});
-  assert.equal(nodes(hub.render()).find(n => n.props.className === 'moreChoices'), undefined);
+  assert.equal(choiceBtns(hub.render()).length, 4);
+  const more = nodes(hub.render()).find(n => n.props.className === 'moreChoices');
+  assert.ok(more); more.props.onClick();
+  assert.equal(choiceBtns(hub.render()).length, 5);
 });
 
 test('the fold label speaks both languages', () => {

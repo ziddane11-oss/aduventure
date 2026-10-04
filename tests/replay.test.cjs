@@ -73,7 +73,7 @@ test('a result read before shows its outcome paragraph and can be opened; damage
   const t = text(result(again.render()));
   assert.match(t, /^… The taut wire has snapped/, 'the outcome (last paragraph) stays in view');
   assert.ok(!/skids across the oil/.test(t), 'the build-up is folded');
-  const open = nodes(again.render()).find(n => n.type === 'button' && /It went this way before/.test(text(n)));
+  const open = nodes(again.render()).find(n => n.type === 'button' && /Full text/.test(text(n)));
   open.props.onClick();
   assert.match(text(result(again.render())), /The taut wire has snapped/);
 });
@@ -85,7 +85,7 @@ test('replaying a chapter folds what the last record already saw, and its choice
   g.data.set('aduventure_seen', JSON.stringify(['intro2']));
   nodes(g.render()).find(n => n.type === 'button' && /Replay Ch\.2/.test(text(n))).props.onClick();
   assert.equal(g.state().sceneKey, 'intro2');
-  assert.ok(nodes(g.render()).some(n => n.props.className === 'expandBtn' && /Already on record/.test(text(n))), 'the scene is folded');
+  assert.ok(nodes(g.render()).some(n => n.props.className === 'expandBtn' && /Full text/.test(text(n))), 'the scene is folded');
   assert.equal(stage().props['data-stage'], 'instant');
 });
 
