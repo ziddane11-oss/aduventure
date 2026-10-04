@@ -62,7 +62,7 @@ for (const lang of ['ko', 'en']) {
     const t = text(card);
     assert.ok(t.includes(lang === 'en' ? 'Record · No. 113' : '제113호'));
     assert.ok(t.includes(lang === 'en' ? 'The name was not recorded' : '이름은 기록되지 않았다'));
-    assert.equal(text(byClass(card, 'redhand')[0]), lang === 'en' ? 'This is a lie.' : '거짓말이다.');
+    assert.equal(byClass(card, 'redhand').length, 0, 'the player must make the first correction');
     assert.equal(byClass(tree, 'card').length, 0, 'No class cards yet');
     const buttons = nodes(tree).filter(n => n.type === 'button' && /choice/.test(n.props.className || ''));
     assert.deepEqual(buttons.map(text), [g.run(`UI.recordLie.${lang}`), g.run(`UI.recordBelieve.${lang}`)]);
