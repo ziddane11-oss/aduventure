@@ -6,14 +6,14 @@ const assert = require('node:assert/strict');
 
 const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
 const app = [...html.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/g)].at(-1)[1].split('ReactDOM.createRoot')[0];
-function harness(saved) {
+function harness(saved, hash = '') {
   const data = new Map([['aduventure_save', '{"pc":{"name":"untouched"}}']]);
   if (saved) data.set('aduventure_own_record_v1', JSON.stringify(saved));
   const states = [], effects = [];
   let index = 0;
   const ctx = vm.createContext({
     console, Date, Math, setTimeout: () => 0, clearTimeout() {}, setInterval: () => 0, clearInterval() {},
-    window: {addEventListener() {}}, document: {documentElement: {}},
+    window: {location:{hash,pathname:'/aduventure/',search:''},addEventListener() {}}, document: {documentElement: {}},
     localStorage: {getItem: k => data.get(k) ?? null, setItem: (k, v) => data.set(k, v), removeItem: k => data.delete(k)},
     React: {
       Fragment: 'fragment', createElement: (type, props, ...children) => ({type, props: props || {}, children}),
@@ -23,9 +23,11 @@ function harness(saved) {
     }
   });
   vm.runInContext(app, ctx);
+  vm.runInContext('window.history = {pushState(a,b,url) { window.location.hash = url; }}', ctx);
   const run = c => vm.runInContext(c, ctx);
   const render = (lang = 'en') => { index = 0; effects.length = 0; const tree = run(`OwnRecordTrial({lang: '${lang}', onLanguage(){}, onExit(){}, sound: false})`); effects.splice(0).forEach(fn => fn()); return tree; };
-  return {run, render, data, move: (s, a) => JSON.parse(JSON.stringify(run(`ownRecordMove(${JSON.stringify(s)}, ${JSON.stringify(a)})`)))};
+  const mainRender = () => { index = 0; effects.length = 0; return run('CRPG()'); };
+  return {run, render, mainRender, data, move: (s, a) => JSON.parse(JSON.stringify(run(`ownRecordMove(${JSON.stringify(s)}, ${JSON.stringify(a)})`)))};
 }
 function prepared(g, choices = {status:'refused', identity:'sealed', attachment:'returned'}) {
   let s = g.run('newOwnRecord()');
@@ -36,6 +38,15 @@ function prepared(g, choices = {status:'refused', identity:'sealed', attachment:
 }
 function nodes(n) { return !n || typeof n !== 'object' ? [] : Array.isArray(n) ? n.flatMap(nodes) : [n, ...n.children.flatMap(nodes)]; }
 function text(n) { return n == null || typeof n === 'boolean' ? '' : Array.isArray(n) ? n.map(text).join('') : typeof n === 'object' ? text(n.children) : String(n); }
+
+test('entering through the title records the case URL, so a reload opens the same experience', () => {
+  const g = harness();
+  const entry = nodes(g.mainRender()).find(n => n.props.className === 'or-entry');
+  entry.props.onClick();
+  assert.equal(g.run('window.location.hash'), '#returned-letter');
+  const loaded = harness(null, g.run('window.location.hash'));
+  assert.ok(nodes(loaded.mainRender()).some(n => typeof n.type === 'function' && n.type.name === 'OwnRecordTrial'));
+});
 
 test('all eight signed reports produce the promised access, with an escape route in every case', () => {
   const g = harness();
