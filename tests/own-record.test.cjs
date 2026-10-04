@@ -227,3 +227,21 @@ test('the ending offers a shareable record of the signed sentences in the chosen
   assert.ok(end.some(n => n.props['data-action'] === 'share'), 'The end screen has a share button');
   for (const stage of ['draft','turn','courier']) assert.equal(nodes(harness({...prepared(g), stage}).render('ko')).some(n => n.props['data-action'] === 'share'), false);
 });
+
+test('sharing uses a stable public link and falls back to selectable text when the clipboard is blocked', async () => {
+  const g = harness();
+  let s = prepared(g, {status:'delayed', identity:'sealed', attachment:'filed'});
+  s = g.move(s, {type:'route', route:'appendix'}); s = g.move(s, {type:'review'}); s = g.move(s, {type:'finish', result:'maintain'});
+  const end = harness(s);
+  const url = end.run('ownRecordShareUrl()');
+  assert.match(url, /^https:\/\//, 'Never the embedding page (e.g. an itch.io iframe) or localhost');
+  end.run('window.ADU_SHARE_URL = "https://someone.itch.io/returned-letter"');
+  assert.equal(end.run('ownRecordShareUrl()'), 'https://someone.itch.io/returned-letter');
+  // No navigator in this context: the share must fail gracefully and expose the text instead.
+  await nodes(end.render('ko')).find(n => n.props['data-action'] === 'share').props.onClick();
+  const after = nodes(end.render('ko'));
+  const box = after.find(n => n.type === 'textarea');
+  assert.ok(box, 'A selectable copy of the share text appears');
+  assert.ok(box.props.value.endsWith('https://someone.itch.io/returned-letter'));
+  assert.ok(text(after).includes(end.run('OWN_RECORD_COPY.shareManual.ko')));
+});
