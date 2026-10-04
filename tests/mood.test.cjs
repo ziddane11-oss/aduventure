@@ -18,7 +18,7 @@ function text(node) {
   return typeof node === 'object' ? text(node.children) : String(node);
 }
 const byClass = (tree, c) => nodes(tree).filter(n => n.props.className === c);
-function game(sceneKey, portraits = '') {
+function game(sceneKey, portraits = null) {
   const states = [];
   let index = 0;
   const data = new Map([['aduventure_lang', JSON.stringify('en')]]);
@@ -39,7 +39,7 @@ function game(sceneKey, portraits = '') {
       useEffect() {}
     }
   });
-  vm.runInContext(portraits ? app.replace(/const PORTRAIT_FILES = \{[\s\S]*?\};/, 'const PORTRAIT_FILES = {' + portraits + '};') : app, ctx);
+  vm.runInContext(portraits !== null ? app.replace(/const PORTRAIT_FILES = \{[\s\S]*?\};/, 'const PORTRAIT_FILES = {' + portraits + '};') : app, ctx);
   data.set('aduventure_save', JSON.stringify({
     v: 1, sceneKey, flags: [], ruleKey: 'srd20', fate: 1, specialLeft: 2, breathLeft: 1, tutSeen: true, runNo: 140,
     pc: {...vm.runInContext('CLASSES.fighter', ctx), classKey: 'fighter', name: 'QA'}, stats: {rolls: 0, success: 0}
@@ -71,8 +71,8 @@ test('one tap on the text shows the whole scene at once', () => {
 });
 
 test('every character has a drawn draft portrait, and a real picture file replaces it', () => {
-  const plain = byClass(game('c2_reader').render(), 'castChip')[0];
-  assert.match(nodes(plain).find(n => n.type === 'img').props.src, /^data:image\/svg\+xml/, 'Draft by default');
+  const plain = byClass(game('c2_reader', '').render(), 'castChip')[0];
+  assert.match(nodes(plain).find(n => n.type === 'img').props.src, /^data:image\/svg\+xml/, 'Draft when no image file is configured');
   const g = game('c2_reader');
   assert.deepEqual([...g.run('Object.keys(CAST)')].sort(), [...g.run('Object.keys(PORTRAIT_DRAFTS)')].sort(), 'No one is left without a face');
   for (const svg of g.run('Object.values(PORTRAIT_DRAFTS)')) assert.match(svg, /#c0392b/, 'One red accent each');
