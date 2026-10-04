@@ -39,7 +39,7 @@ function game(sceneKey, portraits = '') {
       useEffect() {}
     }
   });
-  vm.runInContext(app.replace('const PORTRAIT_FILES = {};', 'const PORTRAIT_FILES = {' + portraits + '};'), ctx);
+  vm.runInContext(portraits ? app.replace(/const PORTRAIT_FILES = \{[\s\S]*?\};/, 'const PORTRAIT_FILES = {' + portraits + '};') : app, ctx);
   data.set('aduventure_save', JSON.stringify({
     v: 1, sceneKey, flags: [], ruleKey: 'srd20', fate: 1, specialLeft: 2, breathLeft: 1, tutSeen: true, runNo: 140,
     pc: {...vm.runInContext('CLASSES.fighter', ctx), classKey: 'fighter', name: 'QA'}, stats: {rolls: 0, success: 0}
