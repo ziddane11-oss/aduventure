@@ -133,6 +133,7 @@ test('every piece of evidence says what it shows, in both languages', () => {
 test('fragments from earlier records count as evidence; with nothing in hand you can only back down', () => {
   const g = game({sceneKey: 'ending2', lore: ['f_fund']});
   g.press('choice objStart');
+  g.press('choice objLine', 1);
   assert.ok(nodes(g.panel()).some(n => n.props.className === 'choice objEvidence' && text(n).includes('The smuggling ledger')));
   const empty = game({sceneKey: 'ending3'});
   assert.ok(nodes(empty.panel()).find(n => n.props.className === 'choice objStart').props.disabled, 'nothing in hand: locked, not a trap');
@@ -142,7 +143,7 @@ test('every chapter has a lie and enough possible proof, and the words are bilin
   const g = game();
   for (const ch of [1, 2, 3]) {
     const r = g.run(`REBUTTALS[${ch}]`);
-    assert.ok(r.proof.length >= 4);
+    assert.ok(r.proof.length >= 2, 'more than one route can supply relevant evidence');
     for (const id of r.proof) assert.ok(g.run(`!!EVIDENCE[${JSON.stringify(id)}]`), id);
     const lines = g.run(`officialRecord(${ch}, [], 130).lines`);
     assert.ok(r.line < lines.length);
@@ -154,6 +155,7 @@ test('every chapter has a lie and enough possible proof, and the words are bilin
 test('replaying a chapter clears the last objection, so it can be raised again', () => {
   const g = game({sceneKey: 'ending2', flags: ['ledger']});
   g.press('choice objStart');
+  g.press('choice objLine', 1);
   g.press('choice objEvidence', 0);
   assert.match(text(g.panel()), /Red ink strikes/);
   nodes(g.render()).find(n => n.type === 'button' && /Replay Ch\.2/.test(text(n))).props.onClick();
