@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>어두밴처 v0.7.3-pt42.1</title>
+<title>어두밴처 v0.7.3-pt43</title>
 <style>body{margin:0;background:#0e1420}</style>
 </head>
 <body>
@@ -318,7 +318,7 @@ function(a,b,c){if(!Vd(b))throw Error(n(200));return Wd(null,a,b,!1,c)};Q.unmoun
    GAS 피드백 파이프 — v0.7 재구현 (제안/신호/텔레메트리)
    ============================================================ */
 /* 플레이테스트 빌드 태그 — 테스트 중 버전 구분용. 수정할 때마다 뒤 번호를 올린다. */
-const BUILD = "v0.7.3-pt42.1";
+const BUILD = "v0.7.3-pt43";
 const GAS_URL = "https://script.google.com/macros/s/AKfycbxFx_m5rhCZmqGoy3JcUUNqEgiObMWNHe9hx-LnZrhzIkfwa9-yJGBWP0lVulptnNQeCQ/exec";
 function gasPost(payload, options = {}) {
   return fetch(GAS_URL, {
@@ -7101,7 +7101,7 @@ const OWN_RECORD_COPY = {
   saved: {ko:"이 사건은 자동 저장됩니다.",en:"This case saves automatically."},
   draftRole: {ko:"오전 · 당신은 기록관이다",en:"Morning · You are the clerk"},
   draftTitle: {ko:"문장은 짧을수록 처리하기 쉽다.",en:"A short sentence is easier to process."},
-  draftIntro: {ko:"촌장 세온이 반송 보고서 한 장을 밀어 놓는다. “배달이 끝나지 않은 이유만 적게. 나머지는 양식대로.” 창구 건너편에서 배달부 핍이 젖은 모자를 움켜쥔다.",en:"Seon slides a return report across your desk. “Just record why the delivery failed. The form will handle the rest.” Across the counter, Pip grips a rain-soaked cap."},
+  draftIntro: {ko:"촌장 세온이 반송 보고서 한 장을 밀어 놓는다. “배달이 끝나지 않은 이유만 적게. 나머지는 양식대로.” 창구 건너편에서 배달부 핍이 젖은 모자를 움켜쥔다.\n\n“내일 첫 배달 전에 다시 올게요.” 핍이 말한다.",en:"Seon slides a return report across your desk. “Just record why the delivery failed. The form will handle the rest.” Across the counter, Pip grips a rain-soaked cap.\n\n“I’ll be back before my first delivery tomorrow,” he says."},
   factsTitle: {ko:"당신이 직접 확인한 것",en:"What you actually observed"},
   fact1: {ko:"봉투의 수취인은 등대지기 베른이다. 배달 완료 도장은 없다.",en:"The envelope is addressed to Bern, the lighthouse keeper. There is no delivery stamp."},
   fact2: {ko:"핍은 말했다. “명부에서 이름이 지워진 사람에게는 배달할 수 없다고 했어요.” 누가 지웠는지, 왜 지웠는지는 확인하지 못했다.",en:"Pip said, “They told me I cannot deliver to someone whose name was removed from the register.” You have not verified who removed it, or why."},
@@ -7123,7 +7123,7 @@ const OWN_RECORD_COPY = {
   filedHint: {ko:"봉인을 유지한 채 정식 접수 · 심사 대상으로 남음",en:"Keep it sealed and formally filed · it must be reviewed"},
   returned: {ko:"봉인된 별지를 배달부에게 돌려준다.",en:"Return the sealed enclosure to the courier."},
   returnFiledHint: {ko:"원본을 돌려주되, 이미 남은 접수 이력과 심사 대상 지위는 유지됨",en:"Return the original; its filing history and standing for review remain"},
-  petitionReturnedAfter: {ko:"별지 원본은 돌려주었다. 하지만 오전의 접수 이력은 남는다. 베른의 신청은 여전히 심사 대상이다.",en:"The original enclosure is returned, but its morning filing remains on record. Bern’s petition is still entitled to review."},
+  petitionReturnedAfter: {ko:"별지 원본은 돌려주었다. 하지만 최초의 접수 이력은 남는다. 베른의 신청은 여전히 심사 대상이다.",en:"The original enclosure is returned, but its original filing remains on record. Bern’s petition is still entitled to review."},
   language: {ko:"English",en:"한국어"},
   returnedHint: {ko:"서류를 당사자에게 반환 · 이 창구에서는 접수하지 않음",en:"Return the document to its bearer · do not file it here"},
   preview: {ko:"서명 전 미리보기",en:"Review before signing"},
@@ -7135,11 +7135,15 @@ const OWN_RECORD_COPY = {
   signed: {ko:"서명 완료 · 원본 보존",en:"Signed · original retained"},
   original: {ko:"원본 · 별지 07",en:"Original · Supplement 07"},
   stamped: {ko:"접수",en:"FILED"},
-  turnRole: {ko:"같은 날 오후",en:"That afternoon"},
-  turnTitle: {ko:"종이의 반대편.",en:"The other side of the paper."},
-  turnText: {ko:"펜의 감촉이 사라진다. 손에는 젖은 모자가 들려 있다.\n\n당신은 배달부 핍이다. 기록실 문 앞, 유리 밑에 낯익은 보고서가 끼워져 있다. 오전에 당신이 고른 문장. 당신이 남긴 서명.",en:"The pen is gone. A wet cap rests in your hands.\n\nYou are Pip, the courier. At the registry door, a familiar report sits under glass. The sentences you chose that morning. The signature you left."},
-  turn: {ko:"내가 서명한 문 앞에 선다",en:"Stand before the door I signed"},
-  courierRole: {ko:"오후 · 당신은 배달부 핍이다",en:"Afternoon · You are Pip"},
+  turnTitleRefused: {ko:"핍의 자리가 비었다.",en:"Pip’s place is empty."},
+  turnTitleDelayed: {ko:"약속한 시간.",en:"At the promised hour."},
+  turnRefused: {ko:"창구를 열어도 핍은 오지 않는다. 어제 그가 모자를 올려놓았던 자리에 빗물이 마른 자국만 남아 있다.\n\n“내일 첫 배달 전에 다시 올게요.”\n\n문밖에서 누군가 유리창을 두드린다.",en:"You open the counter. Pip does not come in. A dried ring of rainwater marks the spot where he rested his cap yesterday.\n\n“I’ll be back before my first delivery tomorrow.”\n\nSomeone taps on the glass outside."},
+  turnDelayed: {ko:"창구를 열자 유리문 너머로 낯익은 모자가 보인다. 핍이 약속한 시간에 왔다.\n\n문지기가 옆으로 비켜선다. 핍은 모자를 벗고 안으로 들어온다.\n\n“이번에는 전할 수 있을까요?”",en:"When you open the counter, a familiar cap appears beyond the glass. Pip has arrived when he promised.\n\nThe attendant steps aside. Pip takes off his cap and comes in.\n\n“Will I be able to deliver it this time?”"},
+  arrivalRefused: {ko:"당신은 배달부 핍이다.\n\n문지기는 당신이 내민 배달증을 창구 안쪽에 내려놓는다. 돌려주지 않는다. “오늘부터 이건 쓸 수 없어.”\n\n당신은 문 앞에 남는다. 문지기가 가리킨 보고서 맨 아래에, 낯익은 서명이 있다.",en:"You are Pip, the courier.\n\nThe attendant sets your badge behind the counter. He does not hand it back. “You can’t use this anymore.”\n\nYou remain at the door. At the bottom of the report he points to is a familiar signature."},
+  arrivalDelayed: {ko:"당신은 배달부 핍이다.\n\n문지기가 배달증을 확인하고 돌려준다. “들어가.” 당신은 배달증을 다시 주머니에 넣는다.\n\n그의 손 밑에 놓인 보고서 맨 아래에, 낯익은 서명이 있다.",en:"You are Pip, the courier.\n\nThe attendant checks your badge and hands it back. “Go in.” You slip it into your pocket.\n\nBeneath his hand lies a report. At the bottom is a familiar signature."},
+  turnRole: {ko:"다음 날 아침 · 기록관의 창구",en:"The next morning · At the clerk’s desk"},
+  turn: {ko:"핍의 자리에서 계속한다",en:"Continue in Pip’s place"},
+  courierRole: {ko:"다음 날 아침 · 당신은 배달부 핍이다",en:"The next morning · You are Pip"},
   courierTitle: {ko:"이 문은 당신의 문장을 읽는다.",en:"This door reads your sentences."},
   courierText: {ko:"베른은 살아 있다. 다만 명부에는 없다. 이름을 되돌려 달라는 신청서를 전해야 한다. 문지기는 유리 밑 보고서를 가리킨다. “통과할 근거가 있으면 보여 줘.”",en:"Bern is alive. He is simply absent from the register. You must deliver his petition to restore his name. The attendant points to the report under the glass. “Show me your grounds for admission.”"},
   accessLabel: {ko:"출입 심사의 근거 · 당신이 서명한 원문",en:"Grounds for admission · your signed original"},
@@ -7164,13 +7168,13 @@ const OWN_RECORD_COPY = {
   routeCopyReturned: {ko:"베른이 담장 그늘에서 기다리고 있다. 당신 손에 되돌아온 별지의 봉인을 그가 직접 푼다.",en:"Bern waits in the shade of the wall. He breaks the seal on the enclosure returned to your hands."},
   petitionTitle: {ko:"명부 정정 신청",en:"Petition to Correct the Register"},
   petitionText: {ko:"신청인: 베른, 등대지기.\n\n나는 살아 있다. 이번 달 명부에서 내 이름이 빠졌다. 창구는 ‘명부에 없는 자의 신청은 받을 수 없다’며 접수를 거부했다.\n\n내 이름을 되찾기 위해, 내 이름이 먼저 필요하다.\n\n이 서류를 받을 수 있는 사람에게 전해 주시오.",en:"Applicant: Bern, lighthouse keeper.\n\nI am alive. My name is missing from this month's register. The desk refused my petition: ‘Applications from unregistered persons cannot be accepted.’\n\nTo recover my name, I must first have my name.\n\nPlease deliver this to someone who is allowed to receive it."},
-  letterAfter: {ko:"베른이 묻는다. “자네가 들어갈 문은 찾았나? 내 신청서가 들어갈 자리는?”\n\n오전에 본 사실은 달라지지 않았다. 배달은 끝나지 않았고, 별지에는 ‘명부 정정 신청’이라고 적혀 있었다.",en:"Bern asks, “Did you find a door for yourself? And a place for my petition?”\n\nNone of the morning's facts have changed. The delivery was unfinished. The enclosure was headed ‘Petition to Correct the Register.’"},
-  filedReveal: {ko:"접수증을 뒤집는다. 별지 접수 시각은 지금이 아니다. 당신이 오전에 서명한 시각이다.\n\n베른이 문을 통과하기도 전에, 그의 신청서는 이미 들어가 있었다.",en:"You turn over the receipt. The enclosure was not filed just now. It was filed when you signed that morning.\n\nBefore Bern could pass through the door, his petition was already inside."},
-  returnedReveal: {ko:"접수증의 별지 칸은 비어 있다. 신청서는 당신에게 돌아왔고, 베른은 여전히 ‘신청한 적 없는 사람’이다.\n\n오전의 세 번째 문장은 종이를 어디에 둘지 정하는 문장이었다. 동시에, 이 사람이 신청한 것으로 인정할지를 정했다.",en:"The enclosure box on the receipt is empty. The petition came back to you. Officially, Bern has never applied.\n\nYour third sentence decided where to put a piece of paper. It also decided whether this person had applied at all."},
+  letterAfter: {ko:"베른이 묻는다. “자네가 들어갈 문은 찾았나? 내 신청서가 들어갈 자리는?”\n\n어제 본 사실은 달라지지 않았다. 배달은 끝나지 않았고, 별지에는 ‘명부 정정 신청’이라고 적혀 있었다.",en:"Bern asks, “Did you find a door for yourself? And a place for my petition?”\n\nNone of yesterday's facts have changed. The delivery was unfinished. The enclosure was headed ‘Petition to Correct the Register.’"},
+  filedReveal: {ko:"접수증을 뒤집는다. 별지 접수 시각은 지금이 아니다. 당신이 어제 서명한 시각이다.\n\n베른이 문을 통과하기도 전에, 그의 신청서는 이미 들어가 있었다.",en:"You turn over the receipt. The enclosure was not filed just now. It was filed when you signed yesterday.\n\nBefore Bern could pass through the door, his petition was already inside."},
+  returnedReveal: {ko:"접수증의 별지 칸은 비어 있다. 신청서는 당신에게 돌아왔고, 베른은 여전히 ‘신청한 적 없는 사람’이다.\n\n어제의 세 번째 문장은 종이를 어디에 둘지 정하는 문장이었다. 동시에, 이 사람이 신청한 것으로 인정할지를 정했다.",en:"The enclosure box on the receipt is empty. The petition came back to you. Officially, Bern has never applied.\n\nYour third sentence decided where to put a piece of paper. It also decided whether this person had applied at all."},
   review: {ko:"이 보고서를 서명한 사람에게 돌려보낸다",en:"Return the report to its signer"},
   reviewRole: {ko:"다시, 기록관의 책상",en:"Back at the clerk's desk"},
   reviewTitle: {ko:"그 서명은 여전히 당신 것이다.",en:"The signature is still yours."},
-  reviewText: {ko:"핍이 보고서를 내려놓는다. 종이는 오전과 같다. 달라진 것은 당신이 그 문장 뒤에서 살아 보았다는 것뿐이다.\n\n고칠 문장만 바꾸어라. 원문과 서명은 남는다. 이미 공개한 이름을 본 사람들의 기억까지 지울 수는 없다.",en:"Pip places the report on your desk. It is the same paper. You have now lived on the other side of its sentences.\n\nChange only what you wish to correct. The original and its signature remain. You cannot erase a published name from the minds of those who read it."},
+  reviewText: {ko:"핍이 보고서를 내려놓는다. 종이는 어제 그대로다. 달라진 것은 당신이 그 문장 뒤에서 살아 보았다는 것뿐이다.\n\n고칠 문장만 바꾸어라. 원문과 서명은 남는다. 이미 공개한 이름을 본 사람들의 기억까지 지울 수는 없다.",en:"Pip places the report on your desk. It is the same paper. You have now lived on the other side of its sentences.\n\nChange only what you wish to correct. The original and its signature remain. You cannot erase a published name from the minds of those who read it."},
   correction: {ko:"정정안",en:"Proposed correction"},
   maintain: {ko:"원문을 유지한다",en:"Keep the original"},
   maintainHint: {ko:"원래 세 문장의 효력을 그대로 남긴다.",en:"Leave all three original provisions in force."},
@@ -7293,12 +7297,12 @@ function OwnRecordTrial({lang, onLanguage, onExit, sound}) {
     choices.map(value => h("label",{key:value,className:"or-option" + (values[field] === value ? " selected" : "")},
       h("input",{type:"radio",name:"or-" + type + "-" + field,value,checked:values[field] === value,"data-pick":field + ":" + value,
         onChange:() => move({type,field,value})}),
-      h("span",null,h("strong",null,ui(value)),h("small",null,ui(type === "revise" && value === "returned" && state.original.attachment === "filed" ? "returnFiledHint" : value+"Hint"))))))));
+      h("span",null,h("strong",null,ui(value)),type === "revise" && h("small",null,ui(type === "revise" && value === "returned" && state.original.attachment === "filed" ? "returnFiledHint" : value+"Hint"))))))));
   const button = (key, action, primary = false, disabled = false) => h("button",{
     type:"button",className:"or-button" + (primary ? " primary" : ""),"data-action":key,disabled,
     onClick:() => move(action)
   },ui(key));
-  const titles = {draft:["draftRole","draftTitle"],turn:["turnRole","turnTitle"],courier:["courierRole","courierTitle"],
+  const titles = {draft:["draftRole","draftTitle"],turn:["turnRole",state.original?.status === "refused" ? "turnTitleRefused" : "turnTitleDelayed"],courier:["courierRole","courierTitle"],
     letter:["letterRole","letterTitle"],review:["reviewRole","reviewTitle"],end:["endRole","endTitle"]};
   const title = titles[state.stage];
   let body;
@@ -7316,13 +7320,12 @@ function OwnRecordTrial({lang, onLanguage, onExit, sound}) {
     button("sign",{type:"sign"},true,!validOwnClauses(state.draft) || !state.signature.trim()),
     (!validOwnClauses(state.draft) || !state.signature.trim()) && h("p",{className:"or-caption"},ui("signHelp")));
   else if (state.stage === "turn") body = h(React.Fragment,null,
-    paragraphs("turnText"),
-    h("div",{className:"or-turn-paper"},record(state.original),h("span",{className:"or-seal"},ui("signed"))),
+    h("div",{className:"or-turn-paper"},paragraphs(state.original.status === "refused" ? "turnRefused" : "turnDelayed")),
     button("turn",{type:"turn"},true));
   else if (state.stage === "courier") {
     const access = ownRecordAccess(state.original);
     const field = {badge:"status",witness:"identity",appendix:"attachment"};
-    body = h(React.Fragment,null,paragraphs("courierText"),
+    body = h(React.Fragment,null,paragraphs(state.original.status === "refused" ? "arrivalRefused" : "arrivalDelayed"),paragraphs("courierText"),
       h("p",{className:"or-caption"},ui("accessLabel")),record(state.original),
       h("div",{className:"or-routes"},["badge","witness","appendix","copy"].map(route => h("button",{
         key:route,type:"button",className:"or-route" + (access[route] ? "" : " blocked"),"data-route":route,
