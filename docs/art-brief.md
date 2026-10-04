@@ -1,19 +1,19 @@
 # 그림 지시서 — ChatGPT(이미지 생성)에 그대로 붙여 넣는 용
 
-> **pt41 현재 기준:** 세온·베른·렌은 잉크 판화풍 실물 이미지로 교체했다. 나머지 인물의 제작에는 [이번 프롬프트](portrait-prompts-pt41.md)와 세 이미지를 기준으로 화풍을 맞춘다. 아래 인물 설정은 유지하되, 이전의 도형 위주 공통 화풍은 더 이상 목표가 아니다.
+> **pt45.1 현재 기준:** 세온·베른·렌과 스컬리·오도·핍·회색 형제·이레·묵, 총 9명 모두 잉크 판화풍 이미지로 연결했다. [기존 3명 프롬프트](portrait-prompts-pt41.md)와 [추가 6명 프롬프트](portrait-prompts-complete.md)를 참고한다. 코드로 그린 도형 초상은 이미지 로드 실패 시 대체 화면으로만 남긴다.
 
-> 목적: 인물 8명 + 장면 그림을 **같은 화풍**으로 맞춘다. 한 장씩 따로 부탁하면 화풍이 흔들리므로, 매번 **[공통 화풍]을 먼저 붙이고** 인물/장면 설명을 덧붙인다.
-> 게임 안에 넣는 법: 파일을 `art/` 폴더에 넣고 `index.html`의 `const PORTRAIT_FILES = {};`에 `seon: "art/seon.png"`처럼 경로만 적으면 코드로 그린 초안 대신 그 그림이 이름 옆에 뜬다.
+> 목적: 인물 9명 + 장면 그림을 **같은 화풍**으로 맞춘다. 한 장씩 따로 부탁하면 화풍이 흔들리므로, 매번 **[공통 화풍]을 먼저 붙이고** 인물/장면 설명을 덧붙인다.
+> 게임 안에 넣는 법: 파일을 `art/` 폴더에 넣고 `index.html`의 `PORTRAIT_FILES`에 해당 인물의 경로를 연결한다.
 
 ## [공통 화풍] — 모든 요청 맨 앞에 붙인다
 ```
-Style: monochrome ink illustration on aged paper. Grayscale only, with ONE accent color: deep red ink (#C0392B), used sparingly and only where noted.
-Flat geometric shapes, bold silhouettes, strong contrast, minimal detail, no gradients except subtle paper grain.
-Face shading split in two halves (left darker, right lighter). Small simple eyes, no exaggerated anime features.
-Square 1:1 portrait, head and shoulders, plain dark background (#121110) with faint paper texture.
+Style: handmade antique wood engraving and pen-and-ink crosshatching. Grayscale and aged ivory only, with ONE restrained deep-red ink accent (#a83228), used only where noted.
+Richly observed human faces and fabric, strong readable light and shadow, imperfect engraved strokes. No flat geometric shapes, anime, or vector art.
+Square 1:1 head-and-shoulders portrait, dark silhouette fading into warm charcoal paper (#171614).
+Keep the face and identifying prop clear at 104px on desktop and 88px on mobile.
 No text, no letters, no watermark.
 ```
-(한국어 설명: 낡은 종이 위 먹 그림, 회색조 + 붉은 잉크 한 색, 도형 위주의 굵은 실루엣, 얼굴 명암은 반으로 나눔, 정사각형 흉상, 글자 없음)
+(한국어 설명: 낡은 종이의 잉크 판화, 회색조·상아색 + 붉은 잉크 한 색, 인물 표정과 질감이 읽히는 정사각형 흉상, 글자 없음)
 
 ## 인물 (파일 이름 = 게임 속 id)
 | id | 이름 | 붙일 설명(영문) | 붉은색을 쓰는 곳 |
@@ -26,6 +26,7 @@ No text, no letters, no watermark.
 | `pip` | 핍 — 붙잡혀 있던 배달부 | A young courier, messenger cap, mailbag strap across the chest, tired but defiant eyes, wet hair. | 우편 가방의 봉랍(밀랍 도장) |
 | `grey` | 회색 형제 — 가짜 수도사 | A tall false monk in a grey hood, face mostly hidden in shadow, heavy iron candlestick. | 촛불 불꽃 |
 | `ire` | 이레 — 먹울의 눈먼 낭독가 | A woman who is blind, eyes gently closed, ink-stained fingertips resting on an open manuscript, calm faint smile. | 손끝의 잉크 |
+| `muk` | 묵 — 먹울 필사소장 | A disciplined copy-master with precisely center-parted hair, a stern clean-shaven face, spotless sleeve cuffs, and a slender writing brush. | 붓끝의 잉크 |
 
 **요청 예시(그대로 복사):**
 ```
