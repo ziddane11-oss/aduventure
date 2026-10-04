@@ -48,6 +48,37 @@ test('entering through the title records the case URL, so a reload opens the sam
   assert.ok(nodes(loaded.mainRender()).some(n => typeof n.type === 'function' && n.type.name === 'OwnRecordTrial'));
 });
 
+test('first signing supplies evidence without outcome spoilers; the next day and review reveal consequences', () => {
+  for (const lang of ['ko','en']) {
+    const g = harness();
+    const copy = g.run('OWN_RECORD_COPY');
+    const draft = text(g.render(lang));
+    assert.ok(draft.includes(copy.fact2[lang]));
+    assert.ok(draft.includes(copy.rule[lang]));
+    for (const key of ['refused','delayed','public','sealed','filed','returned']) {
+      assert.ok(draft.includes(copy[key][lang]), 'The actual sentence remains available');
+      assert.equal(draft.includes(copy[key+'Hint'][lang]), false, 'No advance outcome annotation: '+key);
+    }
+    const mornings = [];
+    for (const status of ['refused','delayed']) {
+      let s = prepared(g, {status,identity:'sealed',attachment:'returned'});
+      mornings.push(text(harness({...s,stage:'turn'}).render(lang)));
+      const door = text(harness(s).render(lang));
+      assert.ok(door.includes(copy[status === 'refused' ? 'badgeClosed' : 'badgeOpen'][lang]));
+      s = g.move(s,{type:'route',route:'copy'}); s = g.move(s,{type:'review'});
+      const review = text(harness(s).render(lang));
+      assert.ok(review.includes(copy.refusedHint[lang]));
+      assert.ok(review.includes(copy.delayedHint[lang]));
+    }
+    assert.notEqual(mornings[0],mornings[1], 'The next morning reflects the actual signed sentence');
+    // The first morning view shows Pip's presence or absence; it does not pre-explain the badge rule.
+    for (const morning of mornings) {
+      assert.equal(morning.includes(copy.refusedHint[lang]),false);
+      assert.equal(morning.includes(copy.delayedHint[lang]),false);
+    }
+  }
+});
+
 test('all eight signed reports produce the promised access, with an escape route in every case', () => {
   const g = harness();
   for (const status of ['refused','delayed']) for (const identity of ['public','sealed']) for (const attachment of ['filed','returned']) {
