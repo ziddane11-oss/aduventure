@@ -67,6 +67,7 @@ test('the last move of a duel shows a clock that can be turned off and stays off
   const want = g.run('timerBudget(0, fmt(SCENES.duel2.text.en, {name: "QA"}).length, false)');
   assert.ok(want > 16 && want <= 46, 'first visit adds reading time');
   assert.match(text(box), new RegExp(want + 's before you falter'));
+  assert.match(text(box), /then they move first/, 'pt39: says what happens when time runs out');
   nodes(box).find(n => n.props.className === 'timerToggle').props.onClick();
   assert.equal(g.data.get('aduventure_timer'), 'false');
   assert.match(text(timerBox(g.render())), /Clock off/);
