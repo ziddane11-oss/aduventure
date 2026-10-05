@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>어두밴처 v0.7.3-pt47</title>
+<title>어두밴처 v0.7.3-pt48</title>
 <style>body{margin:0;background:#0e1420}</style>
 </head>
 <body>
@@ -318,7 +318,7 @@ function(a,b,c){if(!Vd(b))throw Error(n(200));return Wd(null,a,b,!1,c)};Q.unmoun
    GAS 피드백 파이프 — v0.7 재구현 (제안/신호/텔레메트리)
    ============================================================ */
 /* 플레이테스트 빌드 태그 — 테스트 중 버전 구분용. 수정할 때마다 뒤 번호를 올린다. */
-const BUILD = "v0.7.3-pt47";
+const BUILD = "v0.7.3-pt48";
 const GAS_URL = "https://script.google.com/macros/s/AKfycbxFx_m5rhCZmqGoy3JcUUNqEgiObMWNHe9hx-LnZrhzIkfwa9-yJGBWP0lVulptnNQeCQ/exec";
 function gasPost(payload, options = {}) {
   return fetch(GAS_URL, {
@@ -7105,6 +7105,36 @@ const css = `
 .crpg .or-preview,.crpg .or-previous { margin:20px 0; color:var(--dim); font-size:14px; line-height:1.8; }
 .crpg .or-preview summary,.crpg .or-previous summary { cursor:pointer; min-height:40px; padding:8px 0; color:var(--gold); }
 .crpg .or-footer { display:flex; justify-content:space-between; flex-wrap:wrap; gap:12px; border-top:1px solid var(--line); color:var(--dim); font-size:11px; padding-top:20px; margin-top:38px; }
+.crpg .uo-entry { margin-top:-10px; }
+.crpg .uo-shell { max-width:960px; min-width:0; }
+.crpg .uo-body { max-width:760px; margin:0 auto; }
+.crpg .uo-shell .or-nav button { min-height:44px; }
+.crpg .uo-workbench { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:20px; align-items:start; }
+.crpg .uo-workbench .uo-paper { margin:0; padding:22px; min-width:0; }
+.crpg .uo-lines { list-style:none; margin:0; padding:0; }
+.crpg .uo-lines li + li { border-top:1px solid #bdaf97; }
+.crpg .uo-line { display:block; width:100%; min-height:48px; padding:12px 9px; border:1px solid transparent; background:transparent; color:#302920; font:inherit; font-size:17px; line-height:1.75; text-align:left; word-break:keep-all; overflow-wrap:anywhere; }
+.crpg .uo-line small { display:block; color:#6c5843; font-size:12px; line-height:1.6; margin-bottom:4px; }
+.crpg button.uo-line { cursor:pointer; }
+.crpg button.uo-line:hover { background:#bba37e25; }
+.crpg button.uo-line.selected { border-color:#9b352c; box-shadow:inset 3px 0 #9b352c; background:#b23d2910; }
+.crpg button.uo-line.selected span { text-decoration:underline; text-decoration-color:#9b352c; text-decoration-thickness:2px; text-underline-offset:5px; }
+.crpg .uo-paper button:focus-visible { outline-color:#7a2d24; }
+.crpg .uo-clauses { counter-reset:clause; }
+.crpg .uo-clauses li { counter-increment:clause; }
+.crpg .uo-clauses .uo-line::before { content:counter(clause,decimal-leading-zero); display:block; color:#7b6953; font-size:11px; letter-spacing:.1em; }
+.crpg .uo-objection { border-left:3px solid var(--redText); padding:20px 24px; margin:24px 0; background:#291c18; }
+.crpg .uo-objection p { font-size:16px; line-height:1.8; margin:12px 0; }
+.crpg .uo-objection small { display:block; color:var(--dim); font-size:12px; }
+.crpg .uo-speaker { display:flex; align-items:center; gap:15px; margin:0 0 18px; color:var(--gold); font-size:15px; }
+.crpg .uo-speaker .portrait { width:80px; height:80px; flex-shrink:0; border:1px solid var(--line); object-fit:cover; }
+.crpg .uo-disposition { color:#922a21; border:2px solid #a93e31; padding:12px 16px; font-size:18px; line-height:1.8; }
+@media (max-width:700px) {
+  .crpg .uo-workbench { grid-template-columns:minmax(0,1fr); gap:16px; }
+  .crpg .uo-workbench .uo-paper { padding:19px; }
+  .crpg .uo-objection { padding:16px; }
+  .crpg .uo-shell .or-brand { padding-bottom:20px; }
+}
 @keyframes or-turn { from { opacity:0; transform:perspective(900px) rotateY(-14deg) translateY(12px); } to { opacity:1; transform:none; } }
 @media (max-width:560px) {
   .crpg .or-brand { display:block; padding:22px 0; }
@@ -7131,6 +7161,7 @@ const OWN_RECORD_FIELDS = {
   attachment: ["filed", "returned"]
 };
 const OWN_RECORD_COPY = {
+  nextCase: {ko:"다음 사건 · 서명 없는 명령",en:"Continue to The Unsigned Order"},
   title: {ko:"반송된 편지",en:"The Returned Letter"},
   entry: {ko:"새 사건 미리보기 · 반송된 편지",en:"New case preview · The Returned Letter"},
   subtitle: {ko:"소금여울 기록실 · 별지 07",en:"Saltmarsh Registry · Supplement 07"},
@@ -7335,7 +7366,7 @@ function ownRecordShareText(state, lang, url) {
     ...ownRecordOutcomeLines(state).map(key => "· " + ui(key)),
     "", ui("shareInvite"), url].join("\n");
 }
-function OwnRecordTrial({lang, onLanguage, onExit, sound}) {
+function OwnRecordTrial({lang, onLanguage, onExit, onNext, sound}) {
   const [state,setState] = useState(() => restoreOwnRecord(store.get(OWN_RECORD_KEY)));
   const [notice,setNotice] = useState(null);
   const [shareNote,setShareNote] = useState(null);
@@ -7438,7 +7469,8 @@ function OwnRecordTrial({lang, onLanguage, onExit, sound}) {
       h("ul",{className:"or-outcomes"},ownRecordOutcomeLines(state).map(key => h("li",{key},ui(key)))),
       paragraphs(outcome.petition ? (state.original.attachment === "filed" ? "payoffFiled" : "payoffAmended") : "payoffReturned","or-last-line"),
       h("blockquote",{className:"or-rule-echo"},ui("finalRule")),
-      button("replay",{type:"replay"},true),
+      onNext && h("button",{type:"button",className:"or-button primary","data-action":"nextCase",onClick:onNext},ui("nextCase")),
+      button("replay",{type:"replay"},!onNext),
       h("button",{type:"button",className:"or-button","data-action":"share",onClick:shareRecord},ui("share")),
       shareNote && h("p",{className:"or-caption",role:"status"},ui(shareNote)),
       shareManual && h("textarea",{className:"or-share-text",readOnly:true,rows:9,value:shareManual,"aria-label":ui("share"),onFocus:e => e.target.select()}),
@@ -7453,6 +7485,276 @@ function OwnRecordTrial({lang, onLanguage, onExit, sound}) {
     h("footer",{className:"or-footer"},h("span",null,ui("saved")),h("span",null,BUILD)));
 }
 
+
+// pt48 — One rule applies to both the clinic and the chief. Only pending transfers can change.
+const UNSIGNED_ORDER_KEY = "aduventure_unsigned_order_v1";
+const UNSIGNED_ORDER_FIELDS = {authority:["equal","seal"],relief:["strict","witness"]};
+const UNSIGNED_ORDER_COPY = {
+  title:{ko:"서명 없는 명령",en:"The Unsigned Order"},
+  entry:{ko:"두 번째 사건 · 서명 없는 명령",en:"Second case · The Unsigned Order"},
+  subtitle:{ko:"소금여울 창고 · 제08호",en:"Saltmarsh warehouse · No. 08"},
+  exit:{ko:"← 본편으로",en:"← Main game"},
+  language:{ko:"EN",en:"KO"},
+  saved:{ko:"이 기기에 자동 저장",en:"Saved on this device"},
+  draftRole:{ko:"첫날 · 기록관",en:"Day one · The clerk"},
+  draftTitle:{ko:"장부에는 주어가 없었다.",en:"The ledger named no one."},
+  draftIntro:{ko:"약품 두 상자가 사라졌다. 장부에는 ‘위에서 가져감’이라고만 적혀 있다.\n\n세온이 빈 규정서를 내민다.\n“누가 내보냈는지 남겨. 다음에는 책임을 물을 수 있게.”",en:"Two crates of medicine are missing. The ledger says only: ‘Taken from above.’\n\nSeon hands you an unfinished regulation.\n“Put a name to every release. Next time, someone must answer for it.”"},
+  priorSuspended:{ko:"편지 사건 뒤에도 핍의 배달 자격은 정지된 채다. 오늘 창고 문 앞에 온 그는 배달부가 아니라 이웃이다.",en:"Pip’s delivery credential is still suspended after the letter case. Today he comes to the warehouse as a neighbor, not a courier."},
+  priorActive:{ko:"편지 사건 뒤, 핍은 다시 창구에 왔다. 이번에는 편지 대신 빈 약병을 들고 있다.",en:"After the letter case, Pip returns to your desk. This time he carries an empty medicine bottle."},
+  regulation:{ko:"물자 반출 규정",en:"Release regulation"},
+  signatureRule:{ko:"반출 명령은 발행 책임자의 서명이 있어야 효력이 있다.",en:"A release order is valid only with its issuer’s signature."},
+  authority:{ko:"적용 범위",en:"Scope"},
+  relief:{ko:"긴급 약품",en:"Emergency medicine"},
+  equal:{ko:"촌장실에도 같은 규정을 적용한다. 직인은 서명을 대신하지 않는다.",en:"The same rule applies to the chief’s office. A seal does not replace a signature."},
+  seal:{ko:"촌장실 명령에 한해, 직인을 발행 책임자의 서명으로 인정한다.",en:"For orders from the chief’s office, its official seal may stand in for the issuer’s signature."},
+  strict:{ko:"긴급 약품도 발행 책임자의 서명을 받아야 한다.",en:"Emergency medicine also requires the issuer’s signature."},
+  witness:{ko:"진료소로 보낼 긴급 약품은 주민 두 명의 공동 서명·보증으로 반출할 수 있다.",en:"Emergency medicine bound for the clinic may be released under the joint signed guarantee of two residents."},
+  amendmentPower:{ko:"정정권: 기록관. 아직 집행하지 않은 반출 건부터 적용한다.",en:"Amendments: the clerk’s authority. They apply only to transfers not yet carried out."},
+  signature:{ko:"기록관 서명",en:"Clerk’s signature"},
+  signatureHint:{ko:"이름 또는 별명",en:"Name or alias"},
+  sign:{ko:"규정에 서명한다",en:"Sign the regulation"},
+  signHelp:{ko:"두 조항을 고르고 서명하세요.",en:"Choose both clauses and add your signature."},
+  dawnRole:{ko:"다음 날 · 창고 앞",en:"Next morning · Outside the warehouse"},
+  dawnTitle:{ko:"문은 잠겨 있었다.",en:"The door was locked."},
+  dawnText:{ko:"핍이 빈 약병을 내민다.\n“진료소에 남은 게 없대요.”\n\n창고지기 에나는 열쇠를 쥐고 있다. 새 규정 아래, 서명이 비어 있는 진료소 명령서를 내려놓는다.\n“의사는 왕진 중이에요. 저도 핍도 보증은 섰는데… 발행인 서명이 없어서 일단 멈췄어요.”",en:"Pip holds out an empty bottle.\n“The clinic has none left.”\n\nEna, the warehouse keeper, grips her keys. She lays the clinic’s order under the new regulation. Its signature line is empty.\n“The doctor’s out on a visit. Pip and I signed as guarantors, but I held the release. The issuer hasn’t signed.”"},
+  dawn:{ko:"서류를 받는다",en:"Take the papers"},
+  clinicRole:{ko:"오전 · 반출 건 01",en:"Morning · Release 01"},
+  clinicTitle:{ko:"약은 문 너머에 있다.",en:"The medicine is on the other side."},
+  clinicText:{ko:"문틈으로 약품 상자가 보인다.\n핍은 병마개만 돌리고 있다.",en:"Through the gap in the door, you can see the medicine crates.\nPip keeps turning the bottle’s cap."},
+  clinicDocument:{ko:"진료소 약품 반출 명령",en:"Clinic release order"},
+  issuerLabel:{ko:"발행 책임자",en:"Issuer"},
+  clinicIssuer:{ko:"소금여울 진료소 의사",en:"Doctor, Saltmarsh clinic"},
+  purposeLabel:{ko:"반출 목적·행선지",en:"Purpose · Destination"},
+  clinicPurpose:{ko:"긴급 치료약 6병 → 진료소",en:"Six bottles of emergency medicine → Clinic"},
+  issuerSignature:{ko:"발행 책임자 서명",en:"Issuer’s signature"},
+  emptySignature:{ko:"________________ (공란)",en:"________________ (blank)"},
+  sealLabel:{ko:"직인",en:"Official seal"},
+  noSeal:{ko:"없음",en:"None"},
+  chiefSeal:{ko:"소금여울 촌장실 직인",en:"Seal of the Saltmarsh chief’s office"},
+  witnessLabel:{ko:"주민 공동 보증",en:"Residents’ joint guarantee"},
+  witnesses:{ko:"핍 · 에나 — 서명 완료",en:"Pip · Ena — both signed"},
+  noWitnesses:{ko:"없음",en:"None"},
+  orderRole:{ko:"오후 · 반출 건 02",en:"Afternoon · Release 02"},
+  orderTitle:{ko:"“이번에는 열어.”",en:"“Open it this time.”"},
+  medicineReleased:{ko:"에나가 보증란을 장부에 옮긴다. 핍과 에나, 두 이름이 나란히 남는다. 약 여섯 병은 점심 전에 진료소에 닿았다.",en:"Ena copies the guarantee into the ledger. Pip and Ena: both names stay on file. The six bottles reach the clinic before noon."},
+  medicineLate:{ko:"의사의 서명을 받아 돌아왔을 때는 점심이 지났다. 약 여섯 병은 도착했지만, 아침 진료는 오후까지 밀렸다.",en:"By the time the doctor’s signature arrives, noon has passed. The six bottles reach the clinic, but the morning patients wait until afternoon."},
+  orderText:{ko:"세온이 창고로 온다. 남은 약품을 촌장실로 옮기겠다고 한다.\n“분실이 또 나면? 한곳에서 관리해야지.”\n\n그가 종이를 밀어놓는다. 에나는 열쇠를 내려놓지 않는다.",en:"Seon arrives at the warehouse. He wants the remaining medicine moved to his office.\n“What if more goes missing? It needs to be kept in one place.”\n\nHe slides a paper across the desk. Ena keeps hold of the keys."},
+  chiefDocument:{ko:"촌장실 물자 이관 명령",en:"Chief’s requisition order"},
+  chiefIssuer:{ko:"촌장 세온",en:"Chief Seon"},
+  chiefPurpose:{ko:"남은 약품 전량 → 촌장실 보관",en:"All remaining medicine → Storage at the chief’s office"},
+  challengeOpen:{ko:"규정과 명령서를 대조한다",en:"Compare the regulation and the order"},
+  amendOpen:{ko:"규정을 정정한다",en:"Amend the regulation"},
+  wait:{ko:"의사의 서명을 받으러 보낸다",en:"Send for the doctor’s signature"},
+  comply:{ko:"창고를 열어 이관한다",en:"Open the warehouse for transfer"},
+  proofInstruction:{ko:"규정 한 줄과 명령서 한 줄을 골라 이의서에 인용하세요.",en:"Choose one line from each document to quote in your objection."},
+  objection:{ko:"이의서",en:"Objection"},
+  citeRule:{ko:"인용 규정",en:"Cited regulation"},
+  citeOrder:{ko:"인용 명령",en:"Cited order"},
+  unselected:{ko:"선택하지 않음",en:"Not selected"},
+  challengeSubmit:{ko:"두 줄로 이의를 제기한다",en:"File the objection with these two lines"},
+  close:{ko:"서류를 내려놓는다",en:"Put the papers down"},
+  selectTwo:{ko:"에나가 이의서를 돌려준다. “규정과 명령서, 어느 문장끼리 대조한 건가요?”",en:"Ena returns the objection. “Which line of the regulation are you comparing with which line of the order?”"},
+  noRelief:{ko:"에나가 적용 조항을 읽는다. “긴급 약품도 발행 책임자의 서명을 받아야 한다.” 주민 보증은 그 서명을 대신할 수 없다.",en:"Ena reads the clause in force: “Emergency medicine also requires the issuer’s signature.” The residents’ guarantee cannot replace it."},
+  wrongClinic:{ko:"에나가 두 줄을 다시 읽는다. “이 인용만으로는 진료소 반출을 승인할 근거가 되지 않아요.”",en:"Ena reads the two lines again. “These quotations don’t establish grounds to approve the clinic’s release.”"},
+  chiefSealNotice:{ko:"세온이 두 번째 조항 위에 손가락을 놓는다. “촌장실 명령에 한해, 직인을 발행 책임자의 서명으로 인정한다.” 그 아래에는 당신의 서명이 있다.",en:"Seon puts a finger on the second clause: “For orders from the chief’s office, its official seal may stand in for the issuer’s signature.” Your signature is beneath it."},
+  wrongOrder:{ko:"에나는 이관을 멈출 근거를 찾지 못한다. 이 명령은 진료소 긴급 반출이 아니라 촌장실 보관을 위한 것이다.",en:"Ena finds no grounds here to stop the transfer. This order concerns storage at the chief’s office, not an emergency delivery to the clinic."},
+  amendTitle:{ko:"정정란",en:"Amendment"},
+  amendText:{ko:"원문은 지워지지 않는다. 새 조항은 아직 집행하지 않은 반출에만 적용된다.",en:"The original stays on file. New clauses apply only to transfers not yet carried out."},
+  amend:{ko:"정정에 서명한다",en:"Sign the amendment"},
+  amended:{ko:"정정문을 덧붙였다. 에나가 새 조항이 붙은 규정서를 돌려준다.",en:"The amendment is appended. Ena returns the regulation with its new clauses attached."},
+  current:{ko:"현재 효력",en:"In force"},
+  original:{ko:"첫 서명 원본",en:"Original signed regulation"},
+  history:{ko:"원본과 정정 이력",en:"Original and amendments"},
+  clinicAmendment:{ko:"오전 · 진료소 건 집행 전 정정",en:"Morning · Amended before the clinic release"},
+  orderAmendment:{ko:"오후 · 촌장실 이관 전 정정",en:"Afternoon · Amended before the requisition"},
+  endRole:{ko:"해 질 무렵 · 보관 기록",en:"Dusk · Filed record"},
+  heldTitle:{ko:"열쇠는 에나의 손에 남았다.",en:"The keys stayed in Ena’s hand."},
+  obeyedTitle:{ko:"창고의 선반이 비었다.",en:"The warehouse shelves stood empty."},
+  heldEnding:{ko:"세온은 명령서의 빈칸과 규정 아래의 서명을 번갈아 본다.\n\n“이걸 네가 썼다고?”\n\n당신은 대답하지 않는다. 그는 명령서를 접는다. 에나가 열쇠를 주머니에 넣는다.",en:"Seon looks from the empty line on his order to the signature beneath the regulation.\n\n“You wrote this?”\n\nYou say nothing. He folds the order. Ena puts the keys in her pocket."},
+  obeyedEnding:{ko:"세온은 빈 수레가 채워지는 동안 기다린다.\n에나가 장부 마지막 줄을 당신 쪽으로 돌린다.",en:"Seon waits while the empty cart is loaded.\nEna turns the ledger’s last line toward you."},
+  held:{ko:"이관 보류 · 발행 책임자 서명 없음",en:"Transfer held · Issuer’s signature missing"},
+  obeyedSeal:{ko:"이관 집행 · 촌장실 직인 대체 조항 적용",en:"Transfer carried out · Official-seal exception applied"},
+  obeyedAgainstRule:{ko:"이관 집행 · 서명 규정을 적용하지 않음",en:"Transfer carried out · Signature requirement not enforced"},
+  medicineRecordReleased:{ko:"진료소: 오전 반출. 핍·에나의 공동 보증이 장부에 남음.",en:"Clinic: released in the morning. Pip and Ena’s joint guarantee remains on file."},
+  medicineRecordLate:{ko:"진료소: 오후 반출. 아침 진료가 지연됨.",en:"Clinic: released in the afternoon. Morning treatment was delayed."},
+  heldStock:{ko:"남은 약품은 창고에 있다. 서명이 갖춰진 다음 명령까지.",en:"The remaining medicine stays in the warehouse. Until the next properly signed order."},
+  movedStock:{ko:"진료소에 건넨 여섯 병은 그대로다. 다음 약품은 촌장실에 요청해야 한다.",en:"The clinic keeps its six bottles. Its next supply must be requested from the chief’s office."},
+  replay:{ko:"다른 규정으로 다시 시작한다",en:"Start again with another regulation"},
+  previousCase:{ko:"반송된 편지로 돌아간다",en:"Return to The Returned Letter"}
+};
+function validUnsignedClauses(value, complete = true) {
+  return !!value && typeof value === "object" && !Array.isArray(value) && Object.entries(UNSIGNED_ORDER_FIELDS).every(([k,values]) =>
+    values.includes(value[k]) || (!complete && value[k] === ""));
+}
+function unsignedOrderClauses(s) { return s.amendments.length ? s.amendments[s.amendments.length - 1].clauses : s.original; }
+function newUnsignedOrder(priorRaw) {
+  const prior = restoreOwnRecord(priorRaw);
+  return {v:1,stage:"draft",draft:{authority:"",relief:""},signature:prior.stage === "end" ? prior.signature : "",
+    original:null,amendments:[],medicine:null,result:null,panel:null,cite:{clause:null,field:null},revision:null,notice:null,
+    prior:prior.stage === "end" ? {badge:ownRecordOutcome(prior).badge} : null};
+}
+function restoreUnsignedOrder(raw, priorRaw) {
+  const fresh = newUnsignedOrder(priorRaw);
+  const phases = ["draft","dawn","clinic","order","end"];
+  if (!raw || raw.v !== 1 || !phases.includes(raw.stage) || !validUnsignedClauses(raw.draft,false) ||
+      typeof raw.signature !== "string" || raw.signature.length > 24 || !Array.isArray(raw.amendments)) return fresh;
+  const signed = raw.stage !== "draft", pending = ["clinic","order"].includes(raw.stage);
+  if (signed && (!raw.signature.trim() || !validUnsignedClauses(raw.original))) return fresh;
+  let lastAt = 0;
+  for (const amendment of raw.amendments) {
+    const at = phases.indexOf(amendment?.at);
+    if (![2,3].includes(at) || at > phases.indexOf(raw.stage) || at < lastAt || !validUnsignedClauses(amendment.clauses)) return fresh;
+    lastAt = at;
+  }
+  if (!signed && (raw.original || raw.amendments.length)) return fresh;
+  if (["order","end"].includes(raw.stage) ? !["released","late"].includes(raw.medicine) : raw.medicine !== null) return fresh;
+  if (raw.stage === "end" ? !["held","obeyed"].includes(raw.result) : raw.result !== null) return fresh;
+  const effective = signed ? unsignedOrderClauses(raw) : null;
+  const clinicAmendments = raw.amendments.filter(a => a.at === "clinic");
+  const clinicRule = clinicAmendments.length ? clinicAmendments[clinicAmendments.length - 1].clauses : raw.original;
+  if ((raw.result === "held" && effective.authority !== "equal") || (raw.medicine === "released" && clinicRule.relief !== "witness")) return fresh;
+  const copy = v => v ? {authority:v.authority,relief:v.relief} : null;
+  const panel = pending && ["challenge","amend"].includes(raw.panel) ? raw.panel : null;
+  return {...fresh,stage:raw.stage,draft:copy(raw.draft),signature:raw.signature,original:signed ? copy(raw.original) : null,
+    amendments:raw.amendments.map(a => ({at:a.at,clauses:copy(a.clauses)})),medicine:raw.medicine,result:raw.result,panel,
+    cite:{clause:pending && ["signature","authority","relief"].includes(raw.cite?.clause) ? raw.cite.clause : null,
+      field:pending && ["issuer","purpose","signature","seal","witness"].includes(raw.cite?.field) ? raw.cite.field : null},
+    revision:panel === "amend" ? copy(validUnsignedClauses(raw.revision) ? raw.revision : effective) : null,
+    notice:pending && ["selectTwo","noRelief","wrongClinic","chiefSealNotice","wrongOrder","amended"].includes(raw.notice) ? raw.notice : null,
+    prior:raw.prior && typeof raw.prior.badge === "boolean" ? {badge:raw.prior.badge} : null};
+}
+function unsignedOrderMove(s, action) {
+  if (!action || typeof action !== "object") return s;
+  const validPick = Object.keys(UNSIGNED_ORDER_FIELDS).includes(action.field) && UNSIGNED_ORDER_FIELDS[action.field].includes(action.value);
+  const clear = {panel:null,cite:{clause:null,field:null},revision:null,notice:null};
+  if (s.stage === "draft") {
+    if (action.type === "pick" && validPick) return {...s,draft:{...s.draft,[action.field]:action.value}};
+    if (action.type === "signature" && typeof action.value === "string") return {...s,signature:action.value.slice(0,24)};
+    if (action.type === "sign" && validUnsignedClauses(s.draft) && s.signature.trim())
+      return {...s,stage:"dawn",signature:s.signature.trim(),original:{...s.draft}};
+    return s;
+  }
+  if (action.type === "dawn" && s.stage === "dawn") return {...s,stage:"clinic"};
+  if (action.type === "replay" && s.stage === "end") return {...newUnsignedOrder(),signature:s.signature,prior:s.prior};
+  if (!["clinic","order"].includes(s.stage)) return s;
+  const rules = unsignedOrderClauses(s);
+  if (action.type === "panel" && [null,"challenge","amend"].includes(action.value))
+    return {...s,...clear,panel:action.value,revision:action.value === "amend" ? {...rules} : null};
+  if (action.type === "cite" && s.panel === "challenge" &&
+      ((action.kind === "clause" && ["signature","authority","relief"].includes(action.value)) ||
+       (action.kind === "field" && ["issuer","purpose","signature","seal","witness"].includes(action.value))))
+    return {...s,cite:{...s.cite,[action.kind]:action.value},notice:null};
+  if (action.type === "revise" && s.panel === "amend" && validPick) return {...s,revision:{...s.revision,[action.field]:action.value}};
+  if (action.type === "amend" && s.panel === "amend" && validUnsignedClauses(s.revision) && Object.keys(UNSIGNED_ORDER_FIELDS).some(k => rules[k] !== s.revision[k]))
+    return {...s,...clear,amendments:[...s.amendments,{at:s.stage,clauses:{...s.revision}}],notice:"amended"};
+  if (action.type === "wait" && s.stage === "clinic") return {...s,...clear,stage:"order",medicine:"late"};
+  if (action.type === "comply" && s.stage === "order") return {...s,...clear,stage:"end",result:"obeyed"};
+  if (action.type === "challenge") {
+    if (s.panel !== "challenge" || !s.cite.clause || !s.cite.field) return {...s,notice:"selectTwo"};
+    if (s.stage === "clinic") {
+      if (rules.relief !== "witness") return {...s,notice:"noRelief"};
+      if (s.cite.clause === "relief" && ["witness","purpose"].includes(s.cite.field)) return {...s,...clear,stage:"order",medicine:"released"};
+      return {...s,notice:"wrongClinic"};
+    }
+    if (rules.authority === "seal") return {...s,notice:"chiefSealNotice"};
+    if (["signature","authority"].includes(s.cite.clause) && ["signature","seal"].includes(s.cite.field)) return {...s,...clear,stage:"end",result:"held"};
+    return {...s,notice:"wrongOrder"};
+  }
+  return s;
+}
+
+function UnsignedOrderTrial({lang,onLanguage,onExit,onPrevious,sound}) {
+  const [state,setState] = useState(() => restoreUnsignedOrder(store.get(UNSIGNED_ORDER_KEY),store.get(OWN_RECORD_KEY)));
+  const focusRef = useRef(null);
+  const tx = value => value && (value[lang] || value.ko || value.en) || "";
+  const ui = key => tx(UNSIGNED_ORDER_COPY[key]);
+  const h = React.createElement;
+  useEffect(() => { store.set(UNSIGNED_ORDER_KEY,state); },[state]);
+  useEffect(() => {
+    focusRef.current?.focus({preventScroll:true});
+    focusRef.current?.scrollIntoView?.({block:"start",behavior:"auto"});
+  },[state.stage,state.panel]);
+  const move = action => {
+    setState(s => unsignedOrderMove(s,action));
+    if (sound && ["sign","amend","challenge"].includes(action.type)) { try { SFX.cue("pen"); } catch (e) {} }
+  };
+  const paragraphs = key => h("div",{className:"or-prose"},ui(key).split("\n\n").map((p,i) => h("p",{key:i},p)));
+  const button = (key,action,primary = false,disabled = false) => h("button",{type:"button",className:"or-button" + (primary ? " primary" : ""),
+    "data-action":key,disabled,onClick:() => move(action)},ui(key));
+  const signature = () => h("div",{className:"or-signature"},h("span",null,ui("signature")),h("strong",null,state.signature));
+  const paperHead = (key,folio) => h("div",{className:"or-paper-head"},h("span",null,ui(key)),h("span",{className:"or-folio","aria-hidden":true},folio));
+  const ruleLines = clauses => [{id:"signature",text:ui("signatureRule")},{id:"authority",text:ui(clauses?.authority)},{id:"relief",text:ui(clauses?.relief)}];
+  const documentLines = () => [{id:"issuer",label:ui("issuerLabel"),text:ui(state.stage === "clinic" ? "clinicIssuer" : "chiefIssuer")},
+    {id:"purpose",label:ui("purposeLabel"),text:ui(state.stage === "clinic" ? "clinicPurpose" : "chiefPurpose")},
+    {id:"signature",label:ui("issuerSignature"),text:ui("emptySignature")},
+    {id:"seal",label:ui("sealLabel"),text:ui(state.stage === "clinic" ? "noSeal" : "chiefSeal")},
+    {id:"witness",label:ui("witnessLabel"),text:ui(state.stage === "clinic" ? "witnesses" : "noWitnesses")}];
+  const line = (kind,item,interactive) => h("li",{key:item.id},interactive ? h("button",{type:"button",className:"uo-line" + (state.cite[kind] === item.id ? " selected" : ""),
+    ["data-proof-" + kind]:item.id,"aria-pressed":state.cite[kind] === item.id,onClick:() => move({type:"cite",kind,value:item.id})},
+      item.label && h("small",null,item.label),h("span",null,item.text)) : h("div",{className:"uo-line"},item.label && h("small",null,item.label),h("span",null,item.text)));
+  const regulation = (clauses,label = "regulation",interactive = false,previous = null) => h("section",{className:"or-paper uo-paper","aria-label":ui(label)},paperHead(label,"08"),
+    previous ? h("ol",{className:"or-lines"},ruleLines(clauses).map((item,i) => h("li",{key:item.id},i && previous[item.id] !== clauses[item.id]
+      ? h(React.Fragment,null,h("del",null,ui(previous[item.id])),h("ins",null,item.text)) : item.text)))
+      : h("ol",{className:"uo-lines uo-clauses"},ruleLines(clauses).map(item => line("clause",item,interactive))),signature());
+  const order = interactive => h("section",{className:"or-paper uo-paper","aria-label":ui(state.stage === "clinic" ? "clinicDocument" : "chiefDocument")},
+    paperHead(state.stage === "clinic" ? "clinicDocument" : "chiefDocument",state.stage === "clinic" ? "01" : "02"),
+    h("ul",{className:"uo-lines"},documentLines().map(item => line("field",item,interactive))));
+  const fields = (values,type) => h("div",{className:"or-fields"},Object.entries(UNSIGNED_ORDER_FIELDS).map(([field,valuesForField]) => h("fieldset",{key:field},
+    h("legend",null,ui(field)),valuesForField.map(value => h("label",{key:value,className:"or-option" + (values[field] === value ? " selected" : "")},
+      h("input",{type:"radio",name:"uo-" + type + "-" + field,value,checked:values[field] === value,"data-pick":field + ":" + value,onChange:() => move({type,field,value})}),
+      h("span",null,h("strong",null,ui(value))))))));
+  const speaker = id => h("div",{className:"uo-speaker"},portraitImage(id,tx),h("span",null,tx(CAST[id].name)));
+  const history = () => h("details",{className:"or-previous"},h("summary",null,ui("history")),regulation(state.original,"original"),
+    state.amendments.map((a,i) => h("div",{key:i},regulation(a.clauses,a.at === "clinic" ? "clinicAmendment" : "orderAmendment",false,
+      i ? state.amendments[i - 1].clauses : state.original))));
+  const rules = state.original && unsignedOrderClauses(state);
+  const pending = ["clinic","order"].includes(state.stage);
+  let body;
+  if (state.stage === "draft") body = h("div",{className:"uo-body"},paragraphs("draftIntro"),
+    state.prior && paragraphs(state.prior.badge ? "priorActive" : "priorSuspended"),
+    h("blockquote",{className:"or-rule"},h("strong",null,ui("regulation")),ui("signatureRule")),fields(state.draft,"pick"),
+    h("p",{className:"or-caption"},ui("amendmentPower")),
+    h("label",{className:"or-sign-input",htmlFor:"uo-signature"},ui("signature"),
+      h("input",{id:"uo-signature",type:"text",autoComplete:"off",maxLength:24,value:state.signature,placeholder:ui("signatureHint"),
+        onChange:e => move({type:"signature",value:e.target.value})})),
+    button("sign",{type:"sign"},true,!validUnsignedClauses(state.draft) || !state.signature.trim()),
+    (!validUnsignedClauses(state.draft) || !state.signature.trim()) && h("p",{className:"or-caption"},ui("signHelp")));
+  else if (state.stage === "dawn") body = h("div",{className:"uo-body"},speaker("pip"),paragraphs("dawnText"),button("dawn",{type:"dawn"},true));
+  else if (pending && state.panel === "challenge") {
+    const rule = ruleLines(rules).find(item => item.id === state.cite.clause);
+    const evidence = documentLines().find(item => item.id === state.cite.field);
+    body = h(React.Fragment,null,h("p",{className:"or-caption"},ui("proofInstruction")),
+      h("div",{className:"uo-workbench"},regulation(rules,"regulation",true),order(true)),
+      h("section",{className:"uo-objection","aria-label":ui("objection")},h("h3",null,ui("objection")),
+        h("p",null,h("small",null,ui("citeRule")),h("q",null,rule?.text || ui("unselected"))),
+        h("p",null,h("small",null,ui("citeOrder")),h("q",null,evidence ? evidence.label + ": " + evidence.text : ui("unselected")))),
+      state.notice && h("p",{className:"or-notice",role:"status"},ui(state.notice)),
+      button("challengeSubmit",{type:"challenge"},true,!rule || !evidence),button("close",{type:"panel",value:null}));
+  } else if (pending && state.panel === "amend") body = h("div",{className:"uo-body"},paragraphs("amendText"),
+    regulation(state.revision,"amendTitle",false,rules),fields(state.revision,"revise"),
+    button("amend",{type:"amend"},true,!Object.keys(UNSIGNED_ORDER_FIELDS).some(k => rules[k] !== state.revision[k])),button("close",{type:"panel",value:null}));
+  else if (pending) body = h("div",{className:"uo-body"},
+    state.stage === "order" && paragraphs(state.medicine === "released" ? "medicineReleased" : "medicineLate"),
+    state.stage === "order" && speaker("seon"),paragraphs(state.stage === "clinic" ? "clinicText" : "orderText"),order(false),
+    state.notice && h("p",{className:"or-notice",role:"status"},ui(state.notice)),
+    button("challengeOpen",{type:"panel",value:"challenge"},true),button("amendOpen",{type:"panel",value:"amend"}),
+    button(state.stage === "clinic" ? "wait" : "comply",{type:state.stage === "clinic" ? "wait" : "comply"}));
+  else body = h("div",{className:"uo-body"},paragraphs(state.result === "held" ? "heldEnding" : "obeyedEnding"),
+    h("section",{className:"or-paper uo-paper"},paperHead("subtitle","08"),
+      h("p",{className:"uo-disposition"},ui(state.result === "held" ? "held" : rules.authority === "seal" ? "obeyedSeal" : "obeyedAgainstRule")),signature()),
+    h("p",{className:"or-prose"},ui(state.medicine === "released" ? "medicineRecordReleased" : "medicineRecordLate")),
+    paragraphs(state.result === "held" ? "heldStock" : "movedStock"),history(),button("replay",{type:"replay"}),
+    onPrevious && h("button",{type:"button",className:"or-button",onClick:onPrevious},ui("previousCase")));
+  const roleKey = {draft:"draftRole",dawn:"dawnRole",clinic:"clinicRole",order:"orderRole",end:"endRole"}[state.stage];
+  const titleKey = state.panel === "amend" ? "amendTitle" : state.panel === "challenge" ? "objection" :
+    {draft:"draftTitle",dawn:"dawnTitle",clinic:"clinicTitle",order:"orderTitle",end:state.result === "held" ? "heldTitle" : "obeyedTitle"}[state.stage];
+  return h("div",{className:"or-shell uo-shell"},
+    h("nav",{className:"or-nav"},h("button",{type:"button",onClick:onExit},ui("exit")),h("button",{type:"button",onClick:onLanguage,"aria-label":"language"},ui("language"))),
+    h("main",{className:"or-main"},h("div",{className:"or-brand"},ui("title"),h("small",null,ui("subtitle"))),
+      h("div",{className:"or-section-head",ref:focusRef,tabIndex:-1},h("p",{className:"or-eyebrow"},ui(roleKey)),h("h2",null,ui(titleKey))),
+      h("div",{key:state.stage,className:"or-content"},body)),
+    h("footer",{className:"or-footer"},h("span",null,ui("saved")),h("span",null,BUILD)));
+}
 
 function CRPG() {
   const [nameInput, setNameInput] = useState("");
@@ -7563,14 +7865,24 @@ function CRPG() {
   const [dailyDone, setDailyDone] = useState(() => !!store.get("aduventure_daily_" + todayKey));
   const clogRef = useRef(null);
   const [ownTrialOpen, setOwnTrialOpen] = useState(() => typeof window !== "undefined" && window.location?.hash === "#returned-letter");
+  const [orderTrialOpen, setOrderTrialOpen] = useState(() => typeof window !== "undefined" && window.location?.hash === "#unsigned-order");
   useEffect(() => {
-    const syncOwnTrial = () => setOwnTrialOpen(window.location?.hash === "#returned-letter");
+    const syncOwnTrial = () => {
+      setOwnTrialOpen(window.location?.hash === "#returned-letter");
+      setOrderTrialOpen(window.location?.hash === "#unsigned-order");
+    };
     window.addEventListener("hashchange",syncOwnTrial);
     return () => window.removeEventListener?.("hashchange",syncOwnTrial);
   },[]);
   function openOwnTrial() {
     try { window.history?.pushState(null,"","#returned-letter"); } catch (e) {}
     setOwnTrialOpen(true);
+    setOrderTrialOpen(false);
+  }
+  function openOrderTrial() {
+    try { window.history?.pushState(null,"","#unsigned-order"); } catch (e) {}
+    setOrderTrialOpen(true);
+    setOwnTrialOpen(false);
   }
   useEffect(() => {
     clogRef.current?.scrollTo(0, 99999);
@@ -7656,7 +7968,7 @@ function CRPG() {
     }
   }
   const decisionKey = telemetryRun && decisionKind ? telemetryRun.id + ":" + telemetryRun.seq + ":" + sceneKey + ":" + decisionKind : null;
-  const decisionPaused = ownTrialOpen || rolling || tutOpen || feedbackOpen;
+  const decisionPaused = ownTrialOpen || orderTrialOpen || rolling || tutOpen || feedbackOpen;
   const decisionData = {
     scene_id: sceneKey, seq: telemetryRun?.seq, kind: decisionKind,
     available_ids: availableIds, lang, rule: ruleKey, class: pc?.classKey,
@@ -8133,7 +8445,7 @@ function CRPG() {
   const hesitateRef = useRef(null);
   hesitateRef.current = hesitate;
   const timerUnlocked = runIndex >= UNLOCK_AT.timer;
-  const timedNow = !ownTrialOpen && timerOn && timerUnlocked && !!pc && TIMED_SCENES.includes(sceneKey) && !rolling && !pending;
+  const timedNow = !ownTrialOpen && !orderTrialOpen && timerOn && timerUnlocked && !!pc && TIMED_SCENES.includes(sceneKey) && !rolling && !pending;
   // 읽을 시간: 결과는 지금 보이는 길이(접혔으면 접힌 길이), 장면 몫은 본문 전체(인물 대사·여파 줄도 함께 뜨므로 넉넉히).
   const timerSceneText = TIMED_SCENES.includes(sceneKey) && scene?.text ? fmt((scene.text[lang] || scene.text.ko || scene.text), pc || {}) : "";
   const timerTotal = timerSceneText ? timerBudget(lastResult ? resultNarrative(lastResult, lang, resultOpen === lastResult.rid).length : 0, timerSceneText.length, false) : TIMER_SEC;
@@ -8549,9 +8861,19 @@ function CRPG() {
     : fmt(tx(sceneText), pc).split("\n\n");
   const forks = sceneKey === "intro" ? ["stairs", "rescue"].filter(k => seenAtRun.includes(k)) : [];
   const disruptMove = pc && looterDisruptFor(pc.classKey);
+  if (orderTrialOpen) return React.createElement("div", {className:"crpg"},
+    React.createElement("style",null,css), React.createElement(UnsignedOrderTrial, {
+      lang, sound:sfxOn, onPrevious:openOwnTrial,
+      onLanguage:() => { const next = lang === "ko" ? "en" : "ko"; setLang(next); store.set("aduventure_lang",next); },
+      onExit:() => {
+        setOrderTrialOpen(false);
+        if (typeof window !== "undefined" && window.location?.hash === "#unsigned-order")
+          window.history?.replaceState(null,"",window.location.pathname + window.location.search);
+      }
+    }));
   if (ownTrialOpen) return React.createElement("div", {className:"crpg"},
     React.createElement("style",null,css), React.createElement(OwnRecordTrial, {
-      lang, sound:sfxOn,
+      lang, sound:sfxOn, onNext:openOrderTrial,
       onLanguage:() => { const next = lang === "ko" ? "en" : "ko"; setLang(next); store.set("aduventure_lang",next); },
       onExit:() => {
         setOwnTrialOpen(false);
@@ -8704,7 +9026,8 @@ function CRPG() {
     }
   }, ui("rulesGot"))), !pc && !opening && React.createElement("div", {
     className: "scene opening"
-  }, React.createElement("button", {className:"or-entry",onClick:openOwnTrial},tx(OWN_RECORD_COPY.entry)), React.createElement(RecordCard, {
+  }, React.createElement("button", {className:"or-entry",onClick:openOwnTrial},tx(OWN_RECORD_COPY.entry)),
+  React.createElement("button", {className:"or-entry uo-entry",onClick:openOrderTrial},tx(UNSIGNED_ORDER_COPY.entry)), React.createElement(RecordCard, {
     record: { ...officialRecord("opening", [], recordNo, verdict), rebut: null },
     pc: null,
     lang
