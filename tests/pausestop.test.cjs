@@ -1,4 +1,4 @@
-// pt35 — 한 장씩 끊어 하기: 이야기가 이어지는 장 끝에서는 이어하기 저장을 지우지 않고, 첫 판엔 '여기서 멈춰도 된다'를 보여 준다.
+// pt35/pt49 — 장 끝 저장은 유지하고, 첫 판의 멈춤 안내는 2장 이후에만 보여 준다.
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
@@ -76,12 +76,52 @@ for (const sceneKey of ['ending4', 'fin_end']) {
     assert.equal(saved(g), null);
   });
 }
-test('첫 판의 장 끝에만 멈춤 안내가 보이고, 두 번째 판부터는 없다', () => {
+test('2장 이후 첫 판의 장 끝에는 멈춤 안내를 유지하고, 두 번째 판부터는 없다', () => {
   for (const lang of ['ko', 'en']) {
-    const first = nodes(game({sceneKey: 'ending', runNo: 113, lang}).render()).find(n => n.props.className === 'pauseOk');
-    assert.ok(first, lang);
-    if (lang === 'en') assert.ok(!HANGUL.test(text(first)), text(first));
-    assert.ok(!nodes(game({sceneKey: 'ending', runNo: 114, lang}).render()).some(n => n.props.className === 'pauseOk'));
+    for (const sceneKey of ['ending2', 'ending3', 'c2_end', 'c2_end2']) {
+      const first = nodes(game({sceneKey, runNo: 113, lang}).render()).find(n => n.props.className === 'pauseOk');
+      assert.ok(first, `${sceneKey}: ${lang}`);
+      if (lang === 'en') assert.ok(!HANGUL.test(text(first)), text(first));
+      assert.ok(!nodes(game({sceneKey, runNo: 114, lang}).render()).some(n => n.props.className === 'pauseOk'));
+    }
   }
   assert.ok(!nodes(game({sceneKey: 'ending4', runNo: 113}).render()).some(n => n.props.className === 'pauseOk'), '마지막 엔딩엔 없다');
 });
+for (const lang of ['ko', 'en']) {
+  test(`${lang}: 1장 끝의 멈춤 안내만 제거하고 이어하기 저장과 2장 진입은 유지한다`, () => {
+    for (const runNo of [113, 114]) {
+      const g = game({sceneKey: 'ending', runNo, lang});
+      const tree = g.render();
+      assert.ok(!nodes(tree).some(n => n.props.className === 'pauseOk'));
+      assert.ok(!text(tree).includes(g.run(`UI.pauseOk.${lang}`)));
+      assert.equal(saved(g).sceneKey, 'ending');
+      const next = nodes(tree).find(n => n.props.className === 'restart primary');
+      assert.equal(text(next), g.run(`UI.ch2next.${lang}`));
+      next.props.onClick();
+      assert.equal(g.state().sceneKey, 'intro2');
+      assert.equal(saved(g).sceneKey, 'intro2');
+    }
+  });
+  test(`${lang}: 검은 코트 훅은 모든 1장 결말에 표시되고 2장 첫 본문에는 반복되지 않는다`, () => {
+    const hook = lang === 'ko'
+      ? '"뒤에서 맞았네. 검은 코트… 항구 쪽으로 달아났지."'
+      : '"Struck from behind. A black coat… ran off toward the harbor."';
+    const suspense = lang === 'ko'
+      ? '등대를 끈 자는 사람이다. 그리고 아직 마을에 있다.'
+      : "Whoever put out the light was a person. And they're still in town.";
+    const flagsByEnding = [[], ['fixed', 'peaceful', 'sabotage'], ['signal'], ['caughtRen', 'lensCracked'], ['keptLens'], ['jury', 'wired', 'sabotage']];
+    for (const flags of flagsByEnding) {
+      const g = game({sceneKey: 'ending', flags, lang, runNo: 113});
+      const tree = g.render();
+      const narrative = text(byClass(tree, 'narr')[0]);
+      assert.equal(narrative.split(hook).length - 1, 1, `ending flags: ${flags}`);
+      assert.ok(narrative.includes(suspense));
+      assert.ok(!byClass(tree, 'endMore').some(n => text(n).includes(hook)), '접힌 정리 바깥에서 읽힌다');
+      if (lang === 'en') assert.ok(!HANGUL.test(narrative), narrative);
+      nodes(tree).find(n => n.props.className === 'restart primary').props.onClick();
+      assert.ok(!text(byClass(g.render(), 'narr')[0]).includes(hook));
+      assert.ok(!g.run(`SCENES.intro2.text.${lang}`).includes(hook));
+      assert.ok(!g.run(`SCENES.intro2.text.${lang}`).includes(suspense));
+    }
+  });
+}

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>어두밴처 v0.7.3-pt48</title>
+<title>어두밴처 v0.7.3-pt49</title>
 <style>body{margin:0;background:#0e1420}</style>
 </head>
 <body>
@@ -318,7 +318,7 @@ function(a,b,c){if(!Vd(b))throw Error(n(200));return Wd(null,a,b,!1,c)};Q.unmoun
    GAS 피드백 파이프 — v0.7 재구현 (제안/신호/텔레메트리)
    ============================================================ */
 /* 플레이테스트 빌드 태그 — 테스트 중 버전 구분용. 수정할 때마다 뒤 번호를 올린다. */
-const BUILD = "v0.7.3-pt48";
+const BUILD = "v0.7.3-pt49";
 const GAS_URL = "https://script.google.com/macros/s/AKfycbxFx_m5rhCZmqGoy3JcUUNqEgiObMWNHe9hx-LnZrhzIkfwa9-yJGBWP0lVulptnNQeCQ/exec";
 function gasPost(payload, options = {}) {
   return fetch(GAS_URL, {
@@ -395,6 +395,15 @@ function emitTelemetry(event, run, data, keepalive = false) {
     const extra = encodeTelemetry({v: 1, build: BUILD, run_id: run.id, player_id: run.player, ...data});
     if (extra) tele(event, data.scene_id, run.player, extra, keepalive);
   } catch (e) { /* Analytics must never stop a game. */ }
+}
+// Page visits precede character creation: they must not create or resume a run.
+function emitPageOpen(page, entry, lang, visitId) {
+  try {
+    const player = telemetryPlayer();
+    const extra = encodeTelemetry({v: 1, build: BUILD, page, entry,
+      lang: lang === "en" ? "en" : "ko", player_id: player, visit_id: visitId});
+    if (extra) tele("page_open", page, player, extra, true);
+  } catch (e) { /* Opening a page must work even when analytics is unavailable. */ }
 }
 function reportClientError(msg, extra) {
   try {
@@ -2014,8 +2023,8 @@ const SCENES = {
   intro2: {
     ch: 2,
     text: {
-      ko: `다음 날 아침. 등대지기 베른 노인이 깨어났다.\n\n"뒤에서 맞았네. 검은 코트… 항구 쪽으로 달아났지."\n\n등대를 끈 자는 사람이다. 그리고 아직 마을에 있다.`,
-      en: `The next morning. Bern, the old keeper, has come to.\n\n"Struck from behind. A black coat… ran off toward the harbor."\n\nWhoever put out the light was a person. And they're still in town.`
+      ko: `등대지기 베른 노인이 침상에 기대 앉아 있다. 창밖으로 아침 항구가 보인다.`,
+      en: `Bern, the old keeper, sits propped up in bed. The harbor lies beyond the window in the morning light.`
     },
     choices: [{
       label: {
@@ -4606,6 +4615,9 @@ function buildEnding1(flags) {
   }
   ko.push(has("sabotage") ? "그리고 {이름}, 너는 안다. 톱니는 빠진 게 아니라 — 빼낸 것이다. 처음 멈춘 자는 아직 어딘가에 있다." : "처음 등대를 멈춘 자는, 아직 어딘가에 있다.");
   en.push(has("sabotage") ? "And {name}, you know. The gear wasn't missing — it was pulled out. Whoever stopped it first is still out there." : "Whoever stopped the lighthouse first is still out there.");
+  // pt49: 2장으로 넘어가기 전에 검은 코트의 단서를 읽는다. 베른의 증언은 2장 첫 화면에서 반복하지 않는다.
+  ko.push("다음 날 아침. 등대지기 베른 노인이 깨어났다.\n\n\"뒤에서 맞았네. 검은 코트… 항구 쪽으로 달아났지.\"\n\n등대를 끈 자는 사람이다. 그리고 아직 마을에 있다.");
+  en.push("The next morning. Bern, the old keeper, has come to.\n\n\"Struck from behind. A black coat… ran off toward the harbor.\"\n\nWhoever put out the light was a person. And they're still in town.");
   ko.push("\n— 제1장 「잿빛 등대」 끝.");
   en.push("\n— End of Chapter 1, \"The Ashen Lighthouse.\"");
   return bi(ko.join("\n\n"), en.join("\n\n"));
@@ -7860,12 +7872,21 @@ function CRPG() {
   const decisionLive = useRef(null);
   const restartFrom = useRef(null);
   const visitId = useRef(null);
+  const pageOpenSent = useRef(false);
   const todayKey = dayKey();
   const daily = DAILY_CHALLENGES[dayHash(todayKey) % DAILY_CHALLENGES.length];
   const [dailyDone, setDailyDone] = useState(() => !!store.get("aduventure_daily_" + todayKey));
   const clogRef = useRef(null);
   const [ownTrialOpen, setOwnTrialOpen] = useState(() => typeof window !== "undefined" && window.location?.hash === "#returned-letter");
   const [orderTrialOpen, setOrderTrialOpen] = useState(() => typeof window !== "undefined" && window.location?.hash === "#unsigned-order");
+  useEffect(() => {
+    if (pageOpenSent.current) return;
+    pageOpenSent.current = true;
+    try {
+      if (!visitId.current) visitId.current = telemetryId("v");
+      emitPageOpen("index.html", ownTrialOpen ? "returned-letter" : orderTrialOpen ? "unsigned-order" : "main", lang, visitId.current);
+    } catch (e) { /* Telemetry must not interrupt the opening screen. */ }
+  }, []);
   useEffect(() => {
     const syncOwnTrial = () => {
       setOwnTrialOpen(window.location?.hash === "#returned-letter");
@@ -9528,7 +9549,7 @@ function CRPG() {
   }, ui("ch3again")), /*#__PURE__*/React.createElement("button", {
     className: "restart",
     onClick: () => restart()
-  }, ui("fromStart"))), /* pt35: 첫 판엔 장 끝마다 "여기서 멈춰도 된다" — 휴대폰으로 한 장씩 끊어 하는 걸 공식 방식으로. */ runIndex < 1 && MID_ENDINGS.includes(scene.ending) && React.createElement("p", { className: "pauseOk" }, ui("pauseOk")), /* pt34: 장 끝 화면 — 이어 가기 버튼을 위로, 정리(의뢰·지킨 것·기록·통계)는 접어 둔다(펼친 상태는 기억). */ React.createElement("details", { className: "endMore", open: !!store.get("aduventure_endmore") || undefined, onToggle: e => { try { store.set("aduventure_endmore", !!(e && e.target && e.target.open)); } catch (x) {} } }, React.createElement("summary", null, ui("endMoreH"), " \u2014 ", (() => { const L = chapterLedger(scene.ending, flags); return "\u2713" + L.filter(r => r.kept === true).length + " \u00B7 \u2717" + L.filter(r => r.kept === false).length; })(), runNo && [1, 2, 3, 4].includes(scene.ending) ? " \u00B7 " + ui("goalsDone", { n: goalsFor(runNo).filter(id => GOALS[id].done(flags)).length }) : "", " \u00B7 " + ui("badgeCount") + " " + badges.length + "/" + BADGES.length), runNo && [1, 2, 3, 4].includes(scene.ending) && React.createElement(GoalBox, { ids: goalsFor(runNo), flags, ui, tx }), React.createElement("div", {
+  }, ui("fromStart"))), /* pt49: 1장에서는 멈춤 안내만 숨기고, 2장 이후 첫 판 안내와 장 끝 저장은 유지한다. */ runIndex < 1 && scene.ending !== 1 && MID_ENDINGS.includes(scene.ending) && React.createElement("p", { className: "pauseOk" }, ui("pauseOk")), /* pt34: 장 끝 화면 — 이어 가기 버튼을 위로, 정리(의뢰·지킨 것·기록·통계)는 접어 둔다(펼친 상태는 기억). */ React.createElement("details", { className: "endMore", open: !!store.get("aduventure_endmore") || undefined, onToggle: e => { try { store.set("aduventure_endmore", !!(e && e.target && e.target.open)); } catch (x) {} } }, React.createElement("summary", null, ui("endMoreH"), " \u2014 ", (() => { const L = chapterLedger(scene.ending, flags); return "\u2713" + L.filter(r => r.kept === true).length + " \u00B7 \u2717" + L.filter(r => r.kept === false).length; })(), runNo && [1, 2, 3, 4].includes(scene.ending) ? " \u00B7 " + ui("goalsDone", { n: goalsFor(runNo).filter(id => GOALS[id].done(flags)).length }) : "", " \u00B7 " + ui("badgeCount") + " " + badges.length + "/" + BADGES.length), runNo && [1, 2, 3, 4].includes(scene.ending) && React.createElement(GoalBox, { ids: goalsFor(runNo), flags, ui, tx }), React.createElement("div", {
     className: "ledger"
   }, React.createElement("h4", null, ui("ledgerH")), chapterLedger(scene.ending, flags).map((r, i) => React.createElement("div", {
     key: "ledger" + i,

@@ -11,8 +11,37 @@
 <meta name="twitter:card" content="summary">
 <link rel="canonical" href="https://ziddane11-oss.github.io/aduventure/letter.html">
 <!-- 단독 진입 주소: 공유·페스티벌 출품용. 게임 본체는 index.html 하나이며 해시로 「반송된 편지」를 연다. -->
-<meta http-equiv="refresh" content="0; url=./#returned-letter">
-<script>location.replace("./#returned-letter");</script>
+<noscript><meta http-equiv="refresh" content="0; url=./#returned-letter"></noscript>
+<script>
+(() => {
+  // Keep this tiny redirect independent of React and the game bundle.
+  // Tests check BUILD, endpoint and anonymous-player compatibility with index.html.
+  const BUILD = "v0.7.3-pt49";
+  const GAS_URL = "https://script.google.com/macros/s/AKfycbxFx_m5rhCZmqGoy3JcUUNqEgiObMWNHe9hx-LnZrhzIkfwa9-yJGBWP0lVulptnNQeCQ/exec";
+  try {
+    const read = key => {
+      try { return JSON.parse(localStorage.getItem(key)); } catch (e) { return null; }
+    };
+    const id = prefix => prefix + (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+      ? crypto.randomUUID().replace(/-/g, "").slice(0, 12)
+      : Date.now().toString(36) + Math.random().toString(36).slice(2, 7));
+    let player = read("aduventure_anon_player");
+    if (typeof player !== "string" || !/^p[a-z0-9]{8,20}$/i.test(player)) {
+      player = id("p");
+      try { localStorage.setItem("aduventure_anon_player", JSON.stringify(player)); } catch (e) {}
+    }
+    const extra = JSON.stringify({v: 1, build: BUILD, page: "letter.html", entry: "returned-letter",
+      lang: read("aduventure_lang") === "en" ? "en" : "ko", player_id: player, visit_id: id("v")});
+    fetch(GAS_URL, {
+      method: "POST",
+      headers: {"Content-Type": "text/plain;charset=utf-8"},
+      body: JSON.stringify({type: "telemetry", scene: "letter.html", who: player, text: "page_open", extra}),
+      keepalive: true
+    }).catch(() => {});
+  } catch (e) { /* Tracking cannot block the redirect. */ }
+  location.replace("./#returned-letter");
+})();
+</script>
 <style>body{background:#171310;color:#e9e0cf;font-family:serif;padding:24px 16px}a{color:#dcc5a0}</style>
 </head>
 <body>
