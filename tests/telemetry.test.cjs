@@ -17,11 +17,11 @@ function text(node) {
   return typeof node === 'object' ? text(node.children) : String(node);
 }
 let uuid = 0;
-function game({sceneKey = 'confront', flags = [], data = new Map(), effects = true, success = true, storageBlocked = false} = {}) {
+function game({sceneKey = 'confront', flags = [], data = new Map(), effects = true, success = true, storageBlocked = false, lang = 'en', hash = '', network = 'ok'} = {}) {
   const states = [], deps = [], cleanup = [], callbacks = [], sent = [], intervals = [];
   const docListeners = {}, winListeners = {};
   let index = 0, now = 0, dirty = false;
-  data.set('aduventure_lang', '"en"');
+  data.set('aduventure_lang', JSON.stringify(lang));
   const doc = {documentElement: {}, hidden: false,
     addEventListener: (event, fn) => docListeners[event] = fn,
     removeEventListener: event => delete docListeners[event]};
@@ -32,8 +32,12 @@ function game({sceneKey = 'confront', flags = [], data = new Map(), effects = tr
     setTimeout: () => 0, clearTimeout() {},
     setInterval: fn => intervals.push(fn) - 1, clearInterval: id => intervals[id] = null,
     document: doc,
-    window: {addEventListener: (event, fn) => winListeners[event] = fn, removeEventListener: event => delete winListeners[event]},
-    fetch: async (url, options) => { sent.push({payload: JSON.parse(options.body), keepalive: options.keepalive}); return {text: async () => 'ok'}; },
+    window: {location: {hash}, addEventListener: (event, fn) => winListeners[event] = fn, removeEventListener: event => delete winListeners[event]},
+    fetch: (url, options) => {
+      if (!options?.body) return Promise.reject(Error('GET disabled in unit tests'));
+      if (network === 'throw') throw Error('Network blocked');
+      if (network === 'reject') return Promise.reject(Error('Network unavailable'));
+      sent.push({payload: JSON.parse(options.body), keepalive: options.keepalive}); return Promise.resolve({text: async () => 'ok'}); },
     localStorage: {
       getItem: key => { if (storageBlocked) throw Error('blocked'); return data.get(key) ?? null; },
       setItem: (key, value) => { if (storageBlocked) throw Error('blocked'); data.set(key, value); },
@@ -87,6 +91,7 @@ function game({sceneKey = 'confront', flags = [], data = new Map(), effects = tr
     tick: ms => now += ms,
     hidden(value) { doc.hidden = value; docListeners.visibilitychange?.(); },
     pagehide() { winListeners.pagehide?.(); },
+    hashchange(hash) { ctx.window.location.hash = hash; winListeners.hashchange?.(); },
     events: event => sent.filter(x => x.payload.text === event).map(x => JSON.parse(x.payload.extra)),
     finishRoll() { for (let tick = 0; tick < 12; tick++) intervals.forEach(fn => fn && fn()); }
   };
@@ -256,4 +261,168 @@ test('all current narrative payloads fit the legacy extra field and use original
       assert.match(payload.who, /^p[a-z0-9]+$/i);
     }
   }
+});
+
+// pt49: page visits exist before a run, including direct standalone-case entries.
+test('index page opens once before gameplay for both languages and every entry route', () => {
+  for (const lang of ['ko', 'en']) for (const [hash, entry] of [
+    ['', 'main'], ['#returned-letter', 'returned-letter'], ['#unsigned-order', 'unsigned-order'],
+    ['#PRIVATE_FRAGMENT', 'main']
+  ]) {
+    const g = game({sceneKey: null, lang, hash});
+    g.render(); g.render(); g.render();
+    const events = g.events('page_open');
+    assert.equal(events.length, 1, `${lang}/${hash}`);
+    const [event] = events;
+    assert.equal(event.v, 1);
+    assert.equal(event.build, g.run('BUILD'));
+    assert.equal(event.page, 'index.html');
+    assert.equal(event.entry, entry);
+    assert.equal(event.lang, lang);
+    assert.match(event.player_id, /^p[a-z0-9]{8,20}$/i);
+    assert.match(event.visit_id, /^v[a-z0-9]{8,20}$/i);
+    assert.equal(event.run_id, undefined);
+    assert.equal(g.events('run_start').length, 0);
+    assert.equal(g.data.has('aduventure_save'), false);
+    assert.equal(g.sent[0].payload.type, 'telemetry');
+    assert.equal(g.sent[0].payload.scene, 'index.html');
+    assert.equal(g.sent[0].payload.who, event.player_id);
+    assert.equal(g.sent[0].keepalive, true);
+    assert.doesNotMatch(JSON.stringify(g.sent), /PRIVATE_FRAGMENT/);
+  }
+});
+
+test('page opens are not repeated by language/route changes or continuing; reload keeps player and gets a new visit', () => {
+  const g = game();
+  const [first] = g.events('page_open');
+  assert.ok(first);
+  assert.equal(first.player_id, g.events('run_continue')[0].player_id);
+  nodes(g.render()).find(n => n.props['aria-label'] === 'language').props.onClick();
+  g.render(); g.hidden(true); g.hidden(false); g.render();
+  for (const hash of ['#returned-letter', '#unsigned-order', '']) { g.hashchange(hash); g.render(); }
+  assert.equal(g.events('page_open').length, 1);
+  const loaded = game({data: g.data});
+  const [second] = loaded.events('page_open');
+  assert.equal(second.player_id, first.player_id);
+  assert.notEqual(second.visit_id, first.visit_id);
+});
+
+test('page-open storage and network failures never prevent rendering or continuing', async () => {
+  for (const network of ['ok', 'throw', 'reject']) {
+    const g = game({sceneKey: null, storageBlocked: true, network});
+    assert.ok(g.render());
+    assert.ok(g.render());
+    if (network === 'ok') assert.equal(g.events('page_open').length, 1);
+    const continuing = game({network});
+    assert.ok(continuing.render());
+    assert.ok(choices(continuing.render()).length > 0);
+  }
+  await new Promise(resolve => setImmediate(resolve));
+});
+
+const letterHTML = fs.readFileSync(path.join(__dirname, '..', 'letter.html'), 'utf8');
+const letterScript = [...letterHTML.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/g)].map(m => m[1]).join('\n');
+function openLetter({data = new Map(), storageBlocked = false, network = 'ok', withCrypto = true} = {}) {
+  const sent = [], order = [];
+  const ctx = {
+    Date, Math,
+    location: {replace: url => order.push({action: 'redirect', url})},
+    localStorage: {
+      getItem: key => { if (storageBlocked) throw Error('blocked'); return data.get(key) ?? null; },
+      setItem: (key, value) => { if (storageBlocked) throw Error('blocked'); data.set(key, value); }
+    }
+  };
+  if (withCrypto) ctx.crypto = {randomUUID: () => (++uuid).toString(16).padStart(12, '0') + '-abcd'};
+  if (network !== 'missing') ctx.fetch = (url, options) => {
+    order.push({action: 'send'});
+    if (network === 'throw') throw Error('Network blocked');
+    sent.push({url, payload: JSON.parse(options.body), ...options});
+    if (network === 'reject') return Promise.reject(Error('Network unavailable'));
+    if (network === 'pending') return new Promise(() => {});
+    return Promise.resolve({text: async () => 'ok'});
+  };
+  vm.runInNewContext(letterScript, ctx);
+  return {data, sent, order};
+}
+
+test('letter page sends a localized page_open before redirect, then index reuses the anonymous player', () => {
+  for (const lang of ['ko', 'en']) {
+    const data = new Map([
+      ['aduventure_lang', JSON.stringify(lang)],
+      ['aduventure_save', '{"private":"PRIVATE_SAVE"}'],
+      ['aduventure_own_record_v1', '{"private":"PRIVATE_CASE"}']
+    ]);
+    const letter = openLetter({data, network: 'pending'});
+    assert.deepEqual(letter.order.map(x => x.action), ['send', 'redirect']);
+    assert.equal(letter.order[1].url, './#returned-letter', 'redirect never waits for the request');
+    assert.equal(letter.sent.length, 1);
+    const [sent] = letter.sent;
+    const event = JSON.parse(sent.payload.extra);
+    assert.equal(sent.payload.type, 'telemetry');
+    assert.equal(sent.payload.text, 'page_open');
+    assert.equal(sent.payload.scene, 'letter.html');
+    assert.equal(sent.payload.who, event.player_id);
+    assert.equal(sent.method, 'POST');
+    assert.equal(sent.headers['Content-Type'], 'text/plain;charset=utf-8');
+    assert.equal(sent.keepalive, true);
+    assert.equal(event.v, 1);
+    assert.equal(event.page, 'letter.html');
+    assert.equal(event.entry, 'returned-letter');
+    assert.equal(event.lang, lang);
+    assert.equal(event.run_id, undefined);
+    assert.match(event.visit_id, /^v[a-z0-9]{8,20}$/i);
+    assert.equal(JSON.parse(data.get('aduventure_anon_player')), event.player_id);
+    assert.ok(Buffer.byteLength(sent.payload.extra) <= 950);
+    assert.doesNotMatch(sent.body, /PRIVATE_SAVE|PRIVATE_CASE/);
+    assert.equal(data.get('aduventure_save'), '{"private":"PRIVATE_SAVE"}');
+    assert.equal(data.get('aduventure_own_record_v1'), '{"private":"PRIVATE_CASE"}');
+    const index = game({sceneKey: null, data, lang, hash: '#returned-letter'});
+    index.render();
+    assert.equal(sent.url, index.run('GAS_URL'), 'both pages use the same existing sink');
+    assert.equal(event.build, index.run('BUILD'), 'letter build stays synchronized with index');
+    const [opened] = index.events('page_open');
+    assert.equal(opened.page, 'index.html');
+    assert.equal(opened.player_id, event.player_id);
+    assert.notEqual(opened.visit_id, event.visit_id);
+    assert.equal(index.events('run_start').length, 0);
+  }
+});
+
+test('letter reload reuses a valid player and generates a distinct visit each time', () => {
+  const data = new Map([['aduventure_anon_player', '"pexisting1234"']]);
+  const first = JSON.parse(openLetter({data}).sent[0]?.payload.extra || '{}');
+  const second = JSON.parse(openLetter({data}).sent[0]?.payload.extra || '{}');
+  assert.equal(first.player_id, 'pexisting1234');
+  assert.equal(second.player_id, first.player_id);
+  assert.notEqual(second.visit_id, first.visit_id);
+});
+
+test('letter handles blocked or malformed storage and missing crypto without losing telemetry or redirect', () => {
+  for (const storageBlocked of [false, true]) for (const bad of ['{broken', '"PRIVATE_BAD_ID"', 'null']) {
+    const data = new Map([['aduventure_anon_player', bad], ['aduventure_lang', bad]]);
+    const letter = openLetter({data, storageBlocked, withCrypto: false});
+    assert.equal(letter.sent.length, 1);
+    const event = JSON.parse(letter.sent[0].payload.extra);
+    assert.match(event.player_id, /^p[a-z0-9]{8,20}$/i);
+    assert.match(event.visit_id, /^v[a-z0-9]{8,20}$/i);
+    assert.equal(event.lang, 'ko');
+    assert.doesNotMatch(letter.sent[0].body, /PRIVATE_BAD_ID|broken/);
+    assert.equal(letter.order.at(-1).url, './#returned-letter');
+  }
+});
+
+test('letter redirects immediately even when fetch is missing, throws, rejects or never settles', async () => {
+  for (const network of ['missing', 'throw', 'reject', 'pending']) {
+    const letter = openLetter({network});
+    assert.equal(letter.order.filter(x => x.action === 'redirect').length, 1, network);
+    assert.equal(letter.order.at(-1).url, './#returned-letter');
+  }
+  await new Promise(resolve => setImmediate(resolve));
+});
+
+test('letter preserves a no-JavaScript redirect and bilingual manual link without racing the telemetry script', () => {
+  const withoutFallback = letterHTML.replace(/<noscript>[\s\S]*?<\/noscript>/gi, '');
+  assert.doesNotMatch(withoutFallback, /<meta[^>]+http-equiv=["']refresh/i);
+  assert.match(letterHTML, /<noscript>\s*<meta[^>]+http-equiv="refresh"[^>]+url=\.\/#returned-letter[^>]*>\s*<\/noscript>/i);
+  assert.match(letterHTML, /<a href="\.\/#returned-letter">반송된 편지 열기 · Open The Returned Letter<\/a>/);
 });
