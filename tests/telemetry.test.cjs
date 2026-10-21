@@ -17,22 +17,22 @@ function text(node) {
   return typeof node === 'object' ? text(node.children) : String(node);
 }
 let uuid = 0;
-function game({sceneKey = 'confront', flags = [], data = new Map(), effects = true, success = true, storageBlocked = false, lang = 'en', hash = '', network = 'ok'} = {}) {
+function game({sceneKey = 'confront', flags = [], data = new Map(), effects = true, success = true, storageBlocked = false, lang = 'en', hash = '', network = 'ok', search = '', browser} = {}) {
   const states = [], deps = [], cleanup = [], callbacks = [], sent = [], intervals = [];
   const docListeners = {}, winListeners = {};
   let index = 0, now = 0, dirty = false;
-  data.set('aduventure_lang', JSON.stringify(lang));
+  if (lang !== null) data.set('aduventure_lang', JSON.stringify(lang));
   const doc = {documentElement: {}, hidden: false,
     addEventListener: (event, fn) => docListeners[event] = fn,
     removeEventListener: event => delete docListeners[event]};
   const ctx = vm.createContext({
-    console, Date, Math: Object.assign(Object.create(Math), {random: () => success ? 0.999 : 0}),
+    console, Date, URLSearchParams, ...(browser === undefined ? {} : {navigator: browser}), Math: Object.assign(Object.create(Math), {random: () => success ? 0.999 : 0}),
     performance: {now: () => now},
     crypto: {randomUUID: () => (++uuid).toString(16).padStart(12, '0') + '-abcd'},
     setTimeout: () => 0, clearTimeout() {},
     setInterval: fn => intervals.push(fn) - 1, clearInterval: id => intervals[id] = null,
     document: doc,
-    window: {location: {hash}, addEventListener: (event, fn) => winListeners[event] = fn, removeEventListener: event => delete winListeners[event]},
+    window: {location: {hash, search}, addEventListener: (event, fn) => winListeners[event] = fn, removeEventListener: event => delete winListeners[event]},
     fetch: (url, options) => {
       if (!options?.body) return Promise.reject(Error('GET disabled in unit tests'));
       if (network === 'throw') throw Error('Network blocked');
@@ -322,11 +322,11 @@ test('page-open storage and network failures never prevent rendering or continui
 
 const letterHTML = fs.readFileSync(path.join(__dirname, '..', 'letter.html'), 'utf8');
 const letterScript = [...letterHTML.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/g)].map(m => m[1]).join('\n');
-function openLetter({data = new Map(), storageBlocked = false, network = 'ok', withCrypto = true} = {}) {
+function openLetter({data = new Map(), storageBlocked = false, network = 'ok', withCrypto = true, search = '', browser} = {}) {
   const sent = [], order = [];
   const ctx = {
-    Date, Math,
-    location: {replace: url => order.push({action: 'redirect', url})},
+    Date, Math, URLSearchParams, ...(browser === undefined ? {} : {navigator: browser}),
+    location: {search, replace: url => order.push({action: 'redirect', url})},
     localStorage: {
       getItem: key => { if (storageBlocked) throw Error('blocked'); return data.get(key) ?? null; },
       setItem: (key, value) => { if (storageBlocked) throw Error('blocked'); data.set(key, value); }
@@ -354,7 +354,7 @@ test('letter page sends a localized page_open before redirect, then index reuses
     ]);
     const letter = openLetter({data, network: 'pending'});
     assert.deepEqual(letter.order.map(x => x.action), ['send', 'redirect']);
-    assert.equal(letter.order[1].url, './#returned-letter', 'redirect never waits for the request');
+    assert.equal(letter.order[1].url, `./?lang=${lang}#returned-letter`, 'redirect never waits for the request');
     assert.equal(letter.sent.length, 1);
     const [sent] = letter.sent;
     const event = JSON.parse(sent.payload.extra);
@@ -407,7 +407,7 @@ test('letter handles blocked or malformed storage and missing crypto without los
     assert.match(event.visit_id, /^v[a-z0-9]{8,20}$/i);
     assert.equal(event.lang, 'ko');
     assert.doesNotMatch(letter.sent[0].body, /PRIVATE_BAD_ID|broken/);
-    assert.equal(letter.order.at(-1).url, './#returned-letter');
+    assert.equal(letter.order.at(-1).url, './?lang=ko#returned-letter');
   }
 });
 
@@ -415,7 +415,7 @@ test('letter redirects immediately even when fetch is missing, throws, rejects o
   for (const network of ['missing', 'throw', 'reject', 'pending']) {
     const letter = openLetter({network});
     assert.equal(letter.order.filter(x => x.action === 'redirect').length, 1, network);
-    assert.equal(letter.order.at(-1).url, './#returned-letter');
+    assert.equal(letter.order.at(-1).url, './?lang=ko#returned-letter');
   }
   await new Promise(resolve => setImmediate(resolve));
 });
@@ -425,4 +425,106 @@ test('letter preserves a no-JavaScript redirect and bilingual manual link withou
   assert.doesNotMatch(withoutFallback, /<meta[^>]+http-equiv=["']refresh/i);
   assert.match(letterHTML, /<noscript>\s*<meta[^>]+http-equiv="refresh"[^>]+url=\.\/#returned-letter[^>]*>\s*<\/noscript>/i);
   assert.match(letterHTML, /<a href="\.\/#returned-letter">반송된 편지 열기 · Open The Returned Letter<\/a>/);
+});
+
+
+// pt49.1: identical first-language selection on both entry pages.
+const languageCases = [
+  {name: 'URL English overrides Korean storage and browser', search: '?lang=en', stored: '"ko"', browser: {languages: ['ko-KR']}, expected: 'en', persist: true},
+  {name: 'URL Korean overrides English storage and browser', search: '?lang=ko&from=PRIVATE_URL', stored: '"en"', browser: {language: 'en-US'}, expected: 'ko', persist: true},
+  {name: 'valid decoded URL values work', search: '?lang=%65n', stored: '"ko"', expected: 'en', persist: true},
+  {name: 'invalid URL falls through to saved Korean', search: '?lang=fr', stored: '"ko"', browser: {languages: ['en-US']}, expected: 'ko'},
+  {name: 'empty URL falls through to saved English', search: '?lang=', stored: '"en"', browser: {language: 'ko-KR'}, expected: 'en'},
+  {name: 'saved English overrides Korean browser', stored: '"en"', browser: {languages: ['ko-KR']}, expected: 'en'},
+  {name: 'saved Korean overrides English browser', stored: '"ko"', browser: {language: 'en-GB'}, expected: 'ko'},
+  {name: 'Korean primary browser language', browser: {languages: ['ko-KR', 'en-US'], language: 'en-US'}, expected: 'ko'},
+  {name: 'English primary wins over secondary Korean', browser: {languages: ['en-US', 'ko-KR'], language: 'ko-KR'}, expected: 'en'},
+  {name: 'other languages default to English', browser: {languages: ['fr-FR', 'ko']}, expected: 'en'},
+  {name: 'empty languages falls back to language', browser: {languages: [], language: 'ko-KR'}, expected: 'ko'},
+  {name: 'language alone works case insensitively', browser: {language: 'KO-kr'}, expected: 'ko'},
+  {name: 'malformed JSON falls through', stored: '{broken', browser: {languages: ['en-US']}, expected: 'en'},
+  {name: 'unsupported saved language falls through', stored: '"ja"', browser: {language: 'ko'}, expected: 'ko'},
+  {name: 'non-string saved value falls through', stored: '{"lang":"ko"}', browser: {language: 'en'}, expected: 'en'},
+  {name: 'browser with no usable language defaults to English', browser: {}, expected: 'en'},
+  {name: 'no navigator defaults to Korean', expected: 'ko'},
+  {name: 'no navigator still honors valid saved language', stored: '"en"', expected: 'en'}
+];
+for (const page of ['index', 'letter']) {
+  test(`${page}: URL > saved language > primary browser language > no-navigator fallback`, () => {
+    for (const row of languageCases) {
+      const data = new Map(row.stored === undefined ? [] : [['aduventure_lang', row.stored]]);
+      let event;
+      if (page === 'index') {
+        const g = game({sceneKey: null, lang: null, data, search: row.search, browser: row.browser});
+        g.render();
+        event = g.events('page_open')[0];
+        assert.equal(g.doc.documentElement.lang, row.expected, row.name + ': UI');
+        assert.match(g.doc.title, new RegExp('^' + (row.expected === 'en' ? 'Aduventure' : '어두밴처')));
+      } else {
+        const g = openLetter({data, search: row.search, browser: row.browser});
+        event = JSON.parse(g.sent[0].payload.extra);
+        assert.equal(g.order.at(-1).url, `./?lang=${row.expected}#returned-letter`, row.name + ': redirect');
+      }
+      assert.equal(event.lang, row.expected, row.name + ': telemetry');
+      assert.equal(data.get('aduventure_lang'), row.persist ? JSON.stringify(row.expected) : row.stored, row.name + ': storage');
+      assert.doesNotMatch(JSON.stringify(event), /PRIVATE_URL|fr-FR|ko-KR|broken/);
+    }
+  });
+}
+
+test('explicit URL language persists for later direct visits without a language query', () => {
+  for (const lang of ['ko', 'en']) for (const page of ['index', 'letter']) {
+    const opposite = lang === 'en' ? 'ko' : 'en';
+    const data = new Map([['aduventure_lang', JSON.stringify(opposite)]]);
+    if (page === 'index') game({sceneKey: null, lang: null, data, search: `?lang=${lang}`}).render();
+    else openLetter({data, search: `?lang=${lang}`});
+    const reopened = game({sceneKey: null, lang: null, data, browser: {language: opposite}});
+    reopened.render();
+    assert.equal(reopened.doc.documentElement.lang, lang);
+    assert.equal(reopened.events('page_open')[0].lang, lang);
+    const redirected = openLetter({data, browser: {language: opposite}});
+    assert.equal(redirected.order.at(-1).url, `./?lang=${lang}#returned-letter`);
+  }
+});
+
+test('letter preserves resolved language through redirects when storage is blocked', () => {
+  for (const lang of ['ko', 'en']) for (const withQuery of [false, true]) {
+    const letter = openLetter({storageBlocked: true, search: withQuery ? `?lang=${lang}` : '', browser: {language: lang}});
+    const url = new URL(letter.order.at(-1).url, 'https://example.test/aduventure/letter.html');
+    const index = game({sceneKey: null, lang: null, storageBlocked: true, search: url.search, hash: url.hash,
+      browser: {language: lang === 'ko' ? 'en' : 'ko'}});
+    index.render();
+    assert.equal(index.doc.documentElement.lang, lang);
+    assert.equal(JSON.parse(letter.sent[0].payload.extra).lang, lang);
+    assert.equal(index.events('page_open')[0].lang, lang);
+    assert.equal(index.events('page_open')[0].entry, 'returned-letter');
+  }
+});
+
+test('letter keeps the resolved English redirect on all telemetry failure paths', async () => {
+  for (const network of ['missing', 'throw', 'reject', 'pending']) {
+    const letter = openLetter({network, storageBlocked: true, search: '?lang=en', browser: {language: 'ko-KR'}});
+    assert.equal(letter.order.at(-1).url, './?lang=en#returned-letter');
+  }
+  await new Promise(resolve => setImmediate(resolve));
+});
+
+test('URL initialization does not undo in-page language toggles or duplicate page_open', () => {
+  const data = new Map();
+  const g = game({sceneKey: null, lang: null, data, search: '?lang=en', browser: {language: 'ko-KR'}});
+  g.render();
+  assert.equal(g.doc.documentElement.lang, 'en');
+  nodes(g.render()).find(n => n.props['aria-label'] === 'language').props.onClick();
+  g.render(); g.render();
+  assert.equal(g.doc.documentElement.lang, 'ko');
+  assert.equal(data.get('aduventure_lang'), '"ko"');
+  assert.equal(g.events('page_open').length, 1);
+  assert.equal(g.events('page_open')[0].lang, 'en');
+});
+
+test('pt49.1 build tags agree with both static page titles', () => {
+  const build = game({sceneKey: null}).run('BUILD');
+  assert.equal(build, 'v0.7.3-pt49.1');
+  assert.ok(html.match(/<title>([^<]*)<\/title>/)[1].includes(build));
+  assert.ok(letterHTML.match(/<title>([^<]*)<\/title>/)[1].includes(build));
 });

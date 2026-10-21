@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>어두밴처 v0.7.3-pt49</title>
+<title>어두밴처 v0.7.3-pt49.1</title>
 <style>body{margin:0;background:#0e1420}</style>
 </head>
 <body>
@@ -318,7 +318,7 @@ function(a,b,c){if(!Vd(b))throw Error(n(200));return Wd(null,a,b,!1,c)};Q.unmoun
    GAS 피드백 파이프 — v0.7 재구현 (제안/신호/텔레메트리)
    ============================================================ */
 /* 플레이테스트 빌드 태그 — 테스트 중 버전 구분용. 수정할 때마다 뒤 번호를 올린다. */
-const BUILD = "v0.7.3-pt49";
+const BUILD = "v0.7.3-pt49.1";
 const GAS_URL = "https://script.google.com/macros/s/AKfycbxFx_m5rhCZmqGoy3JcUUNqEgiObMWNHe9hx-LnZrhzIkfwa9-yJGBWP0lVulptnNQeCQ/exec";
 function gasPost(payload, options = {}) {
   return fetch(GAS_URL, {
@@ -462,6 +462,31 @@ const store = {
     } catch (e) {}
   }
 };
+
+// pt49.1: keep this resolver identical in index.html and letter.html.
+function resolveInitialLanguage(read, write) {
+  const valid = value => value === "en" || value === "ko";
+  let requested = null;
+  try {
+    const search = typeof window !== "undefined" && window.location
+      ? window.location.search : typeof location !== "undefined" ? location.search : "";
+    if (search) requested = new URLSearchParams(search).get("lang");
+  } catch (e) {}
+  if (valid(requested)) {
+    try { write("aduventure_lang", requested); } catch (e) {}
+    return requested;
+  }
+  let saved = null;
+  try { saved = read("aduventure_lang"); } catch (e) {}
+  if (valid(saved)) return saved;
+  if (typeof navigator === "undefined" || !navigator) return "ko";
+  try {
+    const preferred = Array.isArray(navigator.languages)
+      ? navigator.languages.find(value => typeof value === "string" && value.trim()) : null;
+    const language = preferred || (typeof navigator.language === "string" ? navigator.language : "");
+    return /^ko/i.test(language.trim()) ? "ko" : "en";
+  } catch (e) { return "en"; }
+}
 
 /* ============================================================
    LAYER 1 — RuleSystem 추상화
@@ -741,6 +766,30 @@ const UI = {
   fbConfuse: { ko: "이해하기 어려웠던 설명이나 표현", en: "Any explanation or wording that was hard to understand" },
   fbMore: { ko: "더 플레이하고 싶은 이유, 또는 그만두고 싶은 이유", en: "Why you'd want to keep playing — or why you'd stop" },
   fbBug: { ko: "버그가 있었다면: 발생 위치와 재현 방법", en: "If you hit a bug: where it happened and how to reproduce it" },
+  fbSurvey: { ko: "30초 설문", en: "30-second survey" },
+  fbReplayH: { ko: "한 판 더 한다면 — 원하는 항목만 답해 주세요", en: "One more run — answer whichever questions you like" },
+  fbReplayWant: { ko: "끝나거나 멈춘 뒤 바로 한 판 더 하고 싶었나요?", en: "After finishing or stopping, did you want to play another run right away?" },
+  fbReplayNow: { ko: "지금 바로", en: "Right now" },
+  fbReplayLater: { ko: "나중에", en: "Later" },
+  fbReplayNo: { ko: "아니", en: "No" },
+  fbReplayWhy: { ko: "그 이유는 무엇인가요?", en: "Why?" },
+  fbReplayDiff: { ko: "다시 한다면 무엇을 다르게 하겠나요?", en: "If you played again, what would you do differently?" },
+  fbFunOne: { ko: "더 재미있으려면 딱 하나만 바꾼다면?", en: "If you could change just one thing to make it more fun, what would it be?" },
+  fbReplayDrivers: { ko: "무엇이 있으면 다시 하겠나요? (복수 선택)", en: "What would bring you back for another run? (Select all that apply)" },
+  fbDriverEndings: { ko: "다른 엔딩", en: "Different endings" },
+  fbDriverClassPath: { ko: "다른 직업·경로", en: "Different classes or routes" },
+  fbDriverHarder: { ko: "더 어려운 모드", en: "A harder mode" },
+  fbDriverSecrets: { ko: "숨은 비밀·유물", en: "Hidden secrets or artifacts" },
+  fbDriverDaily: { ko: "오늘의 도전", en: "Daily challenges" },
+  fbDriverShorter: { ko: "더 짧은 한 판", en: "Shorter runs" },
+  fbDriverOther: { ko: "기타", en: "Other" },
+  fbDriverOtherText: { ko: "기타 — 직접 입력", en: "Other — please describe" },
+  fbComeBack: { ko: "내일 또 하러 올 것 같나요? (1: 전혀 아니다 · 5: 매우 그렇다)", en: "How likely are you to come back tomorrow? (1: not at all · 5: very likely)" },
+  fbPay3: { ko: "정식판이 3달러(약 4,000원)면 사겠나요?", en: "Would you buy the full game for US$3 (about ₩4,000)?" },
+  fbPayYes: { ko: "예", en: "Yes" },
+  fbPayMaybe: { ko: "아마", en: "Maybe" },
+  fbPayNo: { ko: "아니", en: "No" },
+  fbTester: { ko: "레딧 아이디 또는 닉네임 (선택 입력 · 유료 테스터 보상 확인용)", en: "Reddit username or nickname (optional · to verify paid tester compensation)" },
   fbSubmit: { ko: "제출(서버로 전송)", en: "Submit (send to server)" },
   fbExport: { ko: "파일로 저장(.txt)", en: "Save as file (.txt)" },
   fbCopy: { ko: "클립보드 복사", en: "Copy to clipboard" },
@@ -6361,7 +6410,16 @@ function PlaytestFeedback(props) {
     combat: "",
     confuse: "",
     more: "",
-    bug: ""
+    bug: "",
+    replayWant: "",
+    replayWhy: "",
+    replayDiff: "",
+    funOne: "",
+    replayDrivers: [],
+    replayDriversOther: "",
+    comeBack: "",
+    pay3: "",
+    tester: ""
   });
   const [status, setStatus] = useState("idle");
   const set = (k, v) => setQ(o => Object.assign({}, o, {
@@ -6380,7 +6438,8 @@ function PlaytestFeedback(props) {
   };
   const answers = () => Object.assign({}, q, {
     choice: packChoice(),
-    quit: packQuit()
+    quit: packQuit(),
+    replayDriversOther: q.replayDrivers.includes("other") ? q.replayDriversOther : ""
   });
   const compose = () => {
     const L = [];
@@ -6395,10 +6454,17 @@ function PlaytestFeedback(props) {
     L.push("[confusing] " + q.confuse);
     L.push("[keep/stop reason] " + q.more);
     L.push("[bug] " + q.bug);
+    const extra = answers();
+    for (const key of ["replayWant", "replayWhy", "replayDiff", "funOne", "replayDrivers", "replayDriversOther", "comeBack", "pay3", "tester"]) {
+      L.push("[" + key + "] " + (Array.isArray(extra[key]) ? extra[key].join(", ") : extra[key]));
+    }
     return L.join("\n");
   };
   const gated = v => v === "yes" || v === "none" || v === "forgot";
-  const hasContent = () => gated(q.choiceHad) || gated(q.quitHad) || [q.combat, q.confuse, q.more, q.bug].some(v => v.trim());
+  const hasContent = () => gated(q.choiceHad) || gated(q.quitHad)
+    || [q.combat, q.confuse, q.more, q.bug, q.replayWhy, q.replayDiff, q.funOne, q.tester].some(v => v.trim())
+    || ["now", "later", "no"].includes(q.replayWant) || q.replayDrivers.length > 0
+    || (Number.isInteger(q.comeBack) && q.comeBack >= 1 && q.comeBack <= 5) || ["yes", "maybe", "no"].includes(q.pay3);
   const missingYesDetail = () => {
     const need = (had, a, b) => had === "yes" && !String(a).trim() && !String(b).trim();
     return need(q.choiceHad, q.choiceWhere, q.choiceWhy) || need(q.quitHad, q.quitWhere, q.quitWhy);
@@ -6449,11 +6515,12 @@ function PlaytestFeedback(props) {
       setStatus("copied");
     } catch (e) {}
   };
-  const field = (key, k) => /*#__PURE__*/React.createElement("label", {
+  const field = (key, k, single = false) => /*#__PURE__*/React.createElement("label", {
     className: "fbField",
     key: key
-  }, /*#__PURE__*/React.createElement("span", null, ui(k)), /*#__PURE__*/React.createElement("textarea", {
-    rows: 2,
+  }, /*#__PURE__*/React.createElement("span", null, ui(k)), /*#__PURE__*/React.createElement(single ? "input" : "textarea", {
+    ...(single ? {type: "text"} : {rows: 2}),
+    name: key,
     value: q[key],
     onChange: e => set(key, e.target.value)
   }));
@@ -6474,17 +6541,34 @@ function PlaytestFeedback(props) {
     checked: q[key] === v,
     onChange: () => set(key, v)
   }), /*#__PURE__*/React.createElement("span", null, v === "yes" ? ui("fbHadYes") : v === "none" ? ui("fbHadNone") : ui("fbHadForgot"))))));
+  const replayDrivers = [["endings", "fbDriverEndings"], ["class_path", "fbDriverClassPath"], ["harder", "fbDriverHarder"], ["secrets", "fbDriverSecrets"], ["daily", "fbDriverDaily"], ["shorter", "fbDriverShorter"], ["other", "fbDriverOther"]];
+  const options = (key, labelKey, choices, multiple = false) => React.createElement("fieldset", {
+    className: "fbField fbGroup"
+  }, React.createElement("legend", null, ui(labelKey)), React.createElement("div", {className: "fbOpts"}, choices.map(([value, label]) => {
+    const checked = multiple ? q[key].includes(value) : q[key] === value;
+    return React.createElement("label", {className: "fbOpt" + (checked ? " on" : ""), key: value}, React.createElement("input", {
+      type: multiple ? "checkbox" : "radio", name: key, value, checked,
+      onChange: () => multiple ? setQ(o => ({...o, [key]: o[key].includes(value) ? o[key].filter(v => v !== value) : [...o[key], value]})) : set(key, value)
+    }), React.createElement("span", null, label ? ui(label) : String(value)));
+  })));
   const statusText = status === "sent" ? ui("fbSent") : status === "fail" ? ui("fbFail") : status === "copied" ? ui("fbCopied") : status === "needDetail" ? ui("fbNeedDetail") : ui("fbEmpty");
   return /*#__PURE__*/React.createElement("div", {
     className: "fbModal",
-    role: "dialog"
+    role: "dialog",
+    "aria-modal": true,
+    "aria-label": ui("fbTitle")
   }, /*#__PURE__*/React.createElement("div", {
     className: "fbCard"
   }, /*#__PURE__*/React.createElement("h3", null, ui("fbTitle"), " ", /*#__PURE__*/React.createElement("span", {
     className: "fbBuild"
   }, build)), /*#__PURE__*/React.createElement("p", {
     className: "fbIntro"
-  }, ui("fbIntro")), gate("choiceHad", "fbChoiceHad"), q.choiceHad === "yes" && field("choiceWhere", "fbChoiceWhere"), q.choiceHad === "yes" && field("choiceWhy", "fbChoiceWhy"), gate("quitHad", "fbQuitHad"), q.quitHad === "yes" && field("quitWhere", "fbQuitWhere"), q.quitHad === "yes" && field("quitWhy", "fbQuitWhy"), field("combat", "fbCombat"), field("confuse", "fbConfuse"), field("more", "fbMore"), field("bug", "fbBug"), /*#__PURE__*/React.createElement("p", {
+  }, ui("fbIntro")), gate("choiceHad", "fbChoiceHad"), q.choiceHad === "yes" && field("choiceWhere", "fbChoiceWhere"), q.choiceHad === "yes" && field("choiceWhy", "fbChoiceWhy"), gate("quitHad", "fbQuitHad"), q.quitHad === "yes" && field("quitWhere", "fbQuitWhere"), q.quitHad === "yes" && field("quitWhy", "fbQuitWhy"), field("combat", "fbCombat"), field("confuse", "fbConfuse"), field("more", "fbMore"), field("bug", "fbBug"), React.createElement("h4", {className: "fbReplayH"}, ui("fbReplayH")),
+  options("replayWant", "fbReplayWant", [["now", "fbReplayNow"], ["later", "fbReplayLater"], ["no", "fbReplayNo"]]),
+  field("replayWhy", "fbReplayWhy"), field("replayDiff", "fbReplayDiff"), field("funOne", "fbFunOne"),
+  options("replayDrivers", "fbReplayDrivers", replayDrivers, true), q.replayDrivers.includes("other") && field("replayDriversOther", "fbDriverOtherText"),
+  options("comeBack", "fbComeBack", [1, 2, 3, 4, 5].map(n => [n, null])),
+  options("pay3", "fbPay3", [["yes", "fbPayYes"], ["maybe", "fbPayMaybe"], ["no", "fbPayNo"]]), field("tester", "fbTester", true), /*#__PURE__*/React.createElement("p", {
     className: "fbMetaNote"
   }, ui("fbMeta")), (status === "sent" || status === "fail" || status === "copied" || status === "empty" || status === "needDetail") && /*#__PURE__*/React.createElement("p", {
     className: "fbStatus " + (status === "needDetail" ? "empty" : status)
@@ -6999,7 +7083,10 @@ const css = `
 .crpg .fbIntro { font-size:13px; color:var(--text); line-height:1.7; margin-bottom:12px; }
 .crpg .fbField { display:flex; flex-direction:column; gap:4px; margin-bottom:10px; }
 .crpg .fbField span { font-size:13px; color:var(--dim); }
-.crpg .fbField textarea { width:100%; resize:vertical; background:var(--panel2); border:1px solid var(--line); border-radius:6px; color:var(--text); font-family:inherit; font-size:14px; padding:8px 10px; line-height:1.6; }
+.crpg .fbField textarea, .crpg .fbField input[type="text"] { width:100%; resize:vertical; background:var(--panel2); border:1px solid var(--line); border-radius:6px; color:var(--text); font-family:inherit; font-size:14px; padding:8px 10px; line-height:1.6; }
+.crpg .fbGroup { border:0; padding:0; min-width:0; }
+.crpg .fbGroup legend { font-size:13px; color:var(--dim); line-height:1.6; padding:0; }
+.crpg .fbReplayH { color:var(--gold); font-size:14px; margin:18px 0 12px; }
 .crpg .fbOpts { display:flex; flex-wrap:wrap; gap:8px; margin-top:4px; }
 .crpg .fbOpt { display:flex; align-items:center; gap:6px; padding:6px 10px; border:1px solid var(--line); border-radius:8px; background:var(--panel2); cursor:pointer; font-size:13px; color:var(--text); }
 .crpg .fbOpt.on { border-color:var(--gold); color:var(--gold); }
@@ -7791,7 +7878,7 @@ function CRPG() {
   const [tutSeen, setTutSeen] = useState(() => store.get("aduventure_check_seen") === true);
   const [introStep, setIntroStep] = useState(0);
   const [sfxOn, setSfxOn] = useState(() => (SFX.enabled = store.get("aduventure_sfx") !== false));
-  const [lang, setLang] = useState(() => store.get("aduventure_lang") || "ko");
+  const [lang, setLang] = useState(() => resolveInitialLanguage(key => store.get(key), (key, value) => store.set(key, value)));
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [caseOpen, setCaseOpen] = useState(false);
   const [eyecatch, setEyecatch] = useState(null);
@@ -9549,7 +9636,7 @@ function CRPG() {
   }, ui("ch3again")), /*#__PURE__*/React.createElement("button", {
     className: "restart",
     onClick: () => restart()
-  }, ui("fromStart"))), /* pt49: 1장에서는 멈춤 안내만 숨기고, 2장 이후 첫 판 안내와 장 끝 저장은 유지한다. */ runIndex < 1 && scene.ending !== 1 && MID_ENDINGS.includes(scene.ending) && React.createElement("p", { className: "pauseOk" }, ui("pauseOk")), /* pt34: 장 끝 화면 — 이어 가기 버튼을 위로, 정리(의뢰·지킨 것·기록·통계)는 접어 둔다(펼친 상태는 기억). */ React.createElement("details", { className: "endMore", open: !!store.get("aduventure_endmore") || undefined, onToggle: e => { try { store.set("aduventure_endmore", !!(e && e.target && e.target.open)); } catch (x) {} } }, React.createElement("summary", null, ui("endMoreH"), " \u2014 ", (() => { const L = chapterLedger(scene.ending, flags); return "\u2713" + L.filter(r => r.kept === true).length + " \u00B7 \u2717" + L.filter(r => r.kept === false).length; })(), runNo && [1, 2, 3, 4].includes(scene.ending) ? " \u00B7 " + ui("goalsDone", { n: goalsFor(runNo).filter(id => GOALS[id].done(flags)).length }) : "", " \u00B7 " + ui("badgeCount") + " " + badges.length + "/" + BADGES.length), runNo && [1, 2, 3, 4].includes(scene.ending) && React.createElement(GoalBox, { ids: goalsFor(runNo), flags, ui, tx }), React.createElement("div", {
+  }, ui("fromStart"))), React.createElement("button", { className: "restart survey", onClick: () => setFeedbackOpen(true) }, ui("fbSurvey")), /* pt49: 1장에서는 멈춤 안내만 숨기고, 2장 이후 첫 판 안내와 장 끝 저장은 유지한다. */ runIndex < 1 && scene.ending !== 1 && MID_ENDINGS.includes(scene.ending) && React.createElement("p", { className: "pauseOk" }, ui("pauseOk")), /* pt34: 장 끝 화면 — 이어 가기 버튼을 위로, 정리(의뢰·지킨 것·기록·통계)는 접어 둔다(펼친 상태는 기억). */ React.createElement("details", { className: "endMore", open: !!store.get("aduventure_endmore") || undefined, onToggle: e => { try { store.set("aduventure_endmore", !!(e && e.target && e.target.open)); } catch (x) {} } }, React.createElement("summary", null, ui("endMoreH"), " \u2014 ", (() => { const L = chapterLedger(scene.ending, flags); return "\u2713" + L.filter(r => r.kept === true).length + " \u00B7 \u2717" + L.filter(r => r.kept === false).length; })(), runNo && [1, 2, 3, 4].includes(scene.ending) ? " \u00B7 " + ui("goalsDone", { n: goalsFor(runNo).filter(id => GOALS[id].done(flags)).length }) : "", " \u00B7 " + ui("badgeCount") + " " + badges.length + "/" + BADGES.length), runNo && [1, 2, 3, 4].includes(scene.ending) && React.createElement(GoalBox, { ids: goalsFor(runNo), flags, ui, tx }), React.createElement("div", {
     className: "ledger"
   }, React.createElement("h4", null, ui("ledgerH")), chapterLedger(scene.ending, flags).map((r, i) => React.createElement("div", {
     key: "ledger" + i,

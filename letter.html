@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>반송된 편지 · The Returned Letter</title>
+<title>반송된 편지 · The Returned Letter v0.7.3-pt49.1</title>
 <meta name="description" content="10분짜리 기록관 미스터리. 당신이 서명한 세 문장이 다음 날 당신을 막는다. / A ten-minute clerk mystery: the three sentences you sign will stand in your way tomorrow.">
 <meta property="og:type" content="website">
 <meta property="og:title" content="반송된 편지 · The Returned Letter">
@@ -13,15 +13,40 @@
 <!-- 단독 진입 주소: 공유·페스티벌 출품용. 게임 본체는 index.html 하나이며 해시로 「반송된 편지」를 연다. -->
 <noscript><meta http-equiv="refresh" content="0; url=./#returned-letter"></noscript>
 <script>
+// pt49.1: keep this resolver identical in index.html and letter.html.
+function resolveInitialLanguage(read, write) {
+  const valid = value => value === "en" || value === "ko";
+  let requested = null;
+  try {
+    const search = typeof window !== "undefined" && window.location
+      ? window.location.search : typeof location !== "undefined" ? location.search : "";
+    if (search) requested = new URLSearchParams(search).get("lang");
+  } catch (e) {}
+  if (valid(requested)) {
+    try { write("aduventure_lang", requested); } catch (e) {}
+    return requested;
+  }
+  let saved = null;
+  try { saved = read("aduventure_lang"); } catch (e) {}
+  if (valid(saved)) return saved;
+  if (typeof navigator === "undefined" || !navigator) return "ko";
+  try {
+    const preferred = Array.isArray(navigator.languages)
+      ? navigator.languages.find(value => typeof value === "string" && value.trim()) : null;
+    const language = preferred || (typeof navigator.language === "string" ? navigator.language : "");
+    return /^ko/i.test(language.trim()) ? "ko" : "en";
+  } catch (e) { return "en"; }
+}
 (() => {
   // Keep this tiny redirect independent of React and the game bundle.
   // Tests check BUILD, endpoint and anonymous-player compatibility with index.html.
-  const BUILD = "v0.7.3-pt49";
+  const BUILD = "v0.7.3-pt49.1";
   const GAS_URL = "https://script.google.com/macros/s/AKfycbxFx_m5rhCZmqGoy3JcUUNqEgiObMWNHe9hx-LnZrhzIkfwa9-yJGBWP0lVulptnNQeCQ/exec";
+  const read = key => {
+    try { return JSON.parse(localStorage.getItem(key)); } catch (e) { return null; }
+  };
+  const lang = resolveInitialLanguage(read, (key, value) => localStorage.setItem(key, JSON.stringify(value)));
   try {
-    const read = key => {
-      try { return JSON.parse(localStorage.getItem(key)); } catch (e) { return null; }
-    };
     const id = prefix => prefix + (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
       ? crypto.randomUUID().replace(/-/g, "").slice(0, 12)
       : Date.now().toString(36) + Math.random().toString(36).slice(2, 7));
@@ -31,7 +56,7 @@
       try { localStorage.setItem("aduventure_anon_player", JSON.stringify(player)); } catch (e) {}
     }
     const extra = JSON.stringify({v: 1, build: BUILD, page: "letter.html", entry: "returned-letter",
-      lang: read("aduventure_lang") === "en" ? "en" : "ko", player_id: player, visit_id: id("v")});
+      lang, player_id: player, visit_id: id("v")});
     fetch(GAS_URL, {
       method: "POST",
       headers: {"Content-Type": "text/plain;charset=utf-8"},
@@ -39,7 +64,7 @@
       keepalive: true
     }).catch(() => {});
   } catch (e) { /* Tracking cannot block the redirect. */ }
-  location.replace("./#returned-letter");
+  location.replace("./?lang=" + lang + "#returned-letter");
 })();
 </script>
 <style>body{background:#171310;color:#e9e0cf;font-family:serif;padding:24px 16px}a{color:#dcc5a0}</style>
