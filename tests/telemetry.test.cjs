@@ -91,6 +91,7 @@ function game({sceneKey = 'confront', flags = [], data = new Map(), effects = tr
     tick: ms => now += ms,
     hidden(value) { doc.hidden = value; docListeners.visibilitychange?.(); },
     pagehide() { winListeners.pagehide?.(); },
+    pageshow() { winListeners.pageshow?.(); },
     hashchange(hash) { ctx.window.location.hash = hash; winListeners.hashchange?.(); },
     events: event => sent.filter(x => x.payload.text === event).map(x => JSON.parse(x.payload.extra)),
     finishRoll() { for (let tick = 0; tick < 12; tick++) intervals.forEach(fn => fn && fn()); }
@@ -522,9 +523,142 @@ test('URL initialization does not undo in-page language toggles or duplicate pag
   assert.equal(g.events('page_open')[0].lang, 'en');
 });
 
-test('pt49.1 build tags agree with both static page titles', () => {
+test('pt50 build tags agree with both static page titles', () => {
   const build = game({sceneKey: null}).run('BUILD');
-  assert.equal(build, 'v0.7.3-pt49.1');
+  assert.equal(build, 'v0.7.3-pt50');
   assert.ok(html.match(/<title>([^<]*)<\/title>/)[1].includes(build));
   assert.ok(letterHTML.match(/<title>([^<]*)<\/title>/)[1].includes(build));
+});
+
+// pt50: the first actionable control on the main opening, before class selection.
+const openingAction = (g, action) => nodes(g.render()).find(n => {
+  const p = n.props;
+  if (action === 'lie') return p.className === 'choice primaryChoice';
+  if (action === 'believe') return n.type === 'button' && text(n) === g.run(`UI.recordBelieve.${g.doc.documentElement.lang || 'en'}`);
+  if (action === 'case_letter') return p.className === 'or-entry';
+  if (action === 'case_order') return p.className === 'or-entry uo-entry';
+  if (action === 'rules') return n.type === 'button' && p.title === g.run(`UI.rulesTitle.${g.doc.documentElement.lang || 'en'}`);
+  if (action === 'lang') return p['aria-label'] === 'language';
+  if (action === 'feedback') return n.type === 'button' && text(n) === '🗒';
+  if (action === 'case_board') return p['aria-label'] === 'case board';
+  if (action === 'sound') return n.type === 'button' && ['🔊', '🔇'].includes(text(n));
+  if (action === 'numbers') return p['aria-label'] === 'numbers';
+  if (action === 'more') return p.className === 'hMoreBtn';
+  if (action === 'other_cases') return n.type === 'summary' && /Other cases|다른 사건/.test(text(n));
+  if (action === 'rule_mode') return n.type === 'select' && p.className === 'hMore';
+  if (action === 'credits') return n.type === 'summary' && text(n).includes('v0.7.3-pt50');
+});
+for (const lang of ['en', 'ko']) {
+  test(`${lang}: every main-opening control emits the first_click page envelope with fixed action and seconds`, () => {
+    for (const action of ['lie', 'believe', 'case_letter', 'case_order', 'rules', 'lang', 'feedback', 'case_board', 'sound', 'numbers', 'more', 'other_cases', 'rule_mode', 'credits']) {
+      const data = new Map([['aduventure_numbers', 'true']]);
+      if (action.startsWith('case_') && action !== 'case_board') data.set('aduventure_badges', '["1pf"]');
+      const g = game({sceneKey: null, lang, data, search: '?from=PRIVATE_URL'});
+      const control = openingAction(g, action); assert.ok(control, action);
+      g.tick(2750);
+      control.props.onClick();
+      g.render();
+      const opened = g.events('page_open')[0], events = g.events('first_click');
+      assert.equal(events.length, 1, action);
+      assert.deepEqual(events[0], {...opened, first_click: action, dwell_seconds: 2.75}, action);
+      const sent = g.sent.find(x => x.payload.text === 'first_click');
+      assert.deepEqual(Object.keys(sent.payload).sort(), ['extra', 'scene', 'text', 'type', 'who']);
+      assert.equal(sent.payload.type, 'telemetry'); assert.equal(sent.payload.scene, 'index.html');
+      assert.equal(sent.payload.who, opened.player_id); assert.equal(sent.keepalive, true);
+      assert.ok(Buffer.byteLength(sent.payload.extra, 'utf8') <= 950);
+      assert.equal(events[0].run_id, undefined);
+      assert.equal(g.events('run_start').length, 0, 'opening actions never create a fake game run');
+      assert.doesNotMatch(JSON.stringify(events[0]), /PRIVATE_URL|PRIVATE_TEST_NAME/);
+    }
+  });
+}
+test('keyboard-only rule selection also counts once, before the next opening action', () => {
+  const g = game({sceneKey: null, data: new Map([['aduventure_numbers', 'true']])});
+  openingAction(g, 'rule_mode').props.onChange({target: {value: 'simple2d6'}});
+  openingAction(g, 'believe').props.onClick();
+  assert.equal(g.events('first_click').length, 1);
+  assert.equal(g.events('first_click')[0].first_click, 'rule_mode');
+});
+test('first-click dwell excludes hidden tabs, pagehide and time routed away; rerenders do not reset it', () => {
+  const g = game({sceneKey: null});
+  g.render(); g.tick(1000); g.hidden(true); g.tick(10000); g.render(); g.hidden(false);
+  g.tick(400); g.pagehide(); g.tick(7000); g.pageshow();
+  g.tick(600); g.hashchange('#returned-letter'); g.render(); g.tick(8000);
+  g.hashchange(''); g.render(); g.tick(250);
+  openingAction(g, 'believe').props.onClick();
+  assert.equal(g.events('first_click')[0].dwell_seconds, 2.25);
+});
+test('first action is fixed across repeated clicks, language changes, rules, class selection and restart', () => {
+  const g = game({sceneKey: null});
+  const langClick = openingAction(g, 'lang').props.onClick;
+  g.tick(500); langClick(); langClick(); g.render();
+  assert.equal(g.events('first_click')[0].lang, 'en', 'record the language before toggling');
+  openingAction(g, 'rules').props.onClick(); g.render();
+  openingAction(g, 'lie').props.onClick();
+  nodes(g.render()).find(n => n.props.className === 'card').props.onClick(); g.render();
+  g.run('testGoto("ending")');
+  nodes(g.render()).find(n => n.type === 'button' && n.props.className === 'restart').props.onClick();
+  openingAction(g, 'believe').props.onClick(); g.render();
+  assert.equal(g.events('first_click').length, 1);
+  assert.equal(g.events('first_click')[0].first_click, 'lang');
+  assert.equal(g.events('first_click')[0].dwell_seconds, 0.5);
+});
+test('opening the other-cases fold wins over the later side-case button as the first click', () => {
+  const g = game({sceneKey: null});
+  openingAction(g, 'other_cases').props.onClick();
+  openingAction(g, 'case_letter').props.onClick(); g.render();
+  assert.equal(g.events('first_click').length, 1);
+  assert.equal(g.events('first_click')[0].first_click, 'other_cases');
+});
+test('direct case links stay immediate and never become main-opening first clicks, even after returning', () => {
+  for (const lang of ['ko', 'en']) for (const [hash, component] of [['#returned-letter', 'OwnRecordTrial'], ['#unsigned-order', 'UnsignedOrderTrial']]) {
+    const g = game({sceneKey: null, lang, hash});
+    assert.ok(nodes(g.render()).some(n => n.type.name === component));
+    g.tick(9000); g.hashchange(''); g.render();
+    openingAction(g, 'lie').props.onClick(); g.render();
+    assert.equal(g.events('first_click').length, 0);
+    assert.equal(g.events('page_open').length, 1);
+    assert.equal(g.events('page_open')[0].entry, hash.slice(1));
+  }
+});
+test('continue counts only at the opening, and a reload has its own first click and visit', () => {
+  const first = game();
+  assert.equal(first.events('first_click')[0].first_click, 'continue');
+  assert.equal(first.events('first_click')[0].visit_id, first.events('page_open')[0].visit_id);
+  nodes(first.render()).find(n => n.props['aria-label'] === 'language').props.onClick(); first.render();
+  assert.equal(first.events('first_click').length, 1);
+  const loaded = game({data: first.data});
+  assert.equal(loaded.events('first_click').length, 1);
+  assert.equal(loaded.events('first_click')[0].player_id, first.events('first_click')[0].player_id);
+  assert.notEqual(loaded.events('first_click')[0].visit_id, first.events('first_click')[0].visit_id);
+});
+test('unmeasured dwell is null and blocked storage or failed telemetry never block opening actions', async () => {
+  for (const effects of [false, true]) for (const network of ['ok', 'throw', 'reject']) {
+    const g = game({sceneKey: null, effects, storageBlocked: true, network});
+    openingAction(g, 'lie').props.onClick();
+    assert.ok(nodes(g.render()).some(n => n.props.className === 'card'));
+    if (network === 'ok') {
+      assert.equal(g.events('first_click').length, 1);
+      assert.equal(g.events('first_click')[0].dwell_seconds, effects ? 0 : null);
+    }
+  }
+  await new Promise(resolve => setImmediate(resolve));
+});
+test('main run starts and chapter clears join their page visit while resumed clears retain the original run', () => {
+  const first = game({sceneKey: null});
+  openingAction(first, 'believe').props.onClick();
+  nodes(first.render()).find(n => n.props.className === 'card').props.onClick(); first.render();
+  const started = first.events('run_start')[0];
+  assert.equal(started.visit_id, first.events('page_open')[0].visit_id);
+  const resumed = game({sceneKey: 'intro', data: first.data});
+  resumed.run('testGoto("ending")'); resumed.render();
+  const clear = resumed.events('chapter_clear')[0];
+  assert.equal(clear.chapter, 1); assert.equal(clear.run_id, started.run_id);
+  assert.equal(clear.visit_id, resumed.events('page_open')[0].visit_id);
+  assert.notEqual(clear.visit_id, started.visit_id);
+  resumed.run('testGoto("ending2")'); resumed.render();
+  const restart = nodes(resumed.render()).find(n => n.type === 'button' && String(n.props.onClick).includes('restart("intro2")'));
+  assert.ok(restart); restart.props.onClick(); resumed.render();
+  assert.equal(resumed.events('run_start')[0].visit_id, clear.visit_id);
+  assert.notEqual(resumed.events('run_start')[0].run_id, started.run_id);
 });
