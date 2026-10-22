@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>어두밴처 v0.7.3-pt49.1</title>
+<title>어두밴처 v0.7.3-pt50</title>
 <style>body{margin:0;background:#0e1420}</style>
 </head>
 <body>
@@ -318,7 +318,7 @@ function(a,b,c){if(!Vd(b))throw Error(n(200));return Wd(null,a,b,!1,c)};Q.unmoun
    GAS 피드백 파이프 — v0.7 재구현 (제안/신호/텔레메트리)
    ============================================================ */
 /* 플레이테스트 빌드 태그 — 테스트 중 버전 구분용. 수정할 때마다 뒤 번호를 올린다. */
-const BUILD = "v0.7.3-pt49.1";
+const BUILD = "v0.7.3-pt50";
 const GAS_URL = "https://script.google.com/macros/s/AKfycbxFx_m5rhCZmqGoy3JcUUNqEgiObMWNHe9hx-LnZrhzIkfwa9-yJGBWP0lVulptnNQeCQ/exec";
 function gasPost(payload, options = {}) {
   return fetch(GAS_URL, {
@@ -397,14 +397,18 @@ function emitTelemetry(event, run, data, keepalive = false) {
   } catch (e) { /* Analytics must never stop a game. */ }
 }
 // Page visits precede character creation: they must not create or resume a run.
-function emitPageOpen(page, entry, lang, visitId) {
+function emitPageEvent(event, page, entry, lang, visitId, details = {}) {
   try {
     const player = telemetryPlayer();
     const extra = encodeTelemetry({v: 1, build: BUILD, page, entry,
-      lang: lang === "en" ? "en" : "ko", player_id: player, visit_id: visitId});
-    if (extra) tele("page_open", page, player, extra, true);
+      lang: lang === "en" ? "en" : "ko", player_id: player, visit_id: visitId, ...details});
+    if (extra) tele(event, page, player, extra, true);
   } catch (e) { /* Opening a page must work even when analytics is unavailable. */ }
 }
+function emitPageOpen(page, entry, lang, visitId) {
+  emitPageEvent("page_open", page, entry, lang, visitId);
+}
+const OPENING_ACTIONS = new Set(["lie", "believe", "case_letter", "case_order", "rules", "lang", "continue", "feedback", "case_board", "sound", "numbers", "more", "other_cases", "rule_mode", "credits"]);
 function reportClientError(msg, extra) {
   try {
     gasPost({
@@ -805,8 +809,9 @@ const UI = {
   sfxOff: { ko: "소리 켜기", en: "Unmute" },
   rulesBtn: { ko: "? 규칙", en: "? Rules" },
   rulesTitle: { ko: "주사위 읽는 법", en: "How to read the dice" },
+  rulesDetailed: { ko: "자세한 규칙", en: "Detailed rules" },
   rulesAria: { ko: "룰 시스템", en: "Rule system" },
-  rulesFoot: { ko: "선택지의 파란 %가 성공 확률. 실패해도 장마다 한 번, 운명 주사위로 다시 굴릴 수 있다.", en: "The blue % on a choice is its success chance. Once per chapter, a Fate die lets you reroll a failure." },
+  rulesFoot: { ko: "‘숫자 보기’를 켜면 선택지의 %로 성공 확률을 볼 수 있다. 남은 운명 주사위가 있으면 실패한 판정을 다시 굴릴 수 있다.", en: "Turn on “Show numbers” to see each choice's success chance (%). If you have a Fate die left, you can reroll a failed check." },
   rulesGot: { ko: "이해했다, 주사위를 다오", en: "Got it — give me the dice" },
   special: { ko: "특수기", en: "special" },
   proficient: { ko: "숙련:", en: "proficient:" },
@@ -984,11 +989,15 @@ const UI = {
   objStamp: { ko: "정정", en: "Corrected" },
   objSealed: { ko: "확정", en: "Sealed" },
   openingProof: { ko: "당신은 살아 있다. 펜을 쥔 손이 그 증거다.", en: "You are alive. The hand holding this pen is your evidence." },
+  openingWho: { ko: "당신은 폭풍을 피해 소금여울에 온 떠돌이 모험가다.", en: "You are a wandering adventurer taking shelter in Saltmarsh." },
+  openingStakes: { ko: "새벽에 어선 세 척이 돌아온다. 그 전에 등대를 밝혀야 한다.", en: "Three fishing boats return at dawn. Light the lighthouse before they reach the rocks." },
+  openingDecision: { ko: "공식 기록은 당신이 죽었다고 한다. 믿을까, 고쳐 쓸까?", en: "The official record says you are dead. Believe it—or rewrite it?" },
+  otherCases: { ko: "다른 사건 (1장 이후 추천)", en: "Other cases (recommended after Ch.1)" },
   openingCorrection: { ko: "생존 확인. 이름은 내가 직접 적는다.", en: "Alive. I will write my own name." },
   aboutLead: { ko: "거짓으로 남은 기록을, 당신이 목격한 진실로 고치는 미스터리.", en: "A mystery of false records, corrected with truths you witness." },
   aboutPremise: { ko: "등대는 꺼졌고 어선 세 척이 돌아온다. 오늘 밤의 진실을 보고, 세온의 기록과 대조하라.", en: "The lighthouse is dark and three boats are coming home. Witness tonight's events, then compare them with Seon's account." },
   aboutStart: { ko: "기록에 남길 이름과, 사건에 접근할 방식을 고른다.", en: "Choose the name this record will bear, and how you approach the case." },
-  checkBrief: { ko: "위험한 행동은 주사위로 판정한다. 실패해도 이야기는 이어진다.", en: "Risky actions use a die roll. Failure still moves the story forward." },
+  checkBrief: { ko: "위험한 행동은 주사위로 성공을 가려요. 능력과 숙련이 확률에 영향을 줘요.", en: "For risky actions, dice decide success; your abilities and skills affect the odds." },
   prologueNext: { ko: "다음 →", en: "Next →" },
   prologueSkip: { ko: "건너뛰기", en: "Skip" },
   prologuePage: { ko: "도입 {n} / {t}", en: "Opening {n} / {t}" },
@@ -5069,6 +5078,19 @@ const BADGES = [{
   name: { ko: "S의 사람", en: "S's Own" },
   how: { ko: "에필로그: 알고도 덮는다", en: "Epilogue: bury what you know" }
 }];
+// pt50: onboarding uses evidence of a real Ch.1 completion, even if the badge's
+// delayed write has not happened yet. Gameplay unlocks keep their existing rules.
+function hasChapterOneClear(badges, records, savedGame) {
+  const ids = BADGES.filter(b => b.ch === 1).map(b => b.id);
+  if (Array.isArray(badges) && ids.some(id => badges.includes(id))) return true;
+  const completeRecord = record => record && typeof record === "object" && !Array.isArray(record)
+    && Number.isInteger(record.rolls) && record.rolls >= 0
+    && Number.isInteger(record.success) && record.success >= 0 && record.success <= record.rolls
+    && record.rate === (record.rolls ? Math.round(record.success / record.rolls * 100) : 0);
+  if (records && typeof records === "object" && ids.some(id => completeRecord(records[id]))) return true;
+  return !!(savedGame && savedGame.sceneKey === "ending" && savedGame.pc
+    && typeof savedGame.pc === "object" && !Array.isArray(savedGame.pc));
+}
 const badgeId = (ending, flags) => ending === 8 ? "8" + (flags.includes("fin_red") ? "r" : flags.includes("fin_read") ? "l" : "c") : ending === 7 ? "7" + (flags.includes("c2_expose") ? "e" : flags.includes("c2_keep") ? "k" : "d") : ending === 6 ? "6" : ending === 5 ? "5" : ending === 4 ? "4" + (flags.includes("accuseSeon") ? "t" : flags.includes("accuseBern") ? "b" : "d") : ending === 1 && flags.includes("signal") ? "1s" : ending === 1 ? "1" + (flags.includes("peaceful") ? "p" : "c") + (flags.includes("fixed") ? "f" : "j") : ending === 2 ? "2" + (flags.includes("peaceful2") ? "p" : "c") : "3" + (flags.includes("saved3") ? "s" : "e");
 
 /* ---------- 오늘의 도전 — 날짜 기반으로 매일 하나가 결정된다(재방문 유도) ---------- */
@@ -6987,6 +7009,11 @@ const css = `
 .crpg .objHint p { margin:0 0 10px; line-height:1.7; color:var(--text); }
 .crpg .objHint summary:focus-visible, .crpg .optionalGoals summary:focus-visible, .crpg .aftermathQuestion summary:focus-visible { outline:2px solid var(--gold); outline-offset:3px; }
 .crpg .openingProof { margin:12px 0 24px; color:var(--redText); font-size:15px; line-height:1.7; }
+.crpg .openingIntro { margin:0 0 18px; font-size:15px; line-height:1.7; color:var(--text); }
+.crpg .openingIntro p { margin:0 0 6px; }
+.crpg .otherCases { margin-top:16px; }
+.crpg .otherCases summary, .crpg .rulesDetails summary { min-height:44px; padding:12px 0; box-sizing:border-box; cursor:pointer; color:var(--dim); }
+.crpg .otherCases summary:focus-visible, .crpg .rulesDetails summary:focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
 .crpg .prologueNav { display:flex; align-items:center; gap:12px; margin:22px 0 8px; }
 .crpg .prologueCount { margin-right:auto; color:var(--dim); font-size:13px; }
 .crpg .prologueNav button { min-height:44px; padding:10px 16px; font:inherit; cursor:pointer; border:1px solid var(--line); border-radius:4px; background:var(--panel2); color:var(--text); }
@@ -7966,6 +7993,8 @@ function CRPG() {
   const clogRef = useRef(null);
   const [ownTrialOpen, setOwnTrialOpen] = useState(() => typeof window !== "undefined" && window.location?.hash === "#returned-letter");
   const [orderTrialOpen, setOrderTrialOpen] = useState(() => typeof window !== "undefined" && window.location?.hash === "#unsigned-order");
+  // Entry is fixed for this page visit. A direct case link is never an opening visit.
+  const openingVisit = useRef({entry: ownTrialOpen ? "returned-letter" : orderTrialOpen ? "unsigned-order" : "main", clock: null, active: false, sent: false});
   useEffect(() => {
     if (pageOpenSent.current) return;
     pageOpenSent.current = true;
@@ -7975,6 +8004,27 @@ function CRPG() {
     } catch (e) { /* Telemetry must not interrupt the opening screen. */ }
   }, []);
   useEffect(() => {
+    const first = openingVisit.current;
+    if (!first.clock) first.clock = createDecisionClock();
+    first.active = first.entry === "main" && !first.sent && !pc && !opening && !ownTrialOpen && !orderTrialOpen;
+    first.clock.sync("opening", !first.active || document.hidden === true);
+  });
+  function recordFirstClick(action) {
+    // Only opening controls count; keep the once flag across route changes/restarts.
+    const first = openingVisit.current;
+    if (first.sent || first.entry !== "main" || pc || opening || ownTrialOpen || orderTrialOpen || !OPENING_ACTIONS.has(action)) return;
+    first.sent = true;
+    first.active = false;
+    try {
+      first.clock?.pause();
+      const ms = first.clock?.read("opening") ?? null;
+      if (!visitId.current) visitId.current = telemetryId("v");
+      emitPageEvent("first_click", "index.html", "main", lang, visitId.current, {
+        first_click: action, dwell_seconds: ms === null ? null : ms / 1000
+      });
+    } catch (e) { /* Input must still work when telemetry is unavailable. */ }
+  }
+  useEffect(() => {
     const syncOwnTrial = () => {
       setOwnTrialOpen(window.location?.hash === "#returned-letter");
       setOrderTrialOpen(window.location?.hash === "#unsigned-order");
@@ -7983,11 +8033,13 @@ function CRPG() {
     return () => window.removeEventListener?.("hashchange",syncOwnTrial);
   },[]);
   function openOwnTrial() {
+    recordFirstClick("case_letter");
     try { window.history?.pushState(null,"","#returned-letter"); } catch (e) {}
     setOwnTrialOpen(true);
     setOrderTrialOpen(false);
   }
   function openOrderTrial() {
+    recordFirstClick("case_order");
     try { window.history?.pushState(null,"","#unsigned-order"); } catch (e) {}
     setOrderTrialOpen(true);
     setOwnTrialOpen(false);
@@ -8099,8 +8151,11 @@ function CRPG() {
     function visibility() {
       const live = decisionLive.current;
       if (live && decisionClock.current) decisionClock.current.sync(live.key, live.paused || document.hidden === true);
+      const first = openingVisit.current;
+      first.clock?.sync("opening", !first.active || document.hidden === true);
     }
     function pagehide() {
+      openingVisit.current.clock?.pause();
       const live = decisionLive.current;
       if (!live?.key || decisionLock.current === live.key || !decisionClock.current) return;
       decisionClock.current.pause();
@@ -8326,7 +8381,7 @@ function CRPG() {
     setIntroStep(0);
     const run = newTelemetryRun(restartFrom.current);
     setTelemetryRun(run);
-    emitTelemetry("run_start", run, {scene_id: "intro", lang, rule: ruleKey, class: key, reason: restartFrom.current ? "restart" : "new", previous_run_id: restartFrom.current || undefined, opening: opening || undefined, record_no: recordNo});
+    emitTelemetry("run_start", run, {scene_id: "intro", visit_id: visitId.current, lang, rule: ruleKey, class: key, reason: restartFrom.current ? "restart" : "new", previous_run_id: restartFrom.current || undefined, opening: opening || undefined, record_no: recordNo});
     setRunNo(recordNo);
     setSeenAtRun(store.get("aduventure_seen") || []);
     setTakenAtRun(store.get("aduventure_taken") || []);
@@ -8404,7 +8459,7 @@ function CRPG() {
       setLastResult(null);
     }
     if (target?.ending) {
-      emitTelemetry("chapter_clear", telemetryRun, {scene_id: key, chapter: target.ch, lang, rule: ruleKey, class: pc?.classKey});
+      emitTelemetry("chapter_clear", telemetryRun, {scene_id: key, visit_id: visitId.current, chapter: target.ch, lang, rule: ruleKey, class: pc?.classKey});
       setFlags(f => {
         const all = [...f, ...extras.filter(x => !f.includes(x))];
         unlockLater(target.ending, all);
@@ -8843,7 +8898,7 @@ function CRPG() {
     if (toScene) {
       const nextRun = newTelemetryRun(restartFrom.current);
       setTelemetryRun(nextRun);
-      emitTelemetry("run_start", nextRun, {scene_id: toScene, lang, rule: ruleKey, class: pc?.classKey, reason: "restart", previous_run_id: restartFrom.current || undefined});
+      emitTelemetry("run_start", nextRun, {scene_id: toScene, visit_id: visitId.current, lang, rule: ruleKey, class: pc?.classKey, reason: "restart", previous_run_id: restartFrom.current || undefined});
       restartFrom.current = null;
     } else setTelemetryRun(null);
     setSceneKey(toScene || "intro");
@@ -8897,6 +8952,7 @@ function CRPG() {
   function continueGame() {
     const s = savedGame || store.get(SAVE_KEY);
     if (!s || !s.pc) return;
+    recordFirstClick("continue");
     stampQuiet.current = true;
     const run = restoreTelemetryRun(s.telemetry);
     setTelemetryRun(run);
@@ -8935,6 +8991,7 @@ function CRPG() {
   }) * 100);
   const art = STUDENT_ART[sceneKey];
   const ch1Cleared = badges.some(b => b.startsWith("1"));
+  const openingCh1Cleared = hasChapterOneClear(badges, records, savedGame);
   const allBadges = badges.length >= BADGES.length;
   const tx = v => v && typeof v === "object" && !Array.isArray(v) && ("ko" in v || "en" in v) ? (v[lang] || v.ko || v.en || "") : v;
   const ui = (k, values = {}) => Object.entries(values).reduce((text, [key, value]) => text.replaceAll("{" + key + "}", String(value)), UI[k] && (UI[k][lang] || UI[k].ko) || k);
@@ -9052,6 +9109,7 @@ function CRPG() {
     className: "hctrl" + (hdrMore ? " open" : "")
   }, /*#__PURE__*/React.createElement("button", {
     onClick: () => {
+      recordFirstClick("lang");
       const nl = lang === "ko" ? "en" : "ko";
       setLang(nl);
       store.set("aduventure_lang", nl);
@@ -9060,29 +9118,30 @@ function CRPG() {
     "aria-label": "language"
   }, ui("langBtn")), /*#__PURE__*/React.createElement("button", {
     className: "hMore",
-    onClick: () => setFeedbackOpen(true),
+    onClick: () => { recordFirstClick("feedback"); setFeedbackOpen(true); },
     title: ui("fbBtn")
   }, "🗒"), React.createElement("button", {
-    onClick: () => setCaseOpen(true),
+    onClick: () => { recordFirstClick("case_board"); setCaseOpen(true); },
     title: ui("caseBtn"),
     "aria-label": "case board"
   }, "🔎"), /*#__PURE__*/React.createElement("button", {
     className: "hMore",
-    onClick: () => { const on = SFX.toggle(); store.set("aduventure_sfx", on); setSfxOn(on); },
+    onClick: () => { recordFirstClick("sound"); const on = SFX.toggle(); store.set("aduventure_sfx", on); setSfxOn(on); },
     title: sfxOn ? ui("sfxOn") : ui("sfxOff")
   }, sfxOn ? "🔊" : "🔇"), /*#__PURE__*/React.createElement("button", {
-    onClick: () => setTutOpen(o => !o),
+    onClick: () => { recordFirstClick("rules"); setTutOpen(o => !o); },
     title: ui("rulesTitle"),
     "aria-label": ui("rulesBtn").replace(/^\?\s*/, "")
   }, "?", React.createElement("span", { className: "hLbl" }, " " + ui("rulesBtn").replace(/^\?\s*/, ""))), React.createElement("button", {
-    onClick: () => setNumbersOn(v => { store.set("aduventure_numbers", !v); return !v; }),
+    onClick: () => { recordFirstClick("numbers"); setNumbersOn(v => { store.set("aduventure_numbers", !v); return !v; }); },
     title: numbersOn ? ui("numbersOff") : ui("numbersOn"),
     "aria-label": "numbers",
     className: "hMore" + (numbersOn ? " on" : "")
   }, "\uD83D\uDD22"), numbersOn && /*#__PURE__*/React.createElement("select", {
     className: "hMore",
     value: ruleKey,
-    onChange: e => setRuleKey(e.target.value),
+    onClick: () => recordFirstClick("rule_mode"),
+    onChange: e => { recordFirstClick("rule_mode"); setRuleKey(e.target.value); },
     "aria-label": ui("rulesAria")
   }, /*#__PURE__*/React.createElement("option", {
     value: "srd20"
@@ -9090,7 +9149,7 @@ function CRPG() {
     value: "simple2d6"
   }, "Simple 2d6")), React.createElement("button", {
     className: "hMoreBtn",
-    onClick: () => setHdrMore(v => !v),
+    onClick: () => { recordFirstClick("more"); setHdrMore(v => !v); },
     "aria-expanded": hdrMore,
     "aria-label": lang === "en" ? "More" : "더 보기"
   }, "\u00B7\u00B7\u00B7"))), pc && SCENE_TITLES[sceneKey] && React.createElement("div", {
@@ -9119,14 +9178,14 @@ function CRPG() {
     className: "locCard"
   }, React.createElement("span", { className: "locPlace" }, "\uD83D\uDCCD " + tx(SCENE_TITLES[sceneKey])), SCENE_DOING[sceneKey] && React.createElement("span", { className: "locDoing" }, tx(SCENE_DOING[sceneKey])))), tutOpen && /*#__PURE__*/React.createElement("div", {
     className: "tut"
-  }, /*#__PURE__*/React.createElement("h4", null, ui("rulesTitle"), " \u2014 ", tx(rules.name)), (rules.tutorial[lang] || rules.tutorial.ko).map((line, i) => /*#__PURE__*/React.createElement("p", {
+  }, /*#__PURE__*/React.createElement("h4", null, ui("rulesTitle"), " \u2014 ", tx(rules.name)), React.createElement("p", { className: "rulesBrief" }, ui("checkBrief")), React.createElement("details", { className: "rulesDetails" }, React.createElement("summary", null, ui("rulesDetailed")), (rules.tutorial[lang] || rules.tutorial.ko).map((line, i) => /*#__PURE__*/React.createElement("p", {
     key: i
   }, line)), /*#__PURE__*/React.createElement("p", {
     style: {
       marginTop: 8,
       color: "#5e8fb8"
     }
-  }, ui("rulesFoot")), /*#__PURE__*/React.createElement("button", {
+  }, ui("rulesFoot"))), /*#__PURE__*/React.createElement("button", {
     onClick: () => {
       setTutOpen(false);
       setTutSeen(true);
@@ -9134,8 +9193,8 @@ function CRPG() {
     }
   }, ui("rulesGot"))), !pc && !opening && React.createElement("div", {
     className: "scene opening"
-  }, React.createElement("button", {className:"or-entry",onClick:openOwnTrial},tx(OWN_RECORD_COPY.entry)),
-  React.createElement("button", {className:"or-entry uo-entry",onClick:openOrderTrial},tx(UNSIGNED_ORDER_COPY.entry)), React.createElement(RecordCard, {
+  }, openingCh1Cleared && React.createElement(React.Fragment, null, React.createElement("button", {className:"or-entry",onClick:openOwnTrial},tx(OWN_RECORD_COPY.entry)),
+  React.createElement("button", {className:"or-entry uo-entry",onClick:openOrderTrial},tx(UNSIGNED_ORDER_COPY.entry))), !openingCh1Cleared && React.createElement("div", { className: "openingIntro" }, ["openingWho", "openingStakes", "openingDecision"].map(key => React.createElement("p", { key }, ui(key)))), React.createElement(RecordCard, {
     record: { ...officialRecord("opening", [], recordNo, verdict), rebut: null },
     pc: null,
     lang
@@ -9145,11 +9204,12 @@ function CRPG() {
     className: "choices"
   }, React.createElement("button", {
     className: "choice primaryChoice",
-    onClick: () => { setOpening("lie"); try { if (sfxOn) SFX.cue("pen"); } catch (e) {} }
+    onClick: () => { recordFirstClick("lie"); setOpening("lie"); try { if (sfxOn) SFX.cue("pen"); } catch (e) {} }
   }, ui("recordLie")), React.createElement("button", {
     className: "choice",
-    onClick: () => setOpening("believe")
-  }, ui("recordBelieve"))), savedGame && savedGame.pc && React.createElement("button", {
+    onClick: () => { recordFirstClick("believe"); setOpening("believe"); }
+  }, ui("recordBelieve"))), !openingCh1Cleared && React.createElement("details", { className: "otherCases" }, React.createElement("summary", { onClick: () => recordFirstClick("other_cases") }, ui("otherCases")),
+  React.createElement("button", {className:"or-entry",onClick:openOwnTrial},tx(OWN_RECORD_COPY.entry)), React.createElement("button", {className:"or-entry uo-entry",onClick:openOrderTrial},tx(UNSIGNED_ORDER_COPY.entry))), savedGame && savedGame.pc && React.createElement("button", {
     className: "continueBtn",
     onClick: continueGame
   }, lang === "en" ? "\u21BB Continue" : "\u21BB \uC774\uC5B4\uC11C \uD558\uAE30")), !pc && opening && /*#__PURE__*/React.createElement("div", {
@@ -9677,7 +9737,7 @@ function CRPG() {
     onClick: () => restart()
   }, ui("rewrite"))), /*#__PURE__*/React.createElement("footer", null,
     React.createElement("details", { className: "credits" },
-      React.createElement("summary", null, ui("credits"), " \xB7 ", BUILD),
+      React.createElement("summary", { onClick: () => recordFirstClick("credits") }, ui("credits"), " \xB7 ", BUILD),
       React.createElement("div", { className: "creditsBody" },
         React.createElement("p", null, ui("footer1")),
         React.createElement("p", null, ui("portraitCredit")),

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>반송된 편지 · The Returned Letter v0.7.3-pt49.1</title>
+<title>반송된 편지 · The Returned Letter v0.7.3-pt50</title>
 <meta name="description" content="10분짜리 기록관 미스터리. 당신이 서명한 세 문장이 다음 날 당신을 막는다. / A ten-minute clerk mystery: the three sentences you sign will stand in your way tomorrow.">
 <meta property="og:type" content="website">
 <meta property="og:title" content="반송된 편지 · The Returned Letter">
@@ -40,7 +40,7 @@ function resolveInitialLanguage(read, write) {
 (() => {
   // Keep this tiny redirect independent of React and the game bundle.
   // Tests check BUILD, endpoint and anonymous-player compatibility with index.html.
-  const BUILD = "v0.7.3-pt49.1";
+  const BUILD = "v0.7.3-pt50";
   const GAS_URL = "https://script.google.com/macros/s/AKfycbxFx_m5rhCZmqGoy3JcUUNqEgiObMWNHe9hx-LnZrhzIkfwa9-yJGBWP0lVulptnNQeCQ/exec";
   const read = key => {
     try { return JSON.parse(localStorage.getItem(key)); } catch (e) { return null; }
