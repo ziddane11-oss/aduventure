@@ -2330,8 +2330,10 @@ function CRPG() {
   // 판정 결과 적용 + 즉시 다음 장면으로 (진행 클릭 제거)
   function applyBranch(branch, res, label) {
     let extra = "";
+    let down = false;
     if (branch.damage) {
       const dmg = d(branch.damage[1]) + branch.damage[0] - 1;
+      down = pc.hp - dmg <= 0;
       setPc(p => ({
         ...p,
         hp: Math.max(0, p.hp - dmg)
@@ -2348,7 +2350,8 @@ function CRPG() {
       text: branch.text + extra,
       kind: res.success ? "good" : "bad"
     });
-    goto(branch.goto, branch.flag);
+    // 전투 밖에서도 HP가 0이 되면 전투 패배와 같은 게임오버로
+    goto(down ? "gameover" : branch.goto, branch.flag);
   }
   function resolveCheck(choice, fateAvail) {
     setRolling(true);
