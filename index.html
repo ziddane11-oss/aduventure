@@ -2360,7 +2360,7 @@ function CRPG() {
     SFX.dice();
     let t = 0;
     const iv = setInterval(() => {
-      setRollFace(d(ruleKey === "srd20" ? 20 : 12));
+      setRollFace(ruleKey === "srd20" ? d(20) : d(6) + d(6));
       if (++t > 9) {
         clearInterval(iv);
         const res = rules.check({
