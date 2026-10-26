@@ -2333,7 +2333,8 @@ function CRPG() {
     let extra = "";
     let down = false;
     if (branch.damage) {
-      const dmg = d(branch.damage[1]) + branch.damage[0] - 1;
+      const [lo, hi] = branch.damage;
+      const dmg = lo + d(hi - lo + 1) - 1; // lo~hi
       down = pc.hp - dmg <= 0;
       setPc(p => ({
         ...p,
