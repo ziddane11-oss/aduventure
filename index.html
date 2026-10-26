@@ -2211,12 +2211,14 @@ function CRPG() {
   useEffect(() => {
     if (sceneKey === "ending3" && flags.includes("keeper")) SFX.bell();
   }, [sceneKey]);
-  // 자동 저장 — 안정적인 서사 장면에서만 진행 상태를 보관한다.
-  // (전투·판정 중·엔딩·게임오버·첫 인트로는 제외 → 복원 시 항상 선택지 화면으로 복귀)
+  // 자동 저장 — 서사 장면뿐 아니라 판정 실패 대기와 전투(승패 화면 포함)도 그대로 보관한다.
+  // 새로고침으로 판정·전투 결과를 무르지 못하게. (굴리는 중·엔딩·게임오버·첫 인트로는 제외 —
+  // 굴리는 중이면 결과를 보기 전 상태가, 운명 주사위를 굴리는 중이면 직전의 실패 대기가 남는다)
   useEffect(() => {
     if (!pc || !scene) return;
-    if (scene.combat || scene.ending || scene.gameover) return;
-    if (rolling || pending || sceneKey === "intro") return;
+    if (scene.ending || scene.gameover) return;
+    if (rolling || sceneKey === "intro") return;
+    const pendingIdx = pending ? (scene.choices?.indexOf(pending.choice) ?? -1) : -1;
     const snapshot = {
       v: 1,
       pc,
@@ -2228,11 +2230,21 @@ function CRPG() {
       breathLeft,
       ruleKey,
       tutSeen,
+      pending: pendingIdx >= 0 ? {
+        choiceIdx: pendingIdx,
+        res: pending.res
+      } : null,
+      combat: scene.combat && enemy ? {
+        hp: enemy.hp,
+        done: !!enemy.done,
+        playerDown: !!enemy.playerDown,
+        clog
+      } : null,
       savedAt: Date.now()
     };
     store.set(SAVE_KEY, snapshot);
     setSavedGame(snapshot);
-  }, [sceneKey, pc, flags, stats, fate, specialLeft, breathLeft, ruleKey, tutSeen, rolling, pending]);
+  }, [sceneKey, pc, flags, stats, fate, specialLeft, breathLeft, ruleKey, tutSeen, rolling, pending, enemy, clog]);
   // 회차가 끝나면(엔딩·게임오버) 이어하기 기록을 비운다. 엔딩 도감(badges)은 별도로 영구 보관된다.
   useEffect(() => {
     if (pc && scene && (scene.ending || scene.gameover)) {
@@ -2578,10 +2590,12 @@ function CRPG() {
       setSavedGame(null);
     }
   }
-  // 이어서 하기 — 저장된 진행 상태를 복원한다. 임시 상태(전투·판정·직전 결과)는 초기화한다.
+  // 이어서 하기 — 저장된 진행 상태를 복원한다. 판정 실패 대기와 전투 상태도 저장된 그대로 되살리고,
+  // 직전 결과 표시 같은 임시 상태만 초기화한다.
   function continueGame() {
     const s = savedGame || store.get(SAVE_KEY);
     if (!s || !s.pc) return;
+    const sc = SCENES[s.sceneKey];
     setRuleKey(s.ruleKey || "srd20");
     setPc(s.pc);
     setFlags(s.flags || []);
@@ -2593,10 +2607,28 @@ function CRPG() {
     setSpecialLeft(typeof s.specialLeft === "number" ? s.specialLeft : 2);
     setBreathLeft(typeof s.breathLeft === "number" ? s.breathLeft : 1);
     setTutSeen(!!s.tutSeen);
-    setEnemy(null);
-    setClog([]);
+    // 전투 장면이면 저장된 적 HP·전투 기록·승패 그대로 (전투 정보가 없으면 새 전투)
+    if (sc?.combat) {
+      const e = ENEMIES[sc.enemy];
+      const c = s.combat || {};
+      setEnemy({
+        ...e,
+        hp: typeof c.hp === "number" ? c.hp : e.maxHp,
+        done: !!c.done,
+        playerDown: !!c.playerDown
+      });
+      setClog(Array.isArray(c.clog) ? c.clog : []);
+    } else {
+      setEnemy(null);
+      setClog([]);
+    }
     setLastResult(null);
-    setPending(null);
+    // 판정 실패 대기 중이었다면 같은 실패 화면 그대로 (운명 주사위 / 결과를 받아들인다)
+    const waiting = s.pending && sc?.choices?.[s.pending.choiceIdx];
+    setPending(waiting?.check && typeof s.pending.res?.roll === "number" ? {
+      choice: waiting,
+      res: s.pending.res
+    } : null);
     setShowCalc(false);
     setNewBadge(null);
     setRolling(false);
