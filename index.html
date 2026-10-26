@@ -1418,6 +1418,29 @@ const ARTIFACTS = {
   }
 };
 
+/* ---------- 영속 데이터 — 탭 여러 개가 같은 저장소를 쓰므로, 저장 직전에 저장소의 최신값과 합친다 ---------- */
+const BADGE_KEY = "aduventure_badges";
+const RECORDS_KEY = "aduventure_records";
+const LORE_KEY = "aduventure_lore";
+const ARTIFACTS_KEY = "aduventure_artifacts";
+const DAILY_PREFIX = "aduventure_daily_";
+const storedList = k => {
+  const v = store.get(k);
+  return Array.isArray(v) ? v : [];
+};
+const storedRecords = () => {
+  const v = store.get(RECORDS_KEY);
+  return v && typeof v === "object" && !Array.isArray(v) ? v : {};
+};
+const mergeList = (...lists) => [...new Set(lists.flat())];
+// 같은 엔딩의 기록은 더 좋은 쪽(성공률 우선, 동률이면 최소 판정)을 남긴다
+const betterRecord = (a, b) => !b || a.rate > b.rate || a.rate === b.rate && a.rolls < b.rolls;
+const mergeRecords = (...maps) => {
+  const out = {};
+  for (const m of maps) for (const [id, rec] of Object.entries(m)) if (rec && betterRecord(rec, out[id])) out[id] = rec;
+  return out;
+};
+
 /* ============================================================
    장면 비주얼 — 1장: 어둠이 걷히는 등대 / 2장: 안개 걷히는 부두
    ============================================================ */
@@ -2150,18 +2173,31 @@ function CRPG() {
   const [sfxOn, setSfxOn] = useState(false);
   const [enemy, setEnemy] = useState(null);
   const [clog, setClog] = useState([]);
-  const [badges, setBadges] = useState(() => store.get("aduventure_badges") || []);
+  const [badges, setBadges] = useState(() => storedList(BADGE_KEY));
   const [newBadge, setNewBadge] = useState(null);
   const SAVE_KEY = "aduventure_save";
   const [savedGame, setSavedGame] = useState(() => store.get(SAVE_KEY));
-  const [records, setRecords] = useState(() => store.get("aduventure_records") || {});
+  const [records, setRecords] = useState(storedRecords);
   const [recordFlash, setRecordFlash] = useState(null);
-  const [lore, setLore] = useState(() => store.get("aduventure_lore") || []);
-  const [artifacts, setArtifacts] = useState(() => store.get("aduventure_artifacts") || []);
+  const [lore, setLore] = useState(() => storedList(LORE_KEY));
+  const [artifacts, setArtifacts] = useState(() => storedList(ARTIFACTS_KEY));
   const [artifactFlash, setArtifactFlash] = useState(null);
   const todayKey = dayKey();
   const daily = DAILY_CHALLENGES[dayHash(todayKey) % DAILY_CHALLENGES.length];
-  const [dailyDone, setDailyDone] = useState(() => !!store.get("aduventure_daily_" + todayKey));
+  const [dailyDone, setDailyDone] = useState(() => !!store.get(DAILY_PREFIX + todayKey));
+  useEffect(() => {
+    // 다른 탭에서 얻은 도감·최고 기록·지식·유물·오늘의 도전 달성을 이 탭에도 바로 반영
+    const onStorage = e => {
+      const k = e.key;
+      if (k === null || k === BADGE_KEY) setBadges(b => mergeList(b, storedList(BADGE_KEY)));
+      if (k === null || k === RECORDS_KEY) setRecords(r => mergeRecords(r, storedRecords()));
+      if (k === null || k === LORE_KEY) setLore(l => mergeList(l, storedList(LORE_KEY)));
+      if (k === null || k === ARTIFACTS_KEY) setArtifacts(a => mergeList(a, storedList(ARTIFACTS_KEY)));
+      if (k === null || k === DAILY_PREFIX + dayKey()) setDailyDone(done => done || !!store.get(DAILY_PREFIX + dayKey()));
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
   const clogRef = useRef(null);
   useEffect(() => {
     clogRef.current?.scrollTo(0, 99999);
@@ -2211,28 +2247,26 @@ function CRPG() {
     const success = stats.success;
     const rate = rolls ? Math.round(success / rolls * 100) : 0;
     const bId = badgeId(scene.ending, flags);
-    const cur = records[bId];
-    const better = !cur || rate > cur.rate || rate === cur.rate && rolls < cur.rolls;
-    if (better) {
-      const next = {
-        ...records,
-        [bId]: {
-          rolls,
-          success,
-          rate,
-          hp: pc.hp,
-          maxHp: pc.maxHp,
-          ruleKey,
-          at: Date.now()
-        }
-      };
-      store.set("aduventure_records", next);
-      setRecords(next);
-      setRecordFlash(bId);
-    } else {
-      setRecordFlash(null);
-    }
-    if (!dailyDone && daily.test({
+    // 저장 직전에 저장소의 최신값을 읽어 합친다 — 다른 탭의 기록·도전 달성·유물을 덮어쓰지 않게
+    const known = mergeRecords(storedRecords(), records);
+    const rec = {
+      rolls,
+      success,
+      rate,
+      hp: pc.hp,
+      maxHp: pc.maxHp,
+      ruleKey,
+      at: Date.now()
+    };
+    const better = betterRecord(rec, known[bId]);
+    const next = better ? {
+      ...known,
+      [bId]: rec
+    } : known;
+    store.set(RECORDS_KEY, next);
+    setRecords(next);
+    setRecordFlash(better ? bId : null);
+    if (dailyDone || store.get(DAILY_PREFIX + todayKey) || daily.test({
       classKey: pc.classKey,
       ruleKey,
       rate,
@@ -2241,18 +2275,15 @@ function CRPG() {
       maxHp: pc.maxHp,
       ending: scene.ending
     })) {
-      store.set("aduventure_daily_" + todayKey, true);
+      store.set(DAILY_PREFIX + todayKey, true);
       setDailyDone(true);
     }
-    const newArts = Object.keys(ARTIFACTS).filter(id => ARTIFACTS[id].got(flags) && !artifacts.includes(id));
-    if (newArts.length) {
-      const nextA = [...artifacts, ...newArts];
-      store.set("aduventure_artifacts", nextA);
-      setArtifacts(nextA);
-      setArtifactFlash(newArts);
-    } else {
-      setArtifactFlash(null);
-    }
+    const knownArts = mergeList(storedList(ARTIFACTS_KEY), artifacts);
+    const newArts = Object.keys(ARTIFACTS).filter(id => ARTIFACTS[id].got(flags) && !knownArts.includes(id));
+    const nextA = [...knownArts, ...newArts];
+    store.set(ARTIFACTS_KEY, nextA);
+    setArtifacts(nextA);
+    setArtifactFlash(newArts.length ? newArts : null);
   }, [sceneKey, pc]);
   // 비대칭 영속성 — 회차 중 발견한 단서(CLUES)는 '지식'으로 회차를 넘어 영구 축적된다.
   // 실패·게임오버로 회차가 끝나도 지식은 남아, 다음 회차에서 새 선택지(loreReq)를 연다.
@@ -2260,21 +2291,21 @@ function CRPG() {
     const found = flags.filter(f => CLUES[f]);
     if (!found.length) return;
     setLore(prev => {
-      const next = [...new Set([...prev, ...found])];
-      if (next.length === prev.length) return prev;
-      store.set("aduventure_lore", next);
-      return next;
+      // 저장 직전에 저장소의 최신값을 읽어 합친다 — 다른 탭이 모은 지식을 덮어쓰지 않게
+      const saved = storedList(LORE_KEY);
+      const next = mergeList(saved, prev, found);
+      if (next.length !== saved.length) store.set(LORE_KEY, next);
+      return next.length === prev.length ? prev : next;
     });
   }, [flags]);
   function unlock(id) {
-    if (badges.includes(id)) {
-      setNewBadge(null);
-      return;
-    }
-    const next = [...badges, id];
+    // 저장 직전에 저장소의 최신값을 읽어 합친다 — 다른 탭이 얻은 엔딩을 덮어쓰지 않게
+    const known = mergeList(storedList(BADGE_KEY), badges);
+    const isNew = !known.includes(id);
+    const next = isNew ? [...known, id] : known;
     setBadges(next);
-    setNewBadge(id);
-    store.set("aduventure_badges", next);
+    setNewBadge(isNew ? id : null);
+    store.set(BADGE_KEY, next);
   }
   function unlockLater(ending, f) {
     setTimeout(() => unlock(badgeId(ending, f)), 0);
