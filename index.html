@@ -1960,6 +1960,7 @@ const css = `
 .crpg .hctrl { display:flex; gap:8px; align-items:center; font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--dim); }
 .crpg .hctrl select, .crpg .hctrl button { background:var(--panel); color:var(--gold); border:1px solid var(--line);
   border-radius:4px; padding:4px 9px; font-family:inherit; font-size:11px; cursor:pointer; }
+.crpg .hctrl select:disabled { opacity:.4; cursor:default; }
 .crpg .lhscene { display:block; width:100%; border:1px solid var(--line); border-radius:10px; margin-bottom:16px; background:#0b101c; }
 .crpg .artimg { display:block; width:100%; border:1px solid var(--gold); border-radius:10px; margin-bottom:4px; }
 .crpg .artcredit { font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:var(--dim); text-align:right; margin-bottom:12px; }
@@ -2594,6 +2595,8 @@ function CRPG() {
   }, "? \uADDC\uCE59"), /*#__PURE__*/React.createElement("select", {
     value: ruleKey,
     onChange: e => setRuleKey(e.target.value),
+    // 굴리는 중·실패 대기 중·전투 중엔 룰을 바꿀 수 없다 (같은 판정·공격을 다른 룰로 계산하지 못하게)
+    disabled: rolling || !!pending || !!scene?.combat,
     "aria-label": "\uB8F0 \uC2DC\uC2A4\uD15C"
   }, /*#__PURE__*/React.createElement("option", {
     value: "srd20"
