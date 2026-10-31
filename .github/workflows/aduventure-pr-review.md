@@ -15,6 +15,7 @@ permissions:
   pull-requests: read
 
 engine: copilot
+model: gpt-5-mini
 
 tools:
   github:
